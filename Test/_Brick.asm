@@ -25,7 +25,7 @@ draw:
 	call checkBrick
 	cmp al,1
 	jne draw
-
+	;;;
 invoke ExitProcess,0 
 GameBrick ENDP
 
