@@ -15,7 +15,7 @@ brick DWORD 22 DUP(79 DUP(0))
 brickChar byte ' ','-'
 
 .code
-Brick PROC
+GameBrick PROC
 draw:
 	call newBrick
 	call drawBrick
@@ -26,7 +26,7 @@ draw:
 	jne draw
 
 invoke ExitProcess,0 
-Brick ENDP
+GameBrick ENDP
 
 drawBrick proc
 	;call ClrScr

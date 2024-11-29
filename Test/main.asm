@@ -5,10 +5,12 @@ EXTERN Game1A2B@0: PROC
 EXTERN BreakOut@0: PROC
 ;EXTERN Advanced1A2B@0: PROC
 EXTERN WinMain@0: PROC
+EXTERN GameBrick@0: PROC
 Game1A2B EQU Game1A2B@0
 BreakOut EQU BreakOut@0
 ;Advanced1A2B EQU Advanced1A2B@0
 WinMain EQU WinMain@0
+GameBrick EQU GameBrick@0
 
 .data
 Option1 byte "1. 1A2B", 0
