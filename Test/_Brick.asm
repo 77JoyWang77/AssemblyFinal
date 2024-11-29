@@ -101,8 +101,8 @@ L:
 newBrick ENDP
 
 Fall proc
-    mov esi, OFFSET brick + (brickmaxY-2) * brickmaxX * 4 
-    mov edi, OFFSET brick + (brickmaxY-1) * brickmaxX * 4
+    mov esi, OFFSET brick + ((brickmaxY-1) * brickmaxX-1) * 4 
+    mov edi, OFFSET brick + (brickmaxY * brickmaxX-1) * 4
     std                                           
     mov ecx, (brickmaxY-1)*brickmaxX                               
     rep movsd                                    
