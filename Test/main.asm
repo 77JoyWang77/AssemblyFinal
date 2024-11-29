@@ -32,6 +32,9 @@ Start:
     mov edx, OFFSET Option2
     call WriteString
     call Crlf
+    mov edx, OFFSET Option3
+    call WriteString
+    call Crlf
     mov edx, OFFSET message7
     call WriteString
     call Crlf
@@ -49,9 +52,9 @@ Second:
     jmp Next
 
 Third:
-    cmp eax, 2
+    cmp eax, 3
     jne Next
-    call BreakOut  ; 呼叫 Game1A2B 程式
+    call GameBrick  ; 呼叫 Game1A2B 程式
     jmp Next
 
 InvalidInput:

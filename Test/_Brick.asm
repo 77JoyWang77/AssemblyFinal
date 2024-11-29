@@ -16,6 +16,7 @@ brickChar byte ' ','-'
 
 .code
 GameBrick PROC
+	call ClrScr
 draw:
 	call newBrick
 	call drawBrick
