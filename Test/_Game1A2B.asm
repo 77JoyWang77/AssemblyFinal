@@ -17,6 +17,7 @@ messageLose byte "Sorry, you couldn't guess it. The number was: ", 0
 
 .code
 Game1A2B PROC
+    CALL ClrScr
     ; 隨機生成 4 位不重複數字
     call Randomize
     call RandomNumber
