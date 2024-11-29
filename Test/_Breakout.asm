@@ -21,16 +21,18 @@ mWrite MACRO drawText:REQ
 ENDM
 
 .data 
+	minX EQU 1
+	minY EQU 1
 	maxX EQU 79
 	maxY EQU 24
-	planX BYTE 38, 39, 40, 41, 42
-	planY BYTE 22
-	ballX BYTE 40
+	planLength EQU 5
+	planDirection BYTE planLength DUP(?)
+	planX BYTE planLength DUP(?)
+	planY EQU 22
+	ballX BYTE ?
 	ballY BYTE 5
 	ballDirX BYTE 0
 	ballDirY BYTE 1
-	planLength DWORD 5
-	planDirection BYTE -2, -1, 0, 1, 2
 	planChar BYTE '='
 	ballChar BYTE '@'
 	wallChar BYTE '|'
@@ -40,6 +42,9 @@ BreakOut PROC
 
 	CALL DrawTitle
 	CALL ClrScr
+
+	setGame:
+	CALL setPlan
 	
 	goGame:
 	CALL movePlan
@@ -47,14 +52,17 @@ BreakOut PROC
 	CALL drawBall
 	CALL drawWall
 	CALL movBall
+	CALL setBallDir
 	INVOKE Sleep, 80
-	jmp goGame
+	mov al, ballY
+	cmp al, maxY
+	jne goGame
+
 
 	CALL WaitMsg
 
 	INVOKE	ExitProcess, 0
 	ret
-
 BreakOut ENDP 
 
 
@@ -70,6 +78,60 @@ DrawTitle PROC
 DrawTitle ENDP
 
 
+setPlan PROC
+	mov al, minX
+	mov ah, maxX
+	mov esi, OFFSET planX
+	mov edi, OFFSET planDirection
+
+	setPlanMiddle:
+		add al, ah
+		shr al, 1
+		jnc setBallX
+		inc al
+	setBallX:
+		mov ballX, al
+	setPlanDir:
+		mov bl, planLength
+		shr bl, 1
+		jnc evenPlan
+
+	oddPlan:
+		mov dl, bl
+		neg dl
+	oddPlanLoop:
+		mov [edi], dl
+		inc dl
+		inc edi
+		cmp dl, bl
+		jle oddPlanLoop
+		jmp planSetting
+
+	evenPlan:
+		mov dl, bl
+		neg dl
+	evenPlanLoop:
+		mov [edi], dl
+		inc edi
+	evenPlanInc:
+		inc dl
+		cmp dl, 0
+		je evenPlanInc
+		cmp dl, bl
+		jle evenPlanLoop
+		
+	planSetting:
+		sub al, bl
+		mov ecx, planLength
+	planSettingLoop:
+		mov [esi], al
+		inc esi
+		inc al
+		loop planSettingLoop
+
+setPlan ENDP
+
+
 movePlan PROC
 	
 	mov ax, 0
@@ -81,7 +143,7 @@ movePlan PROC
 		jz CheckRightKey
 
 	CheckLeftBoundary:
-		mov dl, 0
+		mov dl, minX
 		cmp BYTE PTR [esi], dl
 		jle CheckRightKey
 
@@ -100,8 +162,9 @@ movePlan PROC
 		jz endMovement
 
 	CheckRightBoundary:
-		mov edx, MaxX
-		sub edx, planLength
+		mov dl, MaxX
+		sub dl, planLength
+		inc dl
 		cmp BYTE PTR [esi], dl
 		jge endMovement
 
@@ -157,6 +220,61 @@ movBall PROC
 	ret
 
 movBall ENDP
+
+setBallDir PROC
+	mov al, ballX
+	mov ah, ballY
+	mov bl, ballDirX
+	mov bh, ballDirY
+	
+	leftBoundary:
+		cmp al, minX
+		jg rightBoundary
+		neg bl
+
+	rightBoundary:
+		cmp al, maxX
+		jl upBoundary
+		neg bl
+
+	upBoundary:
+		cmp ah, minY
+		jg bottomBoundary
+		neg bh
+
+	bottomBoundary:
+		cmp ah, maxY
+		jl PlanBoundary
+		mov bl, 0
+		mov bh, 0
+		jmp endSetting
+
+	PlanBoundary:
+		cmp ah, planY
+		jne endSetting
+		mov esi, OFFSET planX
+		mov ecx, planLength
+		
+	testTouchPlan:
+		cmp [esi], al
+		je ballBounce
+		inc esi
+		loop testTouchPlan
+		jmp endSetting
+
+	ballBounce:
+		mov edi, 5
+		sub edi, ecx
+		mov bl, planDirection[edi]
+		neg bh
+
+	endSetting:
+		mov ballDirX, bl
+		mov ballDirY, bh
+		ret
+
+setBallDir ENDP
+
 
 drawWall PROC
 
