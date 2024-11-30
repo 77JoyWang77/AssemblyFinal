@@ -322,7 +322,7 @@ setBallDir PROC
 
 	PlanBoundary:
 		cmp ah, planY
-		jne endSetting
+		jne touchbrick
 		mov esi, OFFSET planX
 		mov ecx, planLength
 		
@@ -337,6 +337,24 @@ setBallDir PROC
 		mov edi, 5
 		sub edi, ecx
 		mov bl, planDirection[edi]
+		neg bh
+		jmp endSetting
+	
+	touchbrick:
+		movzx eax, ballY          
+		dec eax                   
+		mov ecx, maxX             
+		mul ecx                   
+
+		movzx edx, ballX          
+		dec edx                   
+		add eax, edx                       
+		mov esi, OFFSET brick         
+
+		cmp DWORD PTR [esi+eax*4], 1
+		jne endSetting
+		mov DWORD PTR [esi+eax*4], 0
+		neg bl
 		neg bh
 
 	endSetting:
@@ -390,10 +408,7 @@ drawWall PROC
 	ret
 drawWall ENDP
 
-;;
-
 drawBrick proc
-	;call ClrScr
 	mov esi, OFFSET brick
 	mov eax, 0
 	mov ecx, brickmaxY
