@@ -25,7 +25,7 @@ ENDM
 	minY EQU 1
 	maxX EQU 79
 	maxY EQU 24
-	planLength EQU 5
+	planLength EQU 3
 	planDirection BYTE planLength DUP(?)
 	planX BYTE planLength DUP(?)
 	planY EQU 22
@@ -62,20 +62,9 @@ BreakOut PROC
 	CALL setPlan
 	call newBrick
 	call drawBrick
+	CALL drawPlan
 	
 	goGame:
-	CALL movePlan
-	CALL drawPlan
-	CALL clearBall
-	CALL movBall
-	CALL drawBall
-	CALL drawWall
-	CALL setBallDir
-	call checkBrick
-	CALL checkBall
-	cmp endGame, 1
-	je endBrickGame
-
 	mov al, countTime
 	inc al
 	cmp al, brickFallTime
@@ -85,7 +74,23 @@ BreakOut PROC
 	call fall
 	call newBrick
 	call drawBrick
+	CALL drawPlan
 	mov al, 0
+
+	noBrickFall:
+	mov countTime, al
+
+	CALL movePlan
+	
+	CALL clearBall
+	CALL movBall
+	CALL drawBall
+	CALL drawWall
+	CALL setBallDir
+	call checkBrick
+	CALL checkBall
+	cmp endGame, 1
+	je endBrickGame
 
 	noBrickFall:
 	mov countTime, al
@@ -151,12 +156,12 @@ setPlan PROC
 		mov dl, bl
 		neg dl
 	evenPlanLoop:
-		mov [edi], dl
-		inc edi
-	evenPlanInc:
-		inc dl
 		cmp dl, 0
-		je evenPlanInc
+		je skipZero
+		mov BYTE PTR [esi], dl
+		inc edi
+	skipZero:
+		inc dl
 		cmp dl, bl
 		jle evenPlanLoop
 		
@@ -232,8 +237,9 @@ movePlan PROC
 		mov bl, [esi + planLength -1]
 		inc bl
 		mGoto bl, planY
-		mov al, clearChar
+		mov al, planChar
 		CALL WriteChar
+
     MoveRightLoop:
         inc BYTE PTR [edi]
         inc edi
@@ -321,7 +327,9 @@ setBallDir PROC
 		jmp endSetting
 
 	PlanBoundary:
-		cmp ah, planY
+		mov dl, ah
+		inc dl
+		cmp dl, planY
 		jne touchbrick
 		mov esi, OFFSET planX
 		mov ecx, planLength
@@ -334,7 +342,7 @@ setBallDir PROC
 		jmp endSetting
 
 	ballBounce:
-		mov edi, 5
+		mov edi, planlength
 		sub edi, ecx
 		mov bl, planDirection[edi]
 		neg bh
@@ -354,7 +362,6 @@ setBallDir PROC
 		cmp DWORD PTR [esi+eax*4], 1
 		jne endSetting
 		mov DWORD PTR [esi+eax*4], 0
-		neg bl
 		neg bh
 
 	endSetting:
@@ -409,6 +416,7 @@ drawWall PROC
 drawWall ENDP
 
 drawBrick proc
+
 	mov esi, OFFSET brick
 	mov eax, 0
 	mov ecx, brickmaxY
