@@ -92,8 +92,6 @@ BreakOut PROC
 	cmp endGame, 1
 	je endBrickGame
 
-	noBrickFall:
-	mov countTime, al
 
 	INVOKE Sleep, 100
 	mov al, ballY
