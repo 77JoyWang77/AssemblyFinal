@@ -50,6 +50,7 @@ ENDM
 	brickChar byte ' ','-'
 	brickFallTime BYTE 10
 	countTime BYTE 0
+	colorCount DWORD 0
 	endGame BYTE 0
 .code 
 
@@ -348,18 +349,20 @@ setBallDir PROC
 	
 	touchbrick:
 		movzx eax, ballY          
-		dec eax                   
+		sub eax, 2                   
 		mov ecx, maxX             
 		mul ecx                   
 
 		movzx edx, ballX          
-		dec edx                   
+		dec edx                  
 		add eax, edx                       
-		mov esi, OFFSET brick         
+		mov esi, OFFSET brick
+		shl eax, 2
+		add esi, eax
 
-		cmp DWORD PTR [esi+eax*4], 1
-		jne endSetting
-		mov DWORD PTR [esi+eax*4], 0
+		cmp DWORD PTR [esi], 0
+		je endSetting
+		call clearBrick
 		neg bh
 
 	endSetting:
@@ -368,6 +371,20 @@ setBallDir PROC
 		ret
 
 setBallDir ENDP
+
+clearBrick proc uses eax 
+	mov eax, [esi+4]
+	cmp eax, [esi]     
+    je clearRight
+clearLeft:
+	mov DWORD PTR[esi-4], 0
+	jmp ExitclearBrick
+clearRight:
+	mov DWORD PTR[esi+4], 0
+ExitclearBrick:
+	mov DWORD PTR[esi], 0
+	ret
+clearBrick endp
 
 checkBall PROC
 	mov al, ballY
@@ -414,7 +431,6 @@ drawWall PROC
 drawWall ENDP
 
 drawBrick proc
-
 	mov esi, OFFSET brick
 	mov eax, 0
 	mov ecx, brickmaxY
@@ -432,20 +448,18 @@ Col:
 	mov brickY, al
 	pop eax
 
-	cmp DWORD PTR [esi+eax*4], 1
-	je DrawBrick1
-	jmp DrawBrick0
+	cmp DWORD PTR [esi+eax*4], 0
+	ja DrawBrick1
 
 DrawBrick0:
 	mov dl, brickX
 	mov dh, brickY
 	call Gotoxy
 	push eax
-	mov  eax, red	
+	mov  eax, white	
 	call SetTextColor
 	mov al, brickChar[0]
 	call Writechar
-	pop eax
 	jmp Continue
 
 DrawBrick1:
@@ -453,13 +467,12 @@ DrawBrick1:
 	mov dh, brickY
 	call Gotoxy
 	push eax
-	mov  eax, red	
-	call SetTextColor
+	call drawColor
 	mov al, brickChar[1]
 	call Writechar
-	pop eax
 
 Continue:
+	pop eax
 	inc eax
 	loop Col
 	pop ecx
@@ -471,18 +484,70 @@ ExitPrint:
 	ret
 drawBrick ENDP
 
+drawColor proc
+	cmp DWORD PTR [esi+eax*4], 2
+	je drawYellow
+drawRed:
+	mov  eax, red	
+	call SetTextColor
+	jmp ExitdrawColor
+drawYellow:
+	mov  eax, yellow	
+	call SetTextColor
+	jmp ExitdrawColor
+ExitdrawColor:
+	ret
+drawColor endp
+
 newBrick proc
 	call Randomize
 	mov esi, OFFSET brick
 	mov ecx, brickmaxX
 L:
+	cmp ecx, 1
+	je Random0
 	mov eax, brickTypeNum
 	call RandomRange
-	mov [esi], eax
+	cmp eax, 1
+	je Random1
+Random0:
+	mov DWORD PTR [esi], 0
 	add esi, 4
 	loop L
+	jmp ExitnewBrick
+	
+Random1:
+	call setColor
+	mov [esi], eax
+	mov [esi+4], eax 
+	add esi, 8
+	dec ecx
+	loop L
+ExitnewBrick:
 	ret
 newBrick ENDP
+
+setColor PROC USES ebx
+    mov ebx, colorCount       
+    cmp ebx, 0
+    je SetRed                 
+    cmp ebx, 1
+    je SetYellow              
+
+SetRed:
+    mov eax, 1                
+    mov ebx, 1                
+    jmp ExitsetColor
+
+SetYellow:
+    mov eax, 2                
+    mov ebx, 0                
+    jmp ExitsetColor
+
+ExitsetColor:
+    mov colorCount, ebx       
+    ret
+setColor ENDP
 
 Fall proc
     mov esi, OFFSET brick + ((brickmaxY-1) * brickmaxX-1) * 4 
