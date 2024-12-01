@@ -2,9 +2,6 @@
 .model flat,stdcall 
 option casemap:none 
 
-;EXTERN Random09@0: PROC
-;Random09 EQU Random09@0
-
 WinMain proto :DWORD,:DWORD,:DWORD,:DWORD 
 UpdateLineText PROTO, LineText:PTR SDWORD, mode: Byte
 
@@ -37,14 +34,14 @@ RemainingTriesText db "Remaining:  ", 0
 EndGame db "Game Over!", 0
 AnswerText db "The answer is     ", 0
 GuessLineText db "       ", 0
-Line1Text db "                ", 0
-Line2Text db "                ", 0
-Line3Text db "                ", 0
-Line4Text db "                ", 0
-Line5Text db "                ", 0
-Line6Text db "                ", 0
-Line7Text db "                ", 0
-Line8Text db "                ", 0
+Line1Text db "                    ", 0
+Line2Text db "                    ", 0
+Line3Text db "                    ", 0
+Line4Text db "                    ", 0
+Line5Text db "                    ", 0
+Line6Text db "                    ", 0
+Line7Text db "                    ", 0
+Line8Text db "                    ", 0
 line1Rect RECT <20, 20, 250, 40>
 line2Rect RECT <20, 50, 250, 70> 
 line3Rect RECT <20, 80, 250, 100>
@@ -447,17 +444,17 @@ UpdateLineText PROC, LineText:PTR SDWORD, mode: Byte
         ; 更新 ACount 到位置 9
         mov al, Acount
         add al, '0'                     ; 將 ACount 轉換成 ASCII 字元
-        mov [edi + 2], al               ; 存入 Line1Text 的第 9 個字元位置
+        mov [edi + 6], al               ; 存入 Line1Text 的第 9 個字元位置
         mov al, 'A'
-        mov [edi + 4], al
+        mov [edi + 8], al
         ; 更新 BCount 到位置 11
         mov al, Bcount
         add al, '0'                     ; 將 BCount 轉換成 ASCII 字元
-        mov [edi + 6], al              ; 存入 Line1Text 的第 11 個字元位置
+        mov [edi + 10], al              ; 存入 Line1Text 的第 11 個字元位置
         mov al, 'B'
-        mov [edi + 8], al
+        mov [edi + 12], al
     .ELSE
-        mov ecx, 16
+        mov ecx, 20
         mov al, ' '
         mov edi, LineText
         rep stosb
