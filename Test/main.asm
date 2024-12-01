@@ -3,26 +3,23 @@ INCLUDELIB	user32.lib
 
 EXTERN Game1A2B@0: PROC
 EXTERN BreakOut@0: PROC
-;EXTERN Advanced1A2B@0: PROC
-EXTERN WinMain@0: PROC
+EXTERN Advanced1A2B@0: PROC
 EXTERN GameBrick@0: PROC
 Game1A2B EQU Game1A2B@0
 BreakOut EQU BreakOut@0
-;Advanced1A2B EQU Advanced1A2B@0
-WinMain EQU WinMain@0
+Advanced1A2B EQU Advanced1A2B@0
 GameBrick EQU GameBrick@0
 
 .data
 Option1 byte "1. 1A2B", 0
 Option2 byte "2. BreakOut", 0
 Option3 byte "3. Brick", 0
+Option4 byte "4. Advanced 1A2B", 0
 message7 byte "Please enter the game you choose:", 0
 message8 byte "Invalid Input!", 0
 
 .code
 main PROC
-    ;call Advanced1A2B
-    ;call WinMain
 
 Start:
     CALL ClrScr
@@ -33,6 +30,9 @@ Start:
     call WriteString
     call Crlf
     mov edx, OFFSET Option3
+    call WriteString
+    call Crlf
+    mov edx, OFFSET Option4
     call WriteString
     call Crlf
     mov edx, OFFSET message7
@@ -53,8 +53,14 @@ Second:
 
 Third:
     cmp eax, 3
-    jne Next
+    jne Forth
     call GameBrick  ; 呼叫 Game1A2B 程式
+    jmp Next
+
+Forth:
+    cmp eax, 4
+    jne Next
+    call Advanced1A2B  ; 呼叫 Game1A2B 程式
     jmp Next
 
 InvalidInput:

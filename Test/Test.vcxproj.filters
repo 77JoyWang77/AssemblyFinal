@@ -31,4 +31,9 @@
       <Filter>來源檔案</Filter>
     </MASM>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\..\..\OneDrive\桌面\DEC2HEX.ICO">
+      <Filter>資源檔</Filter>
+    </Image>
+  </ItemGroup>
 </Project>
