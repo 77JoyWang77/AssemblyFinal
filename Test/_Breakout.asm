@@ -357,10 +357,8 @@ setBallDir PROC
 		dec edx                  
 		add eax, edx                       
 		mov esi, OFFSET brick
-		shl eax, 2
-		add esi, eax
 
-		cmp DWORD PTR [esi], 0
+		cmp DWORD PTR [esi+eax*4], 0
 		je endSetting
 		call clearBrick
 		neg bh
@@ -372,17 +370,47 @@ setBallDir PROC
 
 setBallDir ENDP
 
-clearBrick proc uses eax 
-	mov eax, [esi+4]
-	cmp eax, [esi]     
+clearBrick proc uses eax ebx edx
+	mov ebx, [esi+eax*4+4]
+	cmp ebx, [esi+eax*4]     
     je clearRight
 clearLeft:
-	mov DWORD PTR[esi-4], 0
-	jmp ExitclearBrick
+	mov DWORD PTR[esi+eax*4-4], 0
+	xor edx, edx
+	push eax
+	mov ebx, brickmaxX
+	div ebx
+	add al, 1
+	mov brickX, dl
+	mov brickY, al
+	pop eax
+	call drawBrick0
+	jmp clearNow
 clearRight:
-	mov DWORD PTR[esi+4], 0
+	mov DWORD PTR[esi+eax*4+4], 0
+	xor edx, edx
+	push eax
+	mov ebx, brickmaxX
+	div ebx
+	add dl, 2
+	add al, 1
+	mov brickX, dl
+	mov brickY, al
+	pop eax
+	call drawBrick0
+clearNow:
+	mov DWORD PTR[esi+eax*4], 0
+	xor edx, edx
+	push eax
+	mov ebx, brickmaxX
+	div ebx
+	add dl, 1
+	add al, 1
+	mov brickX, dl
+	mov brickY, al
+	pop eax
+	call drawBrick0
 ExitclearBrick:
-	mov DWORD PTR[esi], 0
 	ret
 clearBrick endp
 
@@ -449,30 +477,13 @@ Col:
 	pop eax
 
 	cmp DWORD PTR [esi+eax*4], 0
-	ja DrawBrick1
-
-DrawBrick0:
-	mov dl, brickX
-	mov dh, brickY
-	call Gotoxy
-	push eax
-	mov  eax, white	
-	call SetTextColor
-	mov al, brickChar[0]
-	call Writechar
+	ja calldrawBrick1
+	call drawBrick0
 	jmp Continue
 
-DrawBrick1:
-	mov dl, brickX
-	mov dh, brickY
-	call Gotoxy
-	push eax
-	call drawColor
-	mov al, brickChar[1]
-	call Writechar
-
+calldrawBrick1:
+	call drawBrick1
 Continue:
-	pop eax
 	inc eax
 	loop Col
 	pop ecx
@@ -483,6 +494,31 @@ ExitPrint:
 	call SetTextColor
 	ret
 drawBrick ENDP
+	
+drawBrick0 proc
+	mov dl, brickX
+	mov dh, brickY
+	call Gotoxy
+	push eax
+	mov  eax, white	
+	call SetTextColor
+	mov al, brickChar[0]
+	call Writechar
+	pop eax
+	ret
+drawBrick0 endp
+
+drawBrick1 proc
+	mov dl, brickX
+	mov dh, brickY
+	call Gotoxy
+	push eax
+	call drawColor
+	mov al, brickChar[1]
+	call Writechar
+	pop eax
+	ret
+drawBrick1 endp
 
 drawColor proc
 	cmp DWORD PTR [esi+eax*4], 2
