@@ -6,7 +6,7 @@ option casemap:none
 ;Random09 EQU Random09@0
 
 WinMain proto :DWORD,:DWORD,:DWORD,:DWORD 
-UpdateLineText PROTO, LineText:PTR SDWORD
+UpdateLineText PROTO, LineText:PTR SDWORD, mode: Byte
 
 include windows.inc 
 include user32.inc 
@@ -31,12 +31,11 @@ ButtonText9 db "9",0
 ButtonText0 db "0",0 
 DeleteText db "C",0 
 OKText db "OK",0 
-ButtonStates db 10 dup(0) ; 每個按鈕的狀態 (0: 啟用, 1: 禁用)
-SelectedCount   dd 0            ; 已選數量
-Attempts        dd 0            ; 嘗試次數
-TriesRemaining  db 8  ; 記錄剩餘的機會數量
+SelectedCount   dd 0
+TriesRemaining  db 8
 RemainingTriesText db "Remaining:  ", 0
 EndGame db "Game Over!", 0
+AnswerText db "The answer is     ", 0
 GuessLineText db "       ", 0
 Line1Text db "                ", 0
 Line2Text db "                ", 0
@@ -72,7 +71,6 @@ hwndButton0 HWND ?
 DeleteButton HWND ? 
 OKButton HWND ? 
 SelectedNumbers db 4 dup(?)
-History db 4 dup(?),0
 Answer db 4 DUP(?)
 Acount byte ? 
 Bcount byte ? 
@@ -256,7 +254,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
             ; 確認按鈕是否已被禁用
             sub eax, ButtonID0 ; 計算按鈕索引
-            cmp byte ptr [ButtonStates + eax], 1
             je skip_button ; 按鈕已禁用，跳過
 
             ; 儲存選取數字並禁用按鈕
@@ -294,7 +291,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             ; 更新顯示
             invoke InvalidateRect, hWnd, NULL, TRUE
         .ELSEIF eax == OKID
-            ; 計算 A B 結果
             mov eax, SelectedCount
             cmp eax, 4
             jne skip_button  ; 沒有選擇過數字，跳過
@@ -303,19 +299,19 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             invoke InvalidateRect, hWnd, NULL, TRUE
 
             .IF TriesRemaining == 7
-            invoke UpdateLineText, OFFSET Line1Text
+            invoke UpdateLineText, OFFSET Line1Text, 1
             .ELSEIF TriesRemaining == 6
-            invoke UpdateLineText, OFFSET Line2Text
+            invoke UpdateLineText, OFFSET Line2Text, 1
             .ELSEIF TriesRemaining == 5
-            invoke UpdateLineText, OFFSET Line3Text
+            invoke UpdateLineText, OFFSET Line3Text, 1
             .ELSEIF TriesRemaining == 4
-            invoke UpdateLineText, OFFSET Line4Text
+            invoke UpdateLineText, OFFSET Line4Text, 1
             .ELSEIF TriesRemaining == 3
-            invoke UpdateLineText, OFFSET Line5Text
+            invoke UpdateLineText, OFFSET Line5Text, 1
             .ELSEIF TriesRemaining == 2
-            invoke UpdateLineText, OFFSET Line6Text
+            invoke UpdateLineText, OFFSET Line6Text, 1
             .ELSEIF TriesRemaining == 1
-            invoke UpdateLineText, OFFSET Line7Text
+            invoke UpdateLineText, OFFSET Line7Text, 1
             .ENDIF
 
             mov edi, OFFSET GuessLineText
@@ -326,7 +322,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             inc edi                   ; 移動到下一個字元
             loop reset_loop
             invoke InvalidateRect, hWnd, NULL, TRUE
-            ;invoke MessageBox, NULL, addr GuessLineText, NULL, MB_OK
 
             mov SelectedCount, 0
             ; 重新啟用所有按鈕
@@ -358,8 +353,9 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         game_over:
         ; 顯示遊戲結束訊息
             call Output
+            call Initialized
             invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
-            invoke PostQuitMessage, 0 ; 發送退出訊息
+            invoke PostQuitMessage, 0
             invoke DestroyWindow, hWnd
             ret
 
@@ -442,25 +438,31 @@ Next:
     ret
 CalculateResult ENDP
 
-UpdateLineText PROC, LineText:PTR SDWORD
-    mov esi, OFFSET GuessLineText ; 指向 SelectedNumbers
-    mov edi, LineText               ; 指向 LineText
-    mov ecx, 7                     ; 處理四個數字
-    rep movsb
+UpdateLineText PROC, LineText:PTR SDWORD, mode: Byte
+    .IF mode == 1
+        mov esi, OFFSET GuessLineText ; 指向 SelectedNumbers
+        mov edi, LineText               ; 指向 LineText
+        mov ecx, 7                     ; 處理四個數字
+        rep movsb
 
-    ; 更新 ACount 到位置 9
-    mov al, Acount
-    add al, '0'                     ; 將 ACount 轉換成 ASCII 字元
-    mov [edi + 2], al               ; 存入 Line1Text 的第 9 個字元位置
-    mov al, 'A'
-    mov [edi + 4], al
-    ; 更新 BCount 到位置 11
-    mov al, Bcount
-    add al, '0'                     ; 將 BCount 轉換成 ASCII 字元
-    mov [edi + 6], al              ; 存入 Line1Text 的第 11 個字元位置
-    mov al, 'B'
-    mov [edi + 8], al
-    ;invoke MessageBox, NULL, LineText, NULL, MB_OK
+        ; 更新 ACount 到位置 9
+        mov al, Acount
+        add al, '0'                     ; 將 ACount 轉換成 ASCII 字元
+        mov [edi + 2], al               ; 存入 Line1Text 的第 9 個字元位置
+        mov al, 'A'
+        mov [edi + 4], al
+        ; 更新 BCount 到位置 11
+        mov al, Bcount
+        add al, '0'                     ; 將 BCount 轉換成 ASCII 字元
+        mov [edi + 6], al              ; 存入 Line1Text 的第 11 個字元位置
+        mov al, 'B'
+        mov [edi + 8], al
+    .ELSE
+        mov ecx, 16
+        mov al, ' '
+        mov edi, LineText
+        rep stosb
+    .ENDIF
     ret
 UpdateLineText ENDP
 
@@ -501,17 +503,28 @@ RandomNumber2 ENDP
 
 Output PROC
     mov edi, OFFSET Answer
-    mov esi, OFFSET History
+    mov esi, OFFSET AnswerText
     mov ecx, 4
 move:
     mov al, [edi]
     add al, '0'
-    mov [esi], al
+    mov byte ptr[esi + 14], al
     inc edi
     inc esi
     loop move
-    invoke MessageBox, NULL, addr History, addr AppName, MB_OK 
+    invoke MessageBox, NULL, addr AnswerText, addr AppName, MB_OK 
     ret
 Output ENDP
 
+Initialized PROC
+    mov SelectedCount, 0
+    mov TriesRemaining, 8
+    invoke UpdateLineText, OFFSET Line1Text, 0
+    invoke UpdateLineText, OFFSET Line2Text, 0
+    invoke UpdateLineText, OFFSET Line3Text, 0
+    invoke UpdateLineText, OFFSET Line4Text, 0
+    invoke UpdateLineText, OFFSET Line5Text, 0
+    invoke UpdateLineText, OFFSET Line6Text, 0
+    invoke UpdateLineText, OFFSET Line7Text, 0
+Initialized ENDP
 end
