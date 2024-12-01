@@ -76,18 +76,18 @@ Acount byte ?
 Bcount byte ? 
 
 .const 
-ButtonID0 equ 0
-ButtonID1 equ 1
-ButtonID2 equ 2
-ButtonID3 equ 3
-ButtonID4 equ 4
-ButtonID5 equ 5
-ButtonID6 equ 6
-ButtonID7 equ 7
-ButtonID8 equ 8
-ButtonID9 equ 9
-DeleteID equ 11
-OKID equ 12
+ButtonID0 equ 10
+ButtonID1 equ 11
+ButtonID2 equ 12
+ButtonID3 equ 13
+ButtonID4 equ 14
+ButtonID5 equ 15
+ButtonID6 equ 16
+ButtonID7 equ 17
+ButtonID8 equ 18
+ButtonID9 equ 19
+DeleteID equ 21
+OKID equ 22
 
 .CODE 
 Advanced1A2B PROC 
@@ -252,9 +252,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             cmp ecx, 4
             jae skip_button ; 若已選滿，跳過按鈕處理
 
-            ; 確認按鈕是否已被禁用
-            sub eax, ButtonID0 ; 計算按鈕索引
-            je skip_button ; 按鈕已禁用，跳過
+            sub eax, ButtonID0
 
             ; 儲存選取數字並禁用按鈕
             mov [SelectedNumbers + ecx], al
@@ -326,7 +324,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             mov SelectedCount, 0
             ; 重新啟用所有按鈕
             mov ecx, 10                ; 設置循環次數為 10，表示啟用 10 個按鈕
-            mov ebx, 0                 ; 設置按鈕 ID 從 0 開始
+            mov ebx, ButtonID0                 ; 設置按鈕 ID 從 0 開始
             Reset:
                 push ecx
                 invoke GetDlgItem, hWnd, ebx     ; 獲取按鈕的句柄
@@ -526,5 +524,6 @@ Initialized PROC
     invoke UpdateLineText, OFFSET Line5Text, 0
     invoke UpdateLineText, OFFSET Line6Text, 0
     invoke UpdateLineText, OFFSET Line7Text, 0
+    ret
 Initialized ENDP
 end
