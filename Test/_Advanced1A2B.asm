@@ -2,9 +2,6 @@
 .model flat,stdcall 
 option casemap:none 
 
-WinMain proto :DWORD,:DWORD,:DWORD,:DWORD 
-UpdateLineText PROTO, LineText:PTR SDWORD, mode: Byte
-
 include windows.inc 
 include user32.inc 
 includelib user32.lib 
@@ -12,22 +9,26 @@ include kernel32.inc
 includelib kernel32.lib 
 includelib msvcrt.lib
 
+WinMain proto :DWORD
+UpdateLineText PROTO, LineText:PTR SDWORD, mode: Byte, do:byte
+CreateButton PROTO Text:PTR SDWORD, x:SDWORD, y:SDWORD, ID:SDWORD, hWnd:HWND
+
 .DATA 
-ClassName db "SimpleWinClass",0 
-AppName  db "1A2B",0 
-ButtonClassName db "button",0 
-ButtonText1 db "1",0 
-ButtonText2 db "2",0 
-ButtonText3 db "3",0 
-ButtonText4 db "4",0 
-ButtonText5 db "5",0 
-ButtonText6 db "6",0 
-ButtonText7 db "7",0 
-ButtonText8 db "8",0 
-ButtonText9 db "9",0 
-ButtonText0 db "0",0 
-DeleteText db "C",0 
-OKText db "OK",0 
+ClassName db "SimpleWinClass", 0 
+AppName  db "1A2B", 0 
+ButtonClassName db "button", 0 
+ButtonText1 db "1", 0 
+ButtonText2 db "2", 0 
+ButtonText3 db "3", 0 
+ButtonText4 db "4", 0 
+ButtonText5 db "5", 0 
+ButtonText6 db "6", 0 
+ButtonText7 db "7", 0 
+ButtonText8 db "8", 0 
+ButtonText9 db "9", 0 
+ButtonText0 db "0", 0 
+DeleteText db "C", 0 
+OKText db "OK", 0 
 SelectedCount   dd 0
 TriesRemaining  db 8
 RemainingTriesText db "Remaining:  ", 0
@@ -55,36 +56,10 @@ line9Rect RECT <20, 280, 250, 300>
 .DATA? 
 hInstance HINSTANCE ? 
 CommandLine LPSTR ? 
-hwndButton1 HWND ? 
-hwndButton2 HWND ? 
-hwndButton3 HWND ? 
-hwndButton4 HWND ? 
-hwndButton5 HWND ? 
-hwndButton6 HWND ? 
-hwndButton7 HWND ? 
-hwndButton8 HWND ? 
-hwndButton9 HWND ? 
-hwndButton0 HWND ? 
-DeleteButton HWND ? 
-OKButton HWND ? 
 SelectedNumbers db 4 dup(?)
 Answer db 4 DUP(?)
 Acount byte ? 
 Bcount byte ? 
-
-.const 
-ButtonID0 equ 10
-ButtonID1 equ 11
-ButtonID2 equ 12
-ButtonID3 equ 13
-ButtonID4 equ 14
-ButtonID5 equ 15
-ButtonID6 equ 16
-ButtonID7 equ 17
-ButtonID8 equ 18
-ButtonID9 equ 19
-DeleteID equ 21
-OKID equ 22
 
 .CODE 
 Advanced1A2B PROC 
@@ -95,11 +70,11 @@ start:
     mov    hInstance,eax 
     invoke GetCommandLine
     mov CommandLine,eax
-    invoke WinMain, hInstance,NULL,CommandLine, SW_SHOWDEFAULT 
+    invoke WinMain, hInstance
     ret
 Advanced1A2B ENDP
 
-WinMain proc hInst:HINSTANCE, hPrevInst:HINSTANCE, CmdLine:LPSTR, CmdShow:DWORD 
+WinMain proc hInst:HINSTANCE
     LOCAL wc:WNDCLASSEX 
     LOCAL msg:MSG 
     LOCAL hwnd:HWND 
@@ -169,87 +144,35 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
     LOCAL rect:RECT 
-    LOCAL i:DWORD
 
     .IF uMsg==WM_DESTROY 
         invoke PostQuitMessage,NULL 
     .ELSEIF uMsg==WM_CREATE 
         ; Create the buttons for numbers 1 to 9
-        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName,ADDR ButtonText1,\
-                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
-                        20,310,30,30,hWnd,ButtonID1,hInstance,NULL 
-        mov  hwndButton1,eax
-
-        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName,ADDR ButtonText2,\
-                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
-                        60,310,30,30,hWnd,ButtonID2,hInstance,NULL 
-        mov  hwndButton2,eax
-
-        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName,ADDR ButtonText3,\
-                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
-                        100,310,30,30,hWnd,ButtonID3,hInstance,NULL 
-        mov  hwndButton3,eax
-
-        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName,ADDR ButtonText4,\
-                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
-                        140,310,30,30,hWnd,ButtonID4,hInstance,NULL 
-        mov  hwndButton4,eax
-
-        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName,ADDR ButtonText5,\
-                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
-                        180,310,30,30,hWnd,ButtonID5,hInstance,NULL 
-        mov  hwndButton5,eax
-
-        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName,ADDR ButtonText6,\
-                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
-                        20,350,30,30,hWnd,ButtonID6,hInstance,NULL 
-        mov  hwndButton6,eax
-
-        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName,ADDR ButtonText7,\
-                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
-                        60,350,30,30,hWnd,ButtonID7,hInstance,NULL 
-        mov  hwndButton7,eax
-
-        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName,ADDR ButtonText8,\
-                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
-                        100,350,30,30,hWnd,ButtonID8,hInstance,NULL 
-        mov  hwndButton8,eax
-
-        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName,ADDR ButtonText9,\
-                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
-                        140,350,30,30,hWnd,ButtonID9,hInstance,NULL 
-        mov  hwndButton9,eax
-
-        ; Create the button for 0
-        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName,ADDR ButtonText0,\
-                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
-                        180,350,30,30,hWnd,ButtonID0,hInstance,NULL 
-        mov  hwndButton0,eax
-
-        ; Create the Delete button
-        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName,ADDR DeleteText,\
-                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
-                        220,310,30,30,hWnd,DeleteID,hInstance,NULL 
-        mov  DeleteButton,eax
-
-        ; Create the OK button
-        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName,ADDR OKText,\
-                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
-                        220,350,30,30,hWnd,OKID,hInstance,NULL 
-        mov  OKButton,eax
-        invoke DrawText, hdc, addr RemainingTriesText, -1, addr line1Rect,DT_CENTER
+        invoke CreateButton, addr ButtonText1, 20, 310, 11, hWnd
+        invoke CreateButton, addr ButtonText2, 60, 310, 12, hWnd
+        invoke CreateButton, addr ButtonText3, 100, 310, 13, hWnd
+        invoke CreateButton, addr ButtonText4, 140, 310, 14, hWnd
+        invoke CreateButton, addr ButtonText5, 180, 310, 15, hWnd
+        invoke CreateButton, addr ButtonText6, 20, 350, 16, hWnd
+        invoke CreateButton, addr ButtonText7, 60, 350, 17, hWnd
+        invoke CreateButton, addr ButtonText8, 100, 350, 18, hWnd
+        invoke CreateButton, addr ButtonText9, 140, 350, 19, hWnd
+        invoke CreateButton, addr ButtonText0, 180, 350, 10, hWnd
+        invoke CreateButton, addr DeleteText, 220, 310, 21, hWnd
+        invoke CreateButton, addr OKText, 220, 350, 22, hWnd
 
     .ELSEIF uMsg == WM_COMMAND
         mov eax, wParam
 
         ; 按下數字按鈕
-        .IF eax >= ButtonID0 && eax <= ButtonID9
+        .IF eax >= 10 && eax <= 19
             ; 確認是否已選滿
             mov ecx, SelectedCount
             cmp ecx, 4
             jae skip_button ; 若已選滿，跳過按鈕處理
 
-            sub eax, ButtonID0
+            sub eax, 10
 
             ; 儲存選取數字並禁用按鈕
             mov [SelectedNumbers + ecx], al
@@ -265,7 +188,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             invoke InvalidateRect, hWnd, NULL, TRUE
 
         ; 按下 Delete 按鈕
-        .ELSEIF eax == DeleteID
+        .ELSEIF eax == 21
             ; 檢查是否有已選擇的數字
             mov eax, SelectedCount
             cmp eax, 0
@@ -286,29 +209,20 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
             ; 更新顯示
             invoke InvalidateRect, hWnd, NULL, TRUE
-        .ELSEIF eax == OKID
+        .ELSEIF eax == 22
             mov eax, SelectedCount
             cmp eax, 4
             jne skip_button  ; 沒有選擇過數字，跳過
             call CalculateResult
             dec TriesRemaining
-            invoke InvalidateRect, hWnd, NULL, TRUE
 
-            .IF TriesRemaining == 7
-            invoke UpdateLineText, OFFSET Line1Text, 1
-            .ELSEIF TriesRemaining == 6
-            invoke UpdateLineText, OFFSET Line2Text, 1
-            .ELSEIF TriesRemaining == 5
-            invoke UpdateLineText, OFFSET Line3Text, 1
-            .ELSEIF TriesRemaining == 4
-            invoke UpdateLineText, OFFSET Line4Text, 1
-            .ELSEIF TriesRemaining == 3
-            invoke UpdateLineText, OFFSET Line5Text, 1
-            .ELSEIF TriesRemaining == 2
-            invoke UpdateLineText, OFFSET Line6Text, 1
-            .ELSEIF TriesRemaining == 1
-            invoke UpdateLineText, OFFSET Line7Text, 1
-            .ENDIF
+            invoke UpdateLineText, OFFSET Line1Text, 1, 7
+            invoke UpdateLineText, OFFSET Line2Text, 1, 6
+            invoke UpdateLineText, OFFSET Line3Text, 1, 5
+            invoke UpdateLineText, OFFSET Line4Text, 1, 4
+            invoke UpdateLineText, OFFSET Line5Text, 1, 3
+            invoke UpdateLineText, OFFSET Line6Text, 1, 2
+            invoke UpdateLineText, OFFSET Line7Text, 1, 1
 
             mov edi, OFFSET GuessLineText
             mov ecx, 7
@@ -317,12 +231,11 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             mov [edi], al             ; 設置當前字元為空格
             inc edi                   ; 移動到下一個字元
             loop reset_loop
-            invoke InvalidateRect, hWnd, NULL, TRUE
 
             mov SelectedCount, 0
             ; 重新啟用所有按鈕
             mov ecx, 10                ; 設置循環次數為 10，表示啟用 10 個按鈕
-            mov ebx, ButtonID0                 ; 設置按鈕 ID 從 0 開始
+            mov ebx, 10                 ; 設置按鈕 ID 從 0 開始
             Reset:
                 push ecx
                 invoke GetDlgItem, hWnd, ebx     ; 獲取按鈕的句柄
@@ -330,7 +243,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
                 pop ecx
                 inc ebx                 ; 增加按鈕 ID
                 loop Reset              ; 循環直到 ecx 為 0
-            invoke InvalidateRect, hWnd, NULL, TRUE
 
             mov byte ptr [SelectedNumbers], 0
             mov byte ptr [SelectedNumbers + 1], 0
@@ -372,7 +284,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke DrawText, hdc, addr Line5Text, -1, addr line6Rect,DT_CENTER
         invoke DrawText, hdc, addr Line6Text, -1, addr line7Rect,DT_CENTER
         invoke DrawText, hdc, addr Line7Text, -1, addr line8Rect,DT_CENTER
-
 
         invoke EndPaint, hWnd, addr ps
     .ELSE 
@@ -434,25 +345,28 @@ Next:
     ret
 CalculateResult ENDP
 
-UpdateLineText PROC, LineText:PTR SDWORD, mode: Byte
+UpdateLineText PROC, LineText:PTR SDWORD, mode: Byte, do:byte
+    mov al, do
     .IF mode == 1
-        mov esi, OFFSET GuessLineText ; 指向 SelectedNumbers
-        mov edi, LineText               ; 指向 LineText
-        mov ecx, 7                     ; 處理四個數字
-        rep movsb
+        .IF TriesRemaining == al
+            mov esi, OFFSET GuessLineText ; 指向 SelectedNumbers
+            mov edi, LineText               ; 指向 LineText
+            mov ecx, 7                     ; 處理四個數字
+            rep movsb
 
-        ; 更新 ACount 到位置 9
-        mov al, Acount
-        add al, '0'                     ; 將 ACount 轉換成 ASCII 字元
-        mov [edi + 6], al               ; 存入 Line1Text 的第 9 個字元位置
-        mov al, 'A'
-        mov [edi + 8], al
-        ; 更新 BCount 到位置 11
-        mov al, Bcount
-        add al, '0'                     ; 將 BCount 轉換成 ASCII 字元
-        mov [edi + 10], al              ; 存入 Line1Text 的第 11 個字元位置
-        mov al, 'B'
-        mov [edi + 12], al
+            ; 更新 ACount 到位置 9
+            mov al, Acount
+            add al, '0'                     ; 將 ACount 轉換成 ASCII 字元
+            mov [edi + 6], al               ; 存入 Line1Text 的第 9 個字元位置
+            mov al, 'A'
+            mov [edi + 8], al
+            ; 更新 BCount 到位置 11
+            mov al, Bcount
+            add al, '0'                     ; 將 BCount 轉換成 ASCII 字元
+            mov [edi + 10], al              ; 存入 Line1Text 的第 11 個字元位置
+            mov al, 'B'
+            mov [edi + 12], al
+        .ENDIF
     .ELSE
         mov ecx, 20
         mov al, ' '
@@ -515,13 +429,20 @@ Output ENDP
 Initialized PROC
     mov SelectedCount, 0
     mov TriesRemaining, 8
-    invoke UpdateLineText, OFFSET Line1Text, 0
-    invoke UpdateLineText, OFFSET Line2Text, 0
-    invoke UpdateLineText, OFFSET Line3Text, 0
-    invoke UpdateLineText, OFFSET Line4Text, 0
-    invoke UpdateLineText, OFFSET Line5Text, 0
-    invoke UpdateLineText, OFFSET Line6Text, 0
-    invoke UpdateLineText, OFFSET Line7Text, 0
+    invoke UpdateLineText, OFFSET Line1Text, 0, 0
+    invoke UpdateLineText, OFFSET Line2Text, 0, 0
+    invoke UpdateLineText, OFFSET Line3Text, 0, 0
+    invoke UpdateLineText, OFFSET Line4Text, 0, 0
+    invoke UpdateLineText, OFFSET Line5Text, 0, 0
+    invoke UpdateLineText, OFFSET Line6Text, 0, 0
+    invoke UpdateLineText, OFFSET Line7Text, 0, 0
     ret
 Initialized ENDP
+
+CreateButton PROC Text:PTR SDWORD, x:SDWORD, y:SDWORD, ID:SDWORD, hWnd:HWND
+    invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName, Text,\
+                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
+                        x,y,30,30,hWnd,ID,hInstance,NULL 
+    ret
+CreateButton ENDP
 end

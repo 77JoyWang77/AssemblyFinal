@@ -30,6 +30,9 @@
     <MASM Include="_Brick.asm">
       <Filter>來源檔案</Filter>
     </MASM>
+    <MASM Include="_Home.asm">
+      <Filter>來源檔案</Filter>
+    </MASM>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\..\..\OneDrive\桌面\DEC2HEX.ICO">

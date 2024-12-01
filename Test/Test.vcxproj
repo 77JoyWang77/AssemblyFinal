@@ -141,6 +141,7 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <MASM Include="_Game1A2B.asm" />
     <MASM Include="_Breakout.asm" />
     <MASM Include="main.asm" />
+    <MASM Include="_Home.asm" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\..\..\OneDrive\桌面\DEC2HEX.ICO" />

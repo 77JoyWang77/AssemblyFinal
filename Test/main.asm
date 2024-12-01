@@ -5,22 +5,25 @@ EXTERN Game1A2B@0: PROC
 EXTERN BreakOut@0: PROC
 EXTERN Advanced1A2B@0: PROC
 EXTERN GameBrick@0: PROC
+EXTERN Home@0: PROC
 Game1A2B EQU Game1A2B@0
 BreakOut EQU BreakOut@0
 Advanced1A2B EQU Advanced1A2B@0
 GameBrick EQU GameBrick@0
+Home EQU Home@0
 
 .data
 Option1 byte "1. 1A2B", 0
 Option2 byte "2. BreakOut", 0
 Option3 byte "3. Brick", 0
 Option4 byte "4. Advanced 1A2B", 0
+Option5 byte "5. Home", 0
 message7 byte "Please enter the game you choose:", 0
 message8 byte "Invalid Input!", 0
 
 .code
 main PROC
-
+    ;call Home
 Start:
     CALL ClrScr
     mov edx, OFFSET Option1
@@ -33,6 +36,9 @@ Start:
     call WriteString
     call Crlf
     mov edx, OFFSET Option4
+    call WriteString
+    call Crlf
+    mov edx, OFFSET Option5
     call WriteString
     call Crlf
     mov edx, OFFSET message7
@@ -59,8 +65,14 @@ Third:
 
 Forth:
     cmp eax, 4
-    jne Next
+    jne Fifth
     call Advanced1A2B  ; 呼叫 Game1A2B 程式
+    jmp Next
+
+Fifth:
+    cmp eax, 5
+    jne Next
+    call Home  ; 呼叫 Game1A2B 程式
     jmp Next
 
 InvalidInput:
