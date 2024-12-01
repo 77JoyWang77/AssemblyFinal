@@ -281,6 +281,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             mov [SelectedNumbers + eax], 0  ; 清除該選擇
             mov [GuessLineText + 2 * eax], ' '  ; 清除該選擇
 
+            add ecx, 10
             ; 啟用該按鈕
             invoke GetDlgItem, hWnd, ecx
             invoke EnableWindow, eax, TRUE
