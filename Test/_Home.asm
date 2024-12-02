@@ -20,7 +20,6 @@ include gdi32.inc
 ClassName db "SimpleWinClass",0 
 AppName  db "Home",0 
 Text db "Window", 0
-ButtonClassName db "button", 0 
 platform_X DWORD 350           ; 初始 X 座標
 platform_Y DWORD 550           ; 初始 Y 座標
 platform_Width DWORD 120       ; 平台寬度
@@ -30,8 +29,8 @@ winWidth DWORD 800              ; 視窗寬度
 winHeight DWORD 600             ; 視窗高度
 ballX DWORD 200                 ; 小球 X 座標
 ballY DWORD 100                 ; 小球 Y 座標
-velocityX DWORD 5               ; 小球 X 方向速度
-velocityY DWORD 5               ; 小球 Y 方向速度
+velocityX DWORD 0               ; 小球 X 方向速度
+velocityY DWORD 10               ; 小球 Y 方向速度
 ballRadius DWORD 10             ; 小球半徑
 brickNumX EQU 10
 brickNumY EQU 8
@@ -140,58 +139,7 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .IF uMsg==WM_DESTROY 
         invoke PostQuitMessage,NULL 
         invoke KillTimer, hWnd, 1
-    .ELSEIF uMsg == WM_CREATE
-        cmp controlsCreated, 1
-        je SkipControlCreation
 
-        mov esi, OFFSET brick
-        mov eax, 0              ; eax 用於列循環
-        mov ecx, brickNumY      ; ecx 用於行循環
-    DrawBrickRow1:
-        push ecx
-        mov ecx, brickNumX      ; 每行磚塊的數量
-    DrawBrickCol1:
-        xor edx, edx
-	    push eax
-	    mov ebx, brickNumX
-	    div ebx
-
-        push edx
-        mov ebx, brickHeight
-        mul ebx
-        mov brickY, eax
-        pop edx
-        
-        mov eax, edx
-        mov ebx, brickWidth
-        mul ebx
-        mov brickX, eax
-
-        pop eax
-        cmp DWORD PTR [esi+eax*4], 1  ; 檢查是否繪製此磚塊
-        je DrawBrick2
-        jmp Continue1
-
-    DrawBrick2:
-        push eax
-        push ecx
-        ;invoke Rectangle, hdc, brickX, brickY, tempWidth1, tempHeight1
-        ;invoke CreateWindowEx, WS_EX_CLIENTEDGE, ADDR ButtonClassName, NULL, \
-        ;                   WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, brickX, brickY, 80, 20, \
-        ;                   hWnd, brickNum, hInstance, NULL
-        invoke InvalidateRect, hWnd, NULL, TRUE
-        pop ecx
-        pop eax
-    Continue1:
-        inc brickNum
-        inc eax
-        loop DrawBrickCol1
-        pop ecx
-        loop DrawBrickRow1
-
-        mov controlsCreated, 1
-
-    SkipControlCreation:
 
     .ELSEIF uMsg == WM_TIMER
         ; 更新小球位置
@@ -199,6 +147,8 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         ; 檢測平台碰撞
         call check_platform_collision
+
+        ; 重繪視窗
         invoke InvalidateRect, hWnd, NULL, TRUE
         
     .ELSEIF uMsg == WM_KEYDOWN
@@ -225,6 +175,7 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         skip_left:
         skip_right:
+        ; 重新繪製視窗
         invoke InvalidateRect, hWnd, NULL, TRUE
 
     .ELSEIF uMsg == WM_PAINT
@@ -286,17 +237,28 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
     DrawBrick1:
         push eax
+        push edx
+        mov eax, brickX
+        add eax, brickWidth
+        mov edx, brickY
+        add edx, brickHeight
+        mov [tempWidth], eax
+        mov [tempHeight], edx
+        pop edx
+        pop eax
+        push eax
         push ecx
-        invoke Rectangle, hdc, brickX, brickY, tempWidth1, tempHeight1
+        invoke Rectangle, hdc, brickX, brickY, tempWidth, tempHeight
         pop ecx
         pop eax
     Continue:
-        inc brickNum
+        
         inc eax
         loop DrawBrickCol
         pop ecx
         loop DrawBrickRow
-        
+
+    endDrawBrick:
         invoke EndPaint, hWnd, addr ps
 
     .ELSE 
@@ -392,7 +354,7 @@ check_platform_collision PROC
     mov offset_center, eax
 
     ; 計算弧度
-    fild offset_center           ; 載入角度值
+    fild offset_center           ; 載入角度值            
     fldpi                        ; 載入 π
     fild divisor                 ; 載入 180
     fdiv                         ; 計算 π / 180
@@ -403,27 +365,18 @@ check_platform_collision PROC
     fcos                         ; 計算 cos(角度)
     fild speed                   ; 載入速度大小 V
     fmul                         ; 計算 velocityX = cos(角度) * V
-    fstp DWORD PTR [velocityX]   ; 存入 velocityX
+    fistp DWORD PTR [velocityX]               ; 存入 velocityX
 
     fld st(0)                    ; 弧度值
     fsin                         ; 計算 sin(角度)
     fild speed                   ; 載入速度大小 V
     fmul                         ; 計算 velocityY = sin(角度) * V
-    fstp DWORD PTR [velocityY]   ; 存入 velocityY
-
+    fistp DWORD PTR [velocityY]               ; 存入 velocityY
+    
     ; 反轉 Y 速度（反彈）
     neg velocityY
 
 no_collision:
     ret
 check_platform_collision ENDP
-
-BrickWndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
-    .IF uMsg == WM_DESTROY
-        invoke PostQuitMessage, 0
-    .ELSE
-        invoke DefWindowProc, hWnd, uMsg, wParam, lParam
-    .ENDIF
-    ret
-BrickWndProc endp
 end
