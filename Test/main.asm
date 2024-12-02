@@ -4,18 +4,18 @@ INCLUDELIB	user32.lib
 EXTERN Game1A2B@0: PROC
 EXTERN BreakOut@0: PROC
 EXTERN Advanced1A2B@0: PROC
-EXTERN GameBrick@0: PROC
+EXTERN Cake1@0: PROC
 EXTERN Home@0: PROC
 Game1A2B EQU Game1A2B@0
 BreakOut EQU BreakOut@0
 Advanced1A2B EQU Advanced1A2B@0
-GameBrick EQU GameBrick@0
+Cake1 EQU Cake1@0
 Home EQU Home@0
 
 .data
 Option1 byte "1. 1A2B", 0
 Option2 byte "2. BreakOut", 0
-Option3 byte "3. Brick", 0
+Option3 byte "3. Cake1", 0
 Option4 byte "4. Advanced 1A2B", 0
 Option5 byte "5. Home", 0
 message7 byte "Please enter the game you choose:", 0
@@ -60,7 +60,7 @@ Second:
 Third:
     cmp eax, 3
     jne Forth
-    call GameBrick  ; 呼叫 Game1A2B 程式
+    call Cake1  ; 呼叫 Game1A2B 程式
     jmp Next
 
 Forth:

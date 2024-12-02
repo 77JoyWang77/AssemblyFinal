@@ -171,7 +171,9 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov hdc, eax
         invoke GetClientRect, hWnd, addr rect
         RGB    200,200,50
-        invoke SelectObject, hdc, eax
+        invoke CreateSolidBrush, eax  ; 創建紅色筆刷
+        mov hBrush, eax                          ; 存筆刷句柄
+        invoke SelectObject, hdc, hBrush
         ; 繪製小球
         mov eax, ballX
         sub eax, ballRadius
