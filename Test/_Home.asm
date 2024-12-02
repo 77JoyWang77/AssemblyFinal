@@ -32,6 +32,11 @@ ballY DWORD 100                 ; 小球 Y 座標
 velocityX DWORD 5               ; 小球 X 方向速度
 velocityY DWORD 5               ; 小球 Y 方向速度
 ballRadius DWORD 10             ; 小球半徑
+brickNumX EQU 10
+brickNumY EQU 8
+brick DWORD brickNumY DUP(brickNumX DUP(1))
+brickWidth EQU 80
+brickHeight EQU 20
 divisor DWORD 180
 offset_center DWORD 0
 speed DWORD 10
@@ -125,6 +130,7 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
     LOCAL rect:RECT
+    LOCAL brickX, brickY:DWORD
 
     .IF uMsg==WM_DESTROY 
         invoke PostQuitMessage,NULL 
@@ -194,6 +200,56 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov [tempHeight], edx
         invoke Rectangle, hdc, platform_X, platform_Y, tempWidth, tempHeight
 
+        ; 繪製磚塊
+        mov esi, OFFSET brick
+        mov eax, 0              ; eax 用於列循環
+        mov ecx, brickNumY      ; ecx 用於行循環
+    DrawBrickRow:
+        push ecx
+        mov ecx, brickNumX      ; 每行磚塊的數量
+    DrawBrickCol:
+        xor edx, edx
+	    push eax
+	    mov ebx, brickNumX
+	    div ebx
+
+        push edx
+        mov ebx, brickHeight
+        mul ebx
+        mov brickY, eax
+        pop edx
+        
+        mov eax, edx
+        mov ebx, brickWidth
+        mul ebx
+        mov brickX, eax
+
+        pop eax
+        cmp DWORD PTR [esi+eax*4], 1  ; 檢查是否繪製此磚塊
+        je DrawBrick1
+        jmp Continue
+
+    DrawBrick1:
+        push eax
+        push edx
+        mov eax, brickX
+        add eax, brickWidth
+        mov edx, brickY
+        add edx, brickHeight
+        mov [tempWidth], eax
+        mov [tempHeight], edx
+        pop edx
+        pop eax
+
+        invoke Rectangle, hdc, brickX, brickY, tempWidth, tempHeight
+
+    Continue:
+        inc eax
+        loop DrawBrickCol
+        pop ecx
+        loop DrawBrickRow
+
+    endDrawBrick:
         invoke EndPaint, hWnd, addr ps
 
     .ELSE 
