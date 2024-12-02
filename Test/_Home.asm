@@ -24,7 +24,7 @@ platform_X DWORD 350           ; 初始 X 座標
 platform_Y DWORD 550           ; 初始 Y 座標
 platform_Width DWORD 120       ; 平台寬度
 platform_Height DWORD 20       ; 平台高度
-stepSize DWORD 5              ; 每次移動的像素數量
+stepSize DWORD 10              ; 每次移動的像素數量
 winWidth DWORD 800              ; 視窗寬度
 winHeight DWORD 600             ; 視窗高度
 ballX DWORD 200                 ; 小球 X 座標
@@ -148,34 +148,30 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ; 檢測平台碰撞
         call check_platform_collision
 
-        ; 重繪視窗
-        invoke InvalidateRect, hWnd, NULL, TRUE
-        
-    .ELSEIF uMsg == WM_KEYDOWN
-        .IF wParam == VK_LEFT
+            invoke GetAsyncKeyState, VK_LEFT
+            test eax, 8000h ; 測試最高位
+            jz skip_left
             mov eax, platform_X
             cmp eax, stepSize
-            jl skip_left          ; 避免平台移出左邊界
-            mov eax, platform_X
+            jl skip_left
             sub eax, stepSize
             mov platform_X, eax
-        .ENDIF
+        skip_left:
 
-        .IF wParam == VK_RIGHT
+        invoke GetAsyncKeyState, VK_RIGHT
+            test eax, 8000h ; 測試最高位
+            jz skip_right
             mov eax, platform_X
             add eax, stepSize
             add eax, platform_Width
-            mov ecx, 800           ; 視窗寬度
-            cmp eax, ecx
-            jg skip_right         ; 避免平台移出右邊界
+            cmp eax, winWidth
+            jg skip_right
             mov eax, platform_X
             add eax, stepSize
             mov platform_X, eax
-        .ENDIF
-
-        skip_left:
         skip_right:
-        ; 重新繪製視窗
+
+        ; 重繪視窗
         invoke InvalidateRect, hWnd, NULL, TRUE
 
     .ELSEIF uMsg == WM_PAINT
@@ -333,24 +329,13 @@ check_platform_collision PROC
     add eax, ballRadius
     cmp eax, ebx
     jl no_collision
+    sub ebx, ballRadius
+    mov ballY, ebx
 
     ; 碰撞處理
-    ; 計算接觸點的水平偏移（相對於平台中心）
-    mov eax, ballX
-    mov ebx, platform_X
-    add ebx, platform_Width
-    shr ebx, 1                   ; 平台中心點
-    sub eax, ebx                 ; 偏移量 = ballX - 平台中心
-
-    ; 根據偏移量計算反彈角度，平台寬度為 120，角度範圍從 30 度到 150 度
-    ; 偏移量範圍是 [-60, 60]，對應角度範圍 [30, 150]
-    mov ebx, platform_Width
-    shr ebx, 1                   ; 半平台寬度
-    imul eax, 60                 ; 計算偏移，放大因子
-    idiv ebx                     ; 計算偏移比例 (-60 到 +60)
-
-    ; 根據偏移量計算反彈角度
-    add eax, 90                  ; 反彈角度範圍調整到 30 到 150 度
+    mov eax, 150
+    add eax, platform_X
+    sub eax, ballX
     mov offset_center, eax
 
     ; 計算弧度
