@@ -107,7 +107,7 @@ WinMain proc hInst:HINSTANCE
     mov wr.bottom, 400
 
     ; 調整窗口大小
-    invoke AdjustWindowRect, ADDR wr, WS_OVERLAPPEDWINDOW, FALSE
+    invoke AdjustWindowRect, ADDR wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
 
     ; 計算窗口寬度和高度
     mov eax, wr.right
@@ -120,8 +120,9 @@ WinMain proc hInst:HINSTANCE
 
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
-           WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, \
-           winWidth, winHeight, NULL, NULL, hInst, NULL
+            WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
+            CW_USEDEFAULT, CW_USEDEFAULT, winWidth, winHeight, \
+            NULL, NULL, hInst, NULL
     mov   hwnd,eax 
 
     ; 顯示和更新窗口
