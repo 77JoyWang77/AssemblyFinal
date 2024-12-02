@@ -22,21 +22,21 @@ ClassName db "SimpleWinClass", 0
 AppName  db "Cake", 0 
 ButtonClassName db "button", 0 
 cakeX DWORD 100           ; 初始 X 座標
-cakeY DWORD 20           ; 初始 Y 座標
-cakeWidth DWORD 120       ; 平台寬度
+cakeY DWORD 50           ; 初始 Y 座標
+cakeWidth DWORD 50       ; 平台寬度
 cakeHeight DWORD 20       ; 平台高度
 stepSize DWORD 5              ; 每次移動的像素數量
-winWidth DWORD 300              ; 視窗寬度
+winWidth DWORD 600              ; 視窗寬度
 winHeight DWORD 600             ; 視窗高度
 velocityX DWORD 5               ; 小球 X 方向速度
 velocityY DWORD 0               ; 小球 Y 方向速度
-border_right DWORD 250
+border_right DWORD 550
 border_left DWORD 50
 
 TriesRemaining  db 9
 RemainingTriesText db "Remaining:  ", 0
 EndGame db "Game Over!", 0
-line1Rect RECT <20, 20, 250, 40>
+line1Rect RECT <20, 20, 580, 40>
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -83,7 +83,7 @@ WinMain3 proc hInst:HINSTANCE
     ; 設置目標客戶區大小
     mov wr.left, 0
     mov wr.top, 0
-    mov wr.right, 300
+    mov wr.right, 600
     mov wr.bottom, 600
 
     ; 調整窗口大小
@@ -104,7 +104,7 @@ WinMain3 proc hInst:HINSTANCE
             0, 0, winWidth, winHeight, \
             NULL, NULL, hInst, NULL
     mov   hwnd,eax 
-
+    invoke SetTimer, hwnd, 1, 50, NULL  ; 更新間隔從 50ms 改為 10ms
     ; 顯示和更新窗口
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
@@ -133,6 +133,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ELSEIF uMsg == WM_TIMER
         ; 更新小球位置
         call update_cake
+        invoke InvalidateRect, hWnd, NULL, TRUE
 
     .ELSEIF uMsg == WM_COMMAND
         mov eax, wParam
@@ -186,7 +187,7 @@ update_cake PROC
 
     add eax, cakeWidth
     cmp border_right, eax                ; 碰到右邊界
-    jae reverse_x
+    jle reverse_x
 
     jmp end_update                ; 若無碰撞，結束
 
