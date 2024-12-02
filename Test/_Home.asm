@@ -2,6 +2,14 @@
 .model flat,stdcall 
 option casemap:none 
 
+RGB macro red,green,blue
+	xor eax,eax
+	mov ah,blue
+	shl eax,8
+	mov ah,green
+	mov al,red
+endm
+
 WinMain2 proto :DWORD,:DWORD,:DWORD,:DWORD 
 include windows.inc 
 include user32.inc 
@@ -24,13 +32,16 @@ ballY DWORD 100                 ; 小球 Y 座標
 velocityX DWORD 5               ; 小球 X 方向速度
 velocityY DWORD 5               ; 小球 Y 方向速度
 ballRadius DWORD 10             ; 小球半徑
+divisor DWORD 180
+offset_center DWORD 0
+speed DWORD 10
 
 .DATA? 
 hInstance HINSTANCE ? 
 CommandLine LPSTR ? 
 tempWidth DWORD ?
 tempHeight DWORD ?
-
+hBrush DWORD ?
 
 .CODE 
 Home PROC 
@@ -89,7 +100,7 @@ WinMain2 proc hInst:HINSTANCE, hPrevInst:HINSTANCE, CmdLine:LPSTR, CmdShow:DWORD
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            CW_USEDEFAULT, CW_USEDEFAULT, winWidth, winHeight, \
+            0, 0, winWidth, winHeight, \
             NULL, NULL, hInst, NULL
     mov   hwnd,eax 
     invoke SetTimer, hwnd, 1, 50, NULL  ; 更新間隔從 50ms 改為 10ms
@@ -159,10 +170,12 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
         invoke GetClientRect, hWnd, addr rect
+        RGB    200,200,50
+        invoke SelectObject, hdc, eax
         ; 繪製小球
         mov eax, ballX
-        mov ecx, ballY
         sub eax, ballRadius
+        mov ecx, ballY
         sub ecx, ballRadius
         mov edx, ballX
         add edx, ballRadius
@@ -202,21 +215,21 @@ update_ball PROC
     ; 邊界碰撞檢測（鏡面反射）
     mov eax, ballX
     cmp eax, ballRadius           ; 碰到左邊界
-    jl reverse_x
+    jle reverse_x
 
     mov eax, winWidth
     sub eax, ballRadius
     cmp ballX, eax                ; 碰到右邊界
-    jg reverse_x
+    jae reverse_x
 
     mov eax, ballY
     cmp eax, ballRadius           ; 碰到上邊界
-    jl reverse_y
+    jle reverse_y
 
     mov eax, winHeight
     sub eax, ballRadius
     cmp ballY, eax                ; 碰到下邊界
-    jg reverse_y
+    jae reverse_y
 
     jmp end_update                ; 若無碰撞，結束
 
@@ -245,12 +258,12 @@ check_platform_collision PROC
     mov ecx, platform_Width
     add ebx, ecx
     cmp eax, ebx
-    jg no_collision
+    ja no_collision
 
     ; 檢查是否在平台的垂直範圍內
     mov eax, ballY
     mov ebx, platform_Y
-    sub ebx, ballRadius
+    add eax, ballRadius
     cmp eax, ebx
     jl no_collision
 
@@ -271,32 +284,27 @@ check_platform_collision PROC
 
     ; 根據偏移量計算反彈角度
     add eax, 90                  ; 反彈角度範圍調整到 30 到 150 度
+    mov offset_center, eax
 
-    ; 計算角度的弧度值（弧度 = 角度 * π / 180）
-    fild eax                     ; 載入角度值
+    ; 計算弧度
+    fild offset_center           ; 載入角度值
     fldpi                        ; 載入 π
-    fdiv                         ; 角度轉換為弧度 (π / 180)
-    
-    ; 計算 X 和 Y 方向的速度分量
-    ; 使用角度的 cos 和 sin 來計算 X 和 Y 分量
-    fld st0                      ; 複製弧度
+    fild divisor                 ; 載入 180
+    fdiv                         ; 計算 π / 180
+    fmul                         ; 計算弧度
+
+    ; 計算速度分量
+    fld st(0)                    ; 弧度值
     fcos                         ; 計算 cos(角度)
-    fstp st1                     ; 存儲 cos(角度) 到 st1
+    fild speed                   ; 載入速度大小 V
+    fmul                         ; 計算 velocityX = cos(角度) * V
+    fstp velocityX               ; 存入 velocityX
 
-    fld st0                      ; 複製弧度
+    fld st(0)                    ; 弧度值
     fsin                         ; 計算 sin(角度)
-    fstp st2                     ; 存儲 sin(角度) 到 st2
-
-    ; 計算新的速度分量
-    ; velocityX = cos(角度) * 原來的速度
-    mov eax, velocityX
-    fmul st1                     ; 乘以 cos(角度)
-    fstp velocityX
-
-    ; velocityY = sin(角度) * 原來的速度
-    mov eax, velocityY
-    fmul st2                     ; 乘以 sin(角度)
-    fstp velocityY
+    fild speed                   ; 載入速度大小 V
+    fmul                         ; 計算 velocityY = sin(角度) * V
+    fstp velocityY               ; 存入 velocityY
 
     ; 反轉 Y 速度（反彈）
     neg velocityY
