@@ -29,8 +29,8 @@ winWidth DWORD 800              ; 視窗寬度
 winHeight DWORD 600             ; 視窗高度
 ballX DWORD 200                 ; 小球 X 座標
 ballY DWORD 100                 ; 小球 Y 座標
-velocityX DWORD 5               ; 小球 X 方向速度
-velocityY DWORD 5               ; 小球 Y 方向速度
+velocityX DWORD 0               ; 小球 X 方向速度
+velocityY DWORD 10               ; 小球 Y 方向速度
 ballRadius DWORD 10             ; 小球半徑
 divisor DWORD 180
 offset_center DWORD 0
@@ -287,7 +287,7 @@ check_platform_collision PROC
     mov offset_center, eax
 
     ; 計算弧度
-    fild offset_center           ; 載入角度值
+    fild offset_center           ; 載入角度值            
     fldpi                        ; 載入 π
     fild divisor                 ; 載入 180
     fdiv                         ; 計算 π / 180
@@ -298,14 +298,14 @@ check_platform_collision PROC
     fcos                         ; 計算 cos(角度)
     fild speed                   ; 載入速度大小 V
     fmul                         ; 計算 velocityX = cos(角度) * V
-    fstp velocityX               ; 存入 velocityX
+    fistp DWORD PTR [velocityX]               ; 存入 velocityX
 
     fld st(0)                    ; 弧度值
     fsin                         ; 計算 sin(角度)
     fild speed                   ; 載入速度大小 V
     fmul                         ; 計算 velocityY = sin(角度) * V
-    fstp velocityY               ; 存入 velocityY
-
+    fistp DWORD PTR [velocityY]               ; 存入 velocityY
+    
     ; 反轉 Y 速度（反彈）
     neg velocityY
 
