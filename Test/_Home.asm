@@ -240,10 +240,13 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov [tempHeight], edx
         pop edx
         pop eax
-
+        push eax
+        push ecx
         invoke Rectangle, hdc, brickX, brickY, tempWidth, tempHeight
-
+        pop ecx
+        pop eax
     Continue:
+        
         inc eax
         loop DrawBrickCol
         pop ecx
