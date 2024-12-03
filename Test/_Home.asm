@@ -282,34 +282,56 @@ update_ball PROC
     ; 邊界碰撞檢測（鏡面反射）
     mov eax, ballX
     cmp eax, ballRadius           ; 碰到左邊界
-    jle reverse_x
+    jle reverse_x_left
 
     mov eax, winWidth
     sub eax, ballRadius
     cmp ballX, eax                ; 碰到右邊界
-    jae reverse_x
+    jae reverse_x_right
 
     mov eax, ballY
     cmp eax, ballRadius           ; 碰到上邊界
-    jle reverse_y
+    jle reverse_y_top
 
     mov eax, winHeight
     sub eax, ballRadius
     cmp ballY, eax                ; 碰到下邊界
-    jae reverse_y
+    jae reverse_y_bottom
 
     jmp end_update                ; 若無碰撞，結束
 
-reverse_x:
+reverse_x_left:
     mov eax, velocityX
     neg eax
     mov velocityX, eax
+    mov eax, ballRadius
+    mov ballX, eax
     jmp end_update
 
-reverse_y:
+reverse_x_right:
+    mov eax, velocityX
+    neg eax
+    mov velocityX, eax
+    mov eax, winWidth
+    sub eax, ballRadius
+    mov ballX, eax
+    jmp end_update
+
+reverse_y_top:
     mov eax, velocityY
     neg eax
     mov velocityY, eax
+    mov eax, ballRadius
+    mov ballY, eax
+    jmp end_update
+
+reverse_y_bottom:
+    mov eax, velocityY
+    neg eax
+    mov velocityY, eax
+    mov eax, winHeight
+    sub eax, ballRadius
+    mov ballY, eax
 
 end_update:
     ret
