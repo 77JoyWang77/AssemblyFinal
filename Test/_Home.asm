@@ -34,7 +34,7 @@ velocityY DWORD 10               ; 小球 Y 方向速度
 ballRadius DWORD 10             ; 小球半徑
 brickNumX EQU 10
 brickNumY EQU 8
-brick DWORD brickNumY DUP(brickNumX DUP(1))
+brick DWORD brickNumY DUP(brickNumX DUP(0))
 brickWidth EQU 80
 brickHeight EQU 20
 divisor DWORD 180
