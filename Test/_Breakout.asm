@@ -61,7 +61,7 @@ BreakOut PROC
 
 	setGame:
 	CALL setPlan
-	call newBrick
+;	call newBrick
 	call drawBrick
 	CALL drawPlan
 	
@@ -72,8 +72,8 @@ BreakOut PROC
 	jne noBrickfall
 
 	brickFall:
-	call fall
-	call newBrick
+;	call fall
+;	call newBrick
 	call drawBrick
 	CALL drawPlan
 	mov al, 0
@@ -535,33 +535,33 @@ ExitdrawColor:
 	ret
 drawColor endp
 
-newBrick proc
-	call Randomize
-	mov esi, OFFSET brick
-	mov ecx, brickmaxX
-L:
-	cmp ecx, 1
-	je Random0
-	mov eax, brickTypeNum
-	call RandomRange
-	cmp eax, 1
-	je Random1
-Random0:
-	mov DWORD PTR [esi], 0
-	add esi, 4
-	loop L
-	jmp ExitnewBrick
-	
-Random1:
-	call setColor
-	mov [esi], eax
-	mov [esi+4], eax 
-	add esi, 8
-	dec ecx
-	loop L
-ExitnewBrick:
-	ret
-newBrick ENDP
+;newBrick proc
+;	call Randomize
+;	mov esi, OFFSET brick
+;	mov ecx, brickmaxX
+;L:
+;	cmp ecx, 1
+;	je Random0
+;	mov eax, brickTypeNum
+;	call RandomRange
+;	cmp eax, 1
+;	je Random1
+;Random0:
+;	mov DWORD PTR [esi], 0
+;	add esi, 4
+;	loop L
+;	jmp ExitnewBrick
+;	
+;Random1:
+;	call setColor
+;	mov [esi], eax
+;	mov [esi+4], eax 
+;	add esi, 8
+;	dec ecx
+;	loop L
+;ExitnewBrick:
+;	ret
+;newBrick ENDP
 
 setColor PROC USES ebx
     mov ebx, colorCount       
@@ -585,15 +585,15 @@ ExitsetColor:
     ret
 setColor ENDP
 
-Fall proc
-    mov esi, OFFSET brick + ((brickmaxY-1) * brickmaxX-1) * 4 
-    mov edi, OFFSET brick + (brickmaxY * brickmaxX-1) * 4
-    std                                           
-    mov ecx, (brickmaxY-1)*brickmaxX                               
-    rep movsd                                    
-    cld       
-    ret
-Fall endp
+;Fall proc
+;    mov esi, OFFSET brick + ((brickmaxY-1) * brickmaxX-1) * 4 
+;    mov edi, OFFSET brick + (brickmaxY * brickmaxX-1) * 4
+;    std                                           
+;    mov ecx, (brickmaxY-1)*brickmaxX                               
+;    rep movsd                                    
+;    cld       
+;    ret
+;Fall endp
 
 checkBrick proc
 	xor al,al

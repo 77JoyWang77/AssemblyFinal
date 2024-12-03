@@ -32,9 +32,11 @@ ballY DWORD 400                 ; 小球 Y 座標
 velocityX DWORD 0               ; 小球 X 方向速度
 velocityY DWORD 10               ; 小球 Y 方向速度
 ballRadius DWORD 10             ; 小球半徑
+initialBrickRow EQU 3
+brickTypeNum EQU 2
 brickNumX EQU 10
 brickNumY EQU 8
-brick DWORD brickNumY DUP(brickNumX DUP(1))
+brick DWORD brickNumY DUP(brickNumX DUP(0))
 brickWidth EQU 80
 brickHeight EQU 20
 divisor DWORD 180
@@ -55,7 +57,8 @@ hBrush DWORD ?
 .CODE 
 Home PROC 
 start: 
-    
+    CALL initializeBrick
+
     invoke GetModuleHandle, NULL 
     mov    hInstance1,eax 
     invoke GetCommandLine
@@ -410,4 +413,51 @@ done_row:
 no_collision:
     ret
 brick_collision ENDP
+
+
+initializeBrick proc
+    mov esi, OFFSET brick
+
+    mov eax, brickNumX
+    mov ecx, initialBrickRow
+    mul ecx
+    mov ecx, eax
+    mov ebx, brickTypeNum
+
+    invoke GetTickCount
+    mov eax, edx
+    cdq
+initializenewRandomBrick:
+    div ebx
+    mov [esi], edx
+    add esi, 4
+    loop initializenewRandomBrick
+
+initializeBrick ENDP
+
+newBrick proc
+    mov esi, OFFSET brick
+    mov ecx, brickNumX
+    mov ebx, brickTypeNum
+    invoke GetTickCount
+    mov eax, edx
+    cdq
+newRandomBrick:
+    div ebx
+    mov [esi], edx
+    add esi, 4
+    loop newRandomBrick
+    ret
+newBrick ENDP
+
+Fall proc
+    mov esi, OFFSET brick + ((brickNumY-1) * brickNumX-1) * 4 
+    mov edi, OFFSET brick + (brickNumY * brickNumX-1) * 4
+    std                                           
+    mov ecx, (brickNumY-1)*brickNumX                               
+    rep movsd                                    
+    cld       
+    ret
+Fall endp
+
 end
