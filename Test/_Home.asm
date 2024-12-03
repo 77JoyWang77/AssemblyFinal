@@ -55,7 +55,15 @@ hBrush DWORD ?
 .CODE 
 Home PROC 
 start: 
-    
+    CALL newBrick
+    CALL fall
+    CALL newBrick
+    CALL fall
+    CALL newBrick
+    CALL fall
+    CALL newBrick
+    CALL fall    
+
     invoke GetModuleHandle, NULL 
     mov    hInstance,eax 
     invoke GetCommandLine
@@ -364,4 +372,63 @@ check_platform_collision PROC
 no_collision:
     ret
 check_platform_collision ENDP
+
+newBrick proc
+	mov esi, OFFSET brick
+	mov ecx, brickNumX
+newRandomBrick:
+	call getRandomBrick
+	mov [esi], eax
+	add esi, 4
+	loop newRandomBrick
+	ret
+newBrick ENDP
+
+Fall proc
+    mov ecx, brickNumY         ; 總行數
+    dec ecx                    ; 從倒數第二行開始
+    mov eax, ecx               ; 保存行數
+
+FallLoop:
+    ; 設定源位址 (ESI)
+    mov eax, ecx
+    dec eax                    ; 倒數第 ecx 行
+    imul eax, brickNumX * 4    ; 行數轉換為位元組偏移
+    lea esi, [brick + eax]     ; ESI 指向當前行
+
+    ; 設定目標位址 (EDI)
+    mov eax, ecx
+    imul eax, brickNumX * 4    ; 行數轉換為位元組偏移
+    lea edi, [brick + eax]     ; EDI 指向下一行
+
+    ; 複製一行
+    mov eax, brickNumX         ; 每行的磚塊數
+    mov ecx, eax               ; ECX 為 DWORD 數量
+    rep movsd                  ; 複製當前行到下一行
+
+    ; 繼續處理前一行
+    dec ecx
+    jnz FallLoop
+
+    ; 清空第一行
+    lea edi, [brick]           ; 第一行起始位址
+    mov eax, brickNumX         ; DWORD 數量
+    xor eax, eax               ; 填入 0
+    mov ecx, brickNumX         ; 每行磚塊數
+    rep stosd                  ; 清空第一行
+
+    ret
+Fall endp
+
+
+
+getRandomBrick PROC
+    invoke GetTickCount
+    mov ebx, 2
+    cdq
+    idiv ebx
+    mov eax, edx
+    ret
+getRandomBrick ENDP
+
 end
