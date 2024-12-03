@@ -56,7 +56,7 @@ hBrush DWORD ?
 Home PROC 
 start: 
     CALL newBrick
-    CALL fall
+    CALL Fall
     CALL newBrick
 
     invoke GetModuleHandle, NULL 
