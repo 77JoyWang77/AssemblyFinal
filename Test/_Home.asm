@@ -32,6 +32,8 @@ ballY DWORD 100                 ; 小球 Y 座標
 velocityX DWORD 0               ; 小球 X 方向速度
 velocityY DWORD 10               ; 小球 Y 方向速度
 ballRadius DWORD 10             ; 小球半徑
+initialBrickRow EQU 3
+brickTypeNum EQU 2
 brickNumX EQU 10
 brickNumY EQU 8
 brick DWORD brickNumY DUP(brickNumX DUP(0))
@@ -55,9 +57,7 @@ hBrush DWORD ?
 .CODE 
 Home PROC 
 start: 
-    CALL newBrick
-    CALL Fall
-    CALL newBrick
+    CALL initializeBrick
 
     invoke GetModuleHandle, NULL 
     mov    hInstance,eax 
@@ -368,13 +368,37 @@ no_collision:
     ret
 check_platform_collision ENDP
 
+
+initializeBrick proc
+    mov esi, OFFSET brick
+
+    mov eax, brickNumX
+    mov ecx, initialBrickRow
+    mul ecx
+    mov ecx, eax
+    mov ebx, brickTypeNum
+
+    invoke GetTickCount
+    mov eax, edx
+    cdq
+initializenewRandomBrick:
+    div ebx
+    mov [esi], edx
+    add esi, 4
+    loop initializenewRandomBrick
+
+initializeBrick ENDP
+
 newBrick proc
     mov esi, OFFSET brick
     mov ecx, brickNumX
-
+    mov ebx, brickTypeNum
+    invoke GetTickCount
+    mov eax, edx
+    cdq
 newRandomBrick:
-    call getRandomBrick
-    mov [esi], eax
+    div ebx
+    mov [esi], edx
     add esi, 4
     loop newRandomBrick
     ret
@@ -389,16 +413,5 @@ Fall proc
     cld       
     ret
 Fall endp
-
-
-getRandomBrick PROC
-    invoke GetTickCount
-    mov ebx, 2
-    cdq
-    idiv ebx
-    mov eax, edx
-    ret
-getRandomBrick ENDP
-
 
 end
