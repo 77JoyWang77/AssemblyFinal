@@ -81,13 +81,13 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Irvine;C:\masm32\include</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Irvine;D:\masm32\include</AdditionalLibraryDirectories>
       <AdditionalDependencies>Irvine32.lib;user32.lib;
 kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateMapFile>true</GenerateMapFile>
     </Link>
     <MASM>
-      <IncludePaths>C:\Irvine;C:\masm32\include</IncludePaths>
+      <IncludePaths>C:\Irvine;D:\masm32\include</IncludePaths>
       <AssembledCodeListingFile>$(ProjectName).lst</AssembledCodeListingFile>
     </MASM>
   </ItemDefinitionGroup>
@@ -145,7 +145,10 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <MASM Include="_Home.asm" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\..\..\OneDrive\桌面\DEC2HEX.ICO" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Test.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

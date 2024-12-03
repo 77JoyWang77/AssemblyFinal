@@ -27,8 +27,8 @@ platform_Height DWORD 20       ; 平台高度
 stepSize DWORD 10              ; 每次移動的像素數量
 winWidth DWORD 800              ; 視窗寬度
 winHeight DWORD 600             ; 視窗高度
-ballX DWORD 200                 ; 小球 X 座標
-ballY DWORD 100                 ; 小球 Y 座標
+ballX DWORD 400                 ; 小球 X 座標
+ballY DWORD 400                 ; 小球 Y 座標
 velocityX DWORD 0               ; 小球 X 方向速度
 velocityY DWORD 10               ; 小球 Y 方向速度
 ballRadius DWORD 10             ; 小球半徑
@@ -44,7 +44,7 @@ brickNum DWORD 10
 controlsCreated DWORD 0
 
 .DATA? 
-hInstance HINSTANCE ? 
+hInstance1 HINSTANCE ? 
 CommandLine LPSTR ? 
 tempWidth DWORD ?
 tempHeight DWORD ?
@@ -57,10 +57,10 @@ Home PROC
 start: 
     
     invoke GetModuleHandle, NULL 
-    mov    hInstance,eax 
+    mov    hInstance1,eax 
     invoke GetCommandLine
     mov CommandLine,eax
-    invoke WinMain2, hInstance,NULL,CommandLine, SW_SHOWDEFAULT 
+    invoke WinMain2, hInstance1,NULL,CommandLine, SW_SHOWDEFAULT 
     ret
 Home ENDP
 
@@ -77,7 +77,7 @@ WinMain2 proc hInst:HINSTANCE, hPrevInst:HINSTANCE, CmdLine:LPSTR, CmdShow:DWORD
     mov   wc.cbClsExtra,NULL 
     mov   wc.cbWndExtra,NULL 
     push  hInst 
-    pop   wc.hInstance 
+    pop   wc.hInstance
     mov   wc.hbrBackground,COLOR_WINDOW+1 
     mov   wc.lpszMenuName,NULL 
     mov   wc.lpszClassName,OFFSET ClassName 
@@ -137,10 +137,10 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL brickX, brickY:DWORD
 
     .IF uMsg==WM_DESTROY 
-        invoke PostQuitMessage,NULL 
         invoke KillTimer, hWnd, 1
-
-
+        ; 發送退出訊息
+        invoke PostQuitMessage, NULL
+        ret
     .ELSEIF uMsg == WM_TIMER
         ; 更新小球位置
         call update_ball
@@ -170,6 +170,7 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             add eax, stepSize
             mov platform_X, eax
         skip_right:
+        call brick_collision
 
         ; 重繪視窗
         invoke InvalidateRect, hWnd, NULL, TRUE
@@ -364,4 +365,49 @@ check_platform_collision PROC
 no_collision:
     ret
 check_platform_collision ENDP
+
+brick_collision PROC
+    mov esi, OFFSET brick
+
+    ; 計算列索引（col = ballX / brickWidth）
+    mov eax, ballX
+    xor edx, edx
+    mov ecx, brickWidth
+repeat_col:
+    sub eax, ecx
+    jl done_col
+    inc edx
+    jmp repeat_col
+done_col:
+    mov eax, edx  ; 列索引存入 EAX
+
+    ; 計算行索引（row = ballY / brickHeight）
+    mov edx, 0
+    mov ecx, ballY
+    xor ebx, ebx
+    mov ebx, brickHeight
+repeat_row:
+    sub ecx, ebx
+    jl done_row
+    inc edx
+    jmp repeat_row
+done_row:
+    mov ecx, edx  ; 行索引存入 ECX
+
+    ; 計算偏移量並檢查有效磚塊
+    mov ebx, brickNumX
+    imul ecx, ebx
+    add ecx, eax
+    cmp DWORD PTR [esi + ecx * 4], 1
+    jne no_collision
+
+    ; 碰撞處理
+    mov DWORD PTR [esi + ecx * 4], 0
+    mov eax, velocityY
+    neg eax
+    mov velocityY, eax
+
+no_collision:
+    ret
+brick_collision ENDP
 end
