@@ -178,125 +178,113 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         call brick_collision
 
         ; 重繪視窗
-        invoke InvalidateRect, hWnd, NULL, TRUE
+        invoke InvalidateRect, hWnd, NULL, FALSE
 
-    .ELSEIF uMsg == WM_PAINT
-        invoke BeginPaint, hWnd, addr ps
-        mov hdc, eax
-        ;invoke GetClientRect, hWnd, addr rect
-        ;RGB    200,200,50
-        ;invoke CreateSolidBrush, eax  ; 創建紅色筆刷
-        ;mov hBrush, eax                          ; 存筆刷句柄
-        ;invoke SelectObject, hdc, hBrush
+.ELSEIF uMsg == WM_PAINT
+    ; 先開始繪製
+    invoke BeginPaint, hWnd, addr ps
+    mov hdc, eax
 
-        ; 取得螢幕設備上下文
-        ;invoke GetDC, hWnd
-        ;mov hdc, eax  ; 儲存螢幕設備上下文
+    ; 創建內存設備上下文 (hdcMem) 和位圖
+    invoke CreateCompatibleDC, hdc
+    mov hdcMem, eax
 
-        ; 創建與螢幕兼容的內存設備上下文 (hdcMem)
-        invoke CreateCompatibleDC, hdc
-        mov hdcMem, eax  ; 儲存內存設備上下文
+    invoke CreateCompatibleBitmap, hdc, winWidth, winHeight
+    mov hBitmap, eax
+    invoke SelectObject, hdcMem, hBitmap
 
-        ; 創建與螢幕兼容的位圖
-        invoke CreateCompatibleBitmap, hdc, winWidth, winHeight
-        mov hBitmap, eax  ; 儲存位圖句柄
+    ; 填充背景顏色
+    invoke CreateSolidBrush, 00FFFFFFh
+    mov hBrush, eax
+    invoke FillRect, hdcMem, addr rect, hBrush
 
-        ; 選擇位圖進入內存設備上下文 (hdcMem)
-        invoke SelectObject, hdcMem, hBitmap
+    invoke GetClientRect, hWnd, addr rect
+    RGB    200,200,50
+    invoke CreateSolidBrush, eax  ; 創建紅色筆刷
+    mov hBrush, eax                          ; 存筆刷句柄
+    invoke SelectObject, hdcMem, hBrush
 
-        invoke GetClientRect, hWnd, addr rect
-        RGB    200,200,50
-        invoke CreateSolidBrush, eax  ; 創建紅色筆刷
-        mov hBrush, eax                          ; 存筆刷句柄
-        invoke SelectObject, hdcMem, hBrush
+    ; 繪製小球
+    mov eax, ballX
+    sub eax, ballRadius
+    mov ecx, ballY
+    sub ecx, ballRadius
+    mov edx, ballX
+    add edx, ballRadius
+    mov esi, ballY
+    add esi, ballRadius
+    invoke Ellipse, hdcMem, eax, ecx, edx, esi
 
-        ; 繪製小球
-        mov eax, ballX
-        sub eax, ballRadius
-        mov ecx, ballY
-        sub ecx, ballRadius
-        mov edx, ballX
-        add edx, ballRadius
-        mov esi, ballY
-        add esi, ballRadius
-        invoke Ellipse, hdcMem, eax, ecx, edx, esi
+    ; 繪製平台
+    mov eax, platform_X
+    add eax, platform_Width
+    mov edx, platform_Y
+    add edx, platform_Height
+    mov [tempWidth], eax
+    mov [tempHeight], edx
+    invoke Rectangle, hdcMem, platform_X, platform_Y, tempWidth, tempHeight
 
-        ; 繪製平台
-        mov eax, platform_X
-        add eax, platform_Width
-        mov edx, platform_Y
-        add edx, platform_Height
-        mov [tempWidth], eax
-        mov [tempHeight], edx
-        invoke Rectangle, hdcMem, platform_X, platform_Y, tempWidth, tempHeight
+    ; 繪製磚塊
+    mov esi, OFFSET brick
+    mov eax, 0
+    mov ecx, brickNumY
+DrawBrickRow:
+    push ecx
+    mov ecx, brickNumX
+DrawBrickCol:
+    xor edx, edx
+    push eax
+    mov ebx, brickNumX
+    div ebx
 
-        ; 繪製磚塊
-        mov esi, OFFSET brick
-        mov eax, 0              ; eax 用於列循環
-        mov ecx, brickNumY      ; ecx 用於行循環
-    DrawBrickRow:
-        push ecx
-        mov ecx, brickNumX      ; 每行磚塊的數量
-    DrawBrickCol:
-        xor edx, edx
-	    push eax
-	    mov ebx, brickNumX
-	    div ebx
-
-        push edx
-        mov ebx, brickHeight
-        mul ebx
-        mov brickY, eax
-        pop edx
+    push edx
+    mov ebx, brickHeight
+    mul ebx
+    mov brickY, eax
+    pop edx
         
-        mov eax, edx
-        mov ebx, brickWidth
-        mul ebx
-        mov brickX, eax
+    mov eax, edx
+    mov ebx, brickWidth
+    mul ebx
+    mov brickX, eax
 
-        pop eax
+    pop eax
         cmp DWORD PTR [esi+eax*4], 1  ; 檢查是否繪製此磚塊
-        je DrawBrick1
-        jmp Continue
+    je DrawBrick1
+    jmp Continue
 
-    DrawBrick1:
-        push eax
-        push edx
-        mov eax, brickX
-        add eax, brickWidth
-        mov edx, brickY
-        add edx, brickHeight
-        mov [tempWidth], eax
-        mov [tempHeight], edx
-        pop edx
-        pop eax
-        push eax
-        push ecx
-        invoke Rectangle, hdcMem, brickX, brickY, tempWidth, tempHeight
-        pop ecx
-        pop eax
-    Continue:
+DrawBrick1:
+    push eax
+    push edx
+    mov eax, brickX
+    add eax, brickWidth
+    mov edx, brickY
+    add edx, brickHeight
+    mov [tempWidth], eax
+    mov [tempHeight], edx
+    pop edx
+    pop eax
+    push eax
+    push ecx
+    invoke Rectangle, hdcMem, brickX, brickY, tempWidth, tempHeight
+    pop ecx
+    pop eax
+Continue:
         
-        inc eax
-        loop DrawBrickCol
-        pop ecx
-        loop DrawBrickRow
+    inc eax
+    loop DrawBrickCol
+    pop ecx
+    loop DrawBrickRow
 
-    endDrawBrick:
-       
-        ; 使用 BitBlt 將內存中的圖形複製到螢幕上
-        invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
+    ; 使用 BitBlt 複製內存位圖到螢幕
+    invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
 
-        ; 釋放畫筆和位圖
-        invoke DeleteObject, hBrush
-        invoke DeleteObject, hBitmap
-
-        ; 釋放內存設備上下文
-        invoke DeleteDC, hdcMem
-
-        ; 釋放螢幕設備上下文
-        invoke ReleaseDC, hWnd, hdc 
-        invoke EndPaint, hWnd, addr ps
+    ; 清理資源
+    invoke DeleteObject, hBrush
+    invoke DeleteObject, hBitmap
+    invoke DeleteDC, hdcMem
+    invoke ReleaseDC, hWnd, hdc
+    invoke EndPaint, hWnd, addr ps
 
     .ELSE 
         invoke DefWindowProc,hWnd,uMsg,wParam,lParam 
