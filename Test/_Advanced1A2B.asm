@@ -2,12 +2,18 @@
 .model flat,stdcall 
 option casemap:none 
 
+RGB macro red,green,blue
+	xor eax,eax
+	mov ah,blue
+	shl eax,8
+	mov ah,green
+	mov al,red
+endm
+
 include windows.inc 
 include user32.inc 
-includelib user32.lib 
 include kernel32.inc 
-includelib kernel32.lib 
-includelib msvcrt.lib
+include gdi32.inc 
 
 WinMain proto :DWORD
 UpdateLineText PROTO, LineText:PTR SDWORD, mode: Byte, do:byte
@@ -60,6 +66,7 @@ SelectedNumbers db 4 dup(?)
 Answer db 4 DUP(?)
 Acount byte ? 
 Bcount byte ? 
+hBrush DWORD ?
 
 .CODE 
 Advanced1A2B PROC 
@@ -118,6 +125,10 @@ WinMain proc hInst:HINSTANCE
     sub eax, wr.top
     mov winHeight, eax
 
+    RGB    255,255,255
+    invoke CreateSolidBrush, eax  ; 創建紅色筆刷
+    mov hBrush, eax
+
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
@@ -148,6 +159,12 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
     .IF uMsg==WM_DESTROY 
         invoke PostQuitMessage,NULL 
+        invoke DestroyWindow, hWnd
+        ret
+    .ELSEIF uMsg==WM_CLOSE
+        invoke PostQuitMessage,NULL 
+        invoke DestroyWindow, hWnd
+        ret
     .ELSEIF uMsg==WM_CREATE 
         ; Create the buttons for numbers 1 to 9
         invoke CreateButton, addr ButtonText1, 20, 310, 11, hWnd

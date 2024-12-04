@@ -27,14 +27,16 @@ platform_Height DWORD 20       ; 平台高度
 stepSize DWORD 10              ; 每次移動的像素數量
 winWidth DWORD 800              ; 視窗寬度
 winHeight DWORD 600             ; 視窗高度
-ballX DWORD 200                 ; 小球 X 座標
-ballY DWORD 100                 ; 小球 Y 座標
+ballX DWORD 400                 ; 小球 X 座標
+ballY DWORD 400                 ; 小球 Y 座標
 velocityX DWORD 0               ; 小球 X 方向速度
 velocityY DWORD 10               ; 小球 Y 方向速度
 ballRadius DWORD 10             ; 小球半徑
+initialBrickRow EQU 3
+brickTypeNum EQU 2
 brickNumX EQU 10
 brickNumY EQU 8
-brick DWORD brickNumY DUP(brickNumX DUP(1))
+brick DWORD brickNumY DUP(brickNumX DUP(0))
 brickWidth EQU 80
 brickHeight EQU 20
 divisor DWORD 180
@@ -44,7 +46,7 @@ brickNum DWORD 10
 controlsCreated DWORD 0
 
 .DATA? 
-hInstance HINSTANCE ? 
+hInstance1 HINSTANCE ? 
 CommandLine LPSTR ? 
 tempWidth DWORD ?
 tempHeight DWORD ?
@@ -55,20 +57,13 @@ hBrush DWORD ?
 .CODE 
 Home PROC 
 start: 
-    CALL newBrick
-    CALL Fall
-    CALL newBrick
-    CALL Fall
-    CALL newBrick
-    CALL Fall
-    CALL newBrick
-    CALL Fall    
+    CALL initializeBrick
 
     invoke GetModuleHandle, NULL 
-    mov    hInstance,eax 
+    mov    hInstance1,eax 
     invoke GetCommandLine
     mov CommandLine,eax
-    invoke WinMain2, hInstance,NULL,CommandLine, SW_SHOWDEFAULT 
+    invoke WinMain2, hInstance1,NULL,CommandLine, SW_SHOWDEFAULT 
     ret
 Home ENDP
 
@@ -85,7 +80,7 @@ WinMain2 proc hInst:HINSTANCE, hPrevInst:HINSTANCE, CmdLine:LPSTR, CmdShow:DWORD
     mov   wc.cbClsExtra,NULL 
     mov   wc.cbWndExtra,NULL 
     push  hInst 
-    pop   wc.hInstance 
+    pop   wc.hInstance
     mov   wc.hbrBackground,COLOR_WINDOW+1 
     mov   wc.lpszMenuName,NULL 
     mov   wc.lpszClassName,OFFSET ClassName 
@@ -145,10 +140,10 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL brickX, brickY:DWORD
 
     .IF uMsg==WM_DESTROY 
-        invoke PostQuitMessage,NULL 
         invoke KillTimer, hWnd, 1
-
-
+        ; 發送退出訊息
+        invoke PostQuitMessage, NULL
+        ret
     .ELSEIF uMsg == WM_TIMER
         ; 更新小球位置
         call update_ball
@@ -178,6 +173,7 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             add eax, stepSize
             mov platform_X, eax
         skip_right:
+        call brick_collision
 
         ; 重繪視窗
         invoke InvalidateRect, hWnd, NULL, TRUE
@@ -286,34 +282,56 @@ update_ball PROC
     ; 邊界碰撞檢測（鏡面反射）
     mov eax, ballX
     cmp eax, ballRadius           ; 碰到左邊界
-    jle reverse_x
+    jle reverse_x_left
 
     mov eax, winWidth
     sub eax, ballRadius
     cmp ballX, eax                ; 碰到右邊界
-    jae reverse_x
+    jae reverse_x_right
 
     mov eax, ballY
     cmp eax, ballRadius           ; 碰到上邊界
-    jle reverse_y
+    jle reverse_y_top
 
     mov eax, winHeight
     sub eax, ballRadius
     cmp ballY, eax                ; 碰到下邊界
-    jae reverse_y
+    jae reverse_y_bottom
 
     jmp end_update                ; 若無碰撞，結束
 
-reverse_x:
+reverse_x_left:
     mov eax, velocityX
     neg eax
     mov velocityX, eax
+    mov eax, ballRadius
+    mov ballX, eax
     jmp end_update
 
-reverse_y:
+reverse_x_right:
+    mov eax, velocityX
+    neg eax
+    mov velocityX, eax
+    mov eax, winWidth
+    sub eax, ballRadius
+    mov ballX, eax
+    jmp end_update
+
+reverse_y_top:
     mov eax, velocityY
     neg eax
     mov velocityY, eax
+    mov eax, ballRadius
+    mov ballY, eax
+    jmp end_update
+
+reverse_y_bottom:
+    mov eax, velocityY
+    neg eax
+    mov velocityY, eax
+    mov eax, winHeight
+    sub eax, ballRadius
+    mov ballY, eax
 
 end_update:
     ret
@@ -373,62 +391,95 @@ no_collision:
     ret
 check_platform_collision ENDP
 
+brick_collision PROC
+    mov esi, OFFSET brick
+
+    ; 計算列索引（col = ballX / brickWidth）
+    mov eax, ballX
+    xor edx, edx
+    mov ecx, brickWidth
+repeat_col:
+    sub eax, ecx
+    jl done_col
+    inc edx
+    jmp repeat_col
+done_col:
+    mov eax, edx  ; 列索引存入 EAX
+
+    ; 計算行索引（row = ballY / brickHeight）
+    mov edx, 0
+    mov ecx, ballY
+    xor ebx, ebx
+    mov ebx, brickHeight
+repeat_row:
+    sub ecx, ebx
+    jl done_row
+    inc edx
+    jmp repeat_row
+done_row:
+    mov ecx, edx  ; 行索引存入 ECX
+
+    ; 計算偏移量並檢查有效磚塊
+    mov ebx, brickNumX
+    imul ecx, ebx
+    add ecx, eax
+    cmp DWORD PTR [esi + ecx * 4], 1
+    jne no_collision
+
+    ; 碰撞處理
+    mov DWORD PTR [esi + ecx * 4], 0
+    mov eax, velocityY
+    neg eax
+    mov velocityY, eax
+
+no_collision:
+    ret
+brick_collision ENDP
+
+
+initializeBrick proc
+    mov esi, OFFSET brick
+
+    mov eax, brickNumX
+    mov ecx, initialBrickRow
+    mul ecx
+    mov ecx, eax
+    mov ebx, brickTypeNum
+
+    invoke GetTickCount
+    mov eax, edx
+    cdq
+initializenewRandomBrick:
+    div ebx
+    mov [esi], edx
+    add esi, 4
+    loop initializenewRandomBrick
+
+initializeBrick ENDP
+
 newBrick proc
-	mov esi, OFFSET brick
-	mov ecx, brickNumX
+    mov esi, OFFSET brick
+    mov ecx, brickNumX
+    mov ebx, brickTypeNum
+    invoke GetTickCount
+    mov eax, edx
+    cdq
 newRandomBrick:
-	call getRandomBrick
-	mov [esi], eax
-	add esi, 4
-	loop newRandomBrick
-	ret
+    div ebx
+    mov [esi], edx
+    add esi, 4
+    loop newRandomBrick
+    ret
 newBrick ENDP
 
 Fall proc
-    mov ecx, brickNumY         ; 總行數
-    dec ecx                    ; 從倒數第二行開始
-    mov eax, ecx               ; 保存行數
-
-FallLoop:
-    ; 設定源位址 (ESI)
-    mov eax, ecx
-    dec eax                    ; 倒數第 ecx 行
-    imul eax, brickNumX * 4    ; 行數轉換為位元組偏移
-    lea esi, [brick + eax]     ; ESI 指向當前行
-
-    ; 設定目標位址 (EDI)
-    mov eax, ecx
-    imul eax, brickNumX * 4    ; 行數轉換為位元組偏移
-    lea edi, [brick + eax]     ; EDI 指向下一行
-
-    ; 複製一行
-    mov eax, brickNumX         ; 每行的磚塊數
-    mov ecx, eax               ; ECX 為 DWORD 數量
-    rep movsd                  ; 複製當前行到下一行
-
-    ; 繼續處理前一行
-    dec ecx
-    jnz FallLoop
-
-    ; 清空第一行
-    lea edi, [brick]           ; 第一行起始位址
-    mov eax, brickNumX         ; DWORD 數量
-    xor eax, eax               ; 填入 0
-    mov ecx, brickNumX         ; 每行磚塊數
-    rep stosd                  ; 清空第一行
-
+    mov esi, OFFSET brick + ((brickNumY-1) * brickNumX-1) * 4 
+    mov edi, OFFSET brick + (brickNumY * brickNumX-1) * 4
+    std                                           
+    mov ecx, (brickNumY-1)*brickNumX                               
+    rep movsd                                    
+    cld       
     ret
 Fall endp
-
-
-
-getRandomBrick PROC
-    invoke GetTickCount
-    mov ebx, 2
-    cdq
-    idiv ebx
-    mov eax, edx
-    ret
-getRandomBrick ENDP
 
 end
