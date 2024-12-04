@@ -11,6 +11,7 @@ RGB macro red,green,blue
 endm
 
 WinMain2 proto :DWORD,:DWORD,:DWORD,:DWORD 
+corner_brick_collision proto :DWORD,:DWORD
 include windows.inc 
 include user32.inc 
 include kernel32.inc 
@@ -28,14 +29,14 @@ stepSize DWORD 10              ; 每次移動的像素數量
 winWidth DWORD 800              ; 視窗寬度
 winHeight DWORD 600             ; 視窗高度
 ballX DWORD 400                 ; 小球 X 座標
-ballY DWORD 400                 ; 小球 Y 座標
+ballY DWORD 500                 ; 小球 Y 座標
 velocityX DWORD 0               ; 小球 X 方向速度
 velocityY DWORD 10               ; 小球 Y 方向速度
 ballRadius DWORD 10             ; 小球半徑
-initialBrickRow EQU 3
-brickTypeNum EQU 2
+initialBrickRow EQU 20
 brickNumX EQU 10
-brickNumY EQU 8
+brickNumY EQU 28
+brickTypeNum EQU 2
 brick DWORD brickNumY DUP(brickNumX DUP(0))
 brickWidth EQU 80
 brickHeight EQU 20
@@ -392,49 +393,361 @@ no_collision:
 check_platform_collision ENDP
 
 brick_collision PROC
-    mov esi, OFFSET brick
+    Local brickIndexX : DWORD
+    Local brickIndexY : DWORD
+    Local brickRemainderX : DWORD
+    Local brickRemainderY : DWORD
+    Local tempX : DWORD
+    Local tempY : DWORD
 
-    ; 計算列索引（col = ballX / brickWidth）
-    mov eax, ballX
     xor edx, edx
-    mov ecx, brickWidth
-repeat_col:
-    sub eax, ecx
-    jl done_col
-    inc edx
-    jmp repeat_col
-done_col:
-    mov eax, edx  ; 列索引存入 EAX
+    mov eax, ballX
+    mov ebx, brickWidth
+    div ebx
+    mov brickIndexX, eax
+    mov brickRemainderX, edx
 
-    ; 計算行索引（row = ballY / brickHeight）
-    mov edx, 0
-    mov ecx, ballY
-    xor ebx, ebx
+    xor edx, edx
+    mov eax, ballY 
     mov ebx, brickHeight
-repeat_row:
-    sub ecx, ebx
-    jl done_row
-    inc edx
-    jmp repeat_row
-done_row:
-    mov ecx, edx  ; 行索引存入 ECX
+    div ebx
+    mov brickIndexY, eax
+    mov brickRemainderY, edx
 
-    ; 計算偏移量並檢查有效磚塊
-    mov ebx, brickNumX
-    imul ecx, ebx
-    add ecx, eax
-    cmp DWORD PTR [esi + ecx * 4], 1
-    jne no_collision
+up_brick_collision:           ; brick + brickIndexX * 4 + (brickIndexY - 1) * brickNumX * 4
+    cmp brickIndexY, 0
+    jle bottom_brick_collision
+    mov eax, brickRemainderY
+    cmp eax, ballRadius
+    jg bottom_brick_collision
+    
+    mov eax, brickIndexX
+    shl eax, 2
 
+    mov ebx, brickIndexY
+    dec ebx
+    imul ebx, brickNumX
+    shl ebx, 2
+
+    mov esi, OFFSET brick
+    add esi, eax              ; esi += 水平偏移
+    add esi, ebx              ; esi += 垂直偏移
+
+    cmp DWORD PTR [esi], 0
+    jne brick_collisionY
+
+
+bottom_brick_collision:       ; brick + brickIndexX * 4 + (brickIndexY + 1) * brickNumX * 4
+    mov ebx, brickNumY
+    dec ebx
+    cmp brickIndexY, ebx  
+    jge left_brick_collision
+    mov eax, brickHeight
+    sub eax, brickRemainderY
+    cmp eax, ballRadius
+    jg left_brick_collision
+    
+    mov eax, brickIndexX
+    shl eax, 2
+
+    mov ebx, brickIndexY
+    inc ebx
+    imul ebx, brickNumX
+    shl ebx, 2
+
+    mov esi, OFFSET brick
+    add esi, eax              ; esi += 水平偏移
+    add esi, ebx              ; esi += 垂直偏移
+
+    cmp DWORD PTR [esi], 0
+    jne brick_collisionY
+    jmp left_brick_collision
+
+brick_collisionY:
     ; 碰撞處理
-    mov DWORD PTR [esi + ecx * 4], 0
-    mov eax, velocityY
-    neg eax
-    mov velocityY, eax
+    mov DWORD PTR [esi], 0         ; 移除磚塊
+    neg velocityY                  ; 反轉 Y 方向速度
 
-no_collision:
+
+left_brick_collision:         ; brick + (brickIndexX - 1) * 4 + brickIndexY * brickNumX * 4
+    cmp brickIndexX, 0
+    jle right_brick_collision
+    mov eax, brickRemainderX
+    cmp eax, ballRadius
+    jg right_brick_collision
+    
+    mov eax, brickIndexX
+    dec eax
+    shl eax, 2
+
+    mov ebx, brickIndexY
+
+    imul ebx, brickNumX
+    shl ebx, 2
+
+    mov esi, OFFSET brick
+    add esi, eax              ; esi += 水平偏移
+    add esi, ebx              ; esi += 垂直偏移
+
+    cmp DWORD PTR [esi], 0
+    jne brick_collisionX
+
+
+right_brick_collision:        ; brick + (brickIndexX + 1) * 4 + brickIndexY * brickNumX * 4
+    mov ebx, brickNumX
+    dec ebx
+    cmp brickIndexY, ebx  
+    jge corner_brick
+    mov eax, brickWidth
+    sub eax, brickRemainderX
+    cmp eax, ballRadius
+    jg corner_brick
+    
+    mov eax, brickIndexX
+    inc eax
+    shl eax, 2
+
+    mov ebx, brickIndexY
+
+    imul ebx, brickNumX
+    shl ebx, 2
+
+    mov esi, OFFSET brick
+    add esi, eax              ; esi += 水平偏移
+    add esi, ebx              ; esi += 垂直偏移
+
+    cmp DWORD PTR [esi], 0
+    jne brick_collisionX
+    jmp corner_brick
+
+brick_collisionX:
+    ; 碰撞處理
+    mov DWORD PTR [esi], 0         ; 移除磚塊
+    neg velocityX                  ; 反轉 X 方向速度
+    jmp corner_brick
+
+corner_brick:
+
+leftup:
+    mov esi, OFFSET brick
+    mov eax, brickIndexX
+    dec eax
+    mov tempX, eax
+    cmp eax, 0
+    jl rightup
+    shl eax, 2
+    add esi, eax
+    mov eax, brickIndexY
+    dec eax
+    cmp eax, 0
+    jl leftbottom
+    mov tempY, eax
+    mov ebx, brickNumX
+    mul ebx
+    shl eax, 2
+    add esi, eax
+    cmp DWORD PTR [esi], 0
+    je leftbottom
+
+    mov eax, brickIndexX
+    mov ebx, brickWidth
+    mul ebx
+    mov tempX, eax
+
+    mov eax, brickIndexY
+    mov ebx, brickHeight
+    mul ebx
+    mov tempY, eax
+
+    Invoke corner_brick_collision, tempX, tempY
+    cmp eax, 0
+    je leftbottom
+    mov DWORD PTR [esi], 0
+    mov eax, velocityX
+    cmp eax, 0
+    jge skipLeftupX
+    neg velocityX
+skipLeftupX:
+    mov eax, velocityY
+    cmp eax, 0
+    jge no_brick_collision
+    neg velocityY
+
+
+leftbottom:
+    mov esi, OFFSET brick
+    mov eax, brickIndexX
+    dec eax
+    shl eax, 2
+    add esi, eax
+    mov eax, brickIndexY
+    inc eax
+    cmp eax, brickNumY
+    jge rightup
+    mov tempY, eax
+    mov ebx, brickNumX
+    mul ebx
+    shl eax, 2
+    add esi, eax
+    cmp DWORD PTR [esi], 0
+    je rightup
+
+    mov eax, brickIndexX
+    mov ebx, brickWidth
+    mul ebx
+    mov tempX, eax
+
+    mov eax, brickIndexY
+    inc eax
+    mov ebx, brickHeight
+    mul ebx
+    mov tempY, eax
+
+    Invoke corner_brick_collision, tempX, tempY
+    cmp eax, 0
+    je rightup
+    mov DWORD PTR [esi], 0
+    mov eax, velocityX
+    cmp eax, 0
+    jge skipLeftbottomX
+    neg velocityX
+skipLeftbottomX:
+    mov eax, velocityY
+    cmp eax, 0
+    jle no_brick_collision
+    neg velocityY
+
+rightup:
+    mov esi, OFFSET brick
+    mov eax, brickIndexX
+    inc eax
+    cmp eax, brickNumX
+    jge no_brick_collision
+    mov tempX, eax
+    shl eax, 2
+    add esi, eax
+    mov eax, brickIndexY
+    dec eax
+    cmp eax, 0
+    jl rightbottom
+    mov tempY, eax
+    mov ebx, brickNumX
+    mul ebx
+    shl eax, 2
+    add esi, eax
+    cmp DWORD PTR [esi], 0
+    je rightbottom
+
+    mov eax, brickIndexX
+    inc eax
+    mov ebx, brickWidth
+    mul ebx
+    mov tempX, eax
+
+    mov eax, brickIndexY
+    mov ebx, brickHeight
+    mul ebx
+    mov tempY, eax
+
+    Invoke corner_brick_collision, tempX, tempY
+    cmp eax, 0
+    je rightbottom
+    mov DWORD PTR [esi], 0
+    mov eax, velocityX
+    cmp eax, 0
+    jle skipRightupX
+    neg velocityX
+skipRightupX:
+    mov eax, velocityY
+    cmp eax, 0
+    jge no_brick_collision
+    neg velocityY
+
+rightbottom:
+    mov esi, OFFSET brick
+    mov eax, brickIndexX
+    inc eax
+    mov tempX, eax
+    shl eax, 2
+    add esi, eax
+    mov eax, brickIndexY
+    dec eax
+    cmp eax, brickNumY
+    jge no_brick_collision
+    mov tempY, eax
+    mov ebx, brickNumX
+    mul ebx
+    shl eax, 2
+    add esi, eax
+    cmp DWORD PTR [esi], 0
+    je no_brick_collision
+
+    mov eax, brickIndexX
+    inc eax
+    mov ebx, brickWidth
+    mul ebx
+    mov tempX, eax
+
+    mov eax, brickIndexY
+    inc eax
+    mov ebx, brickHeight
+    mul ebx
+    mov tempY, eax
+
+    Invoke corner_brick_collision, tempX, tempY
+    cmp eax, 0
+    je no_brick_collision
+    mov DWORD PTR [esi], 0
+    mov eax, velocityX
+    cmp eax, 0
+    jle skipRightbottomX
+    neg velocityX
+skipRightbottomX:
+    mov eax, velocityY
+    cmp eax, 0
+    jle no_brick_collision
+    neg velocityY
+
+no_brick_collision:
     ret
 brick_collision ENDP
+
+
+
+corner_brick_collision PROC,
+    brick_X : DWORD,
+    brick_Y : DWORD
+
+    LOCAL square_X : DWORD
+    LOCAL square_Y : DWORD
+
+
+    mov eax, ballX
+    sub eax, brick_X
+    imul eax, eax
+    mov square_X, eax
+
+    mov eax, ballY
+    sub eax, brick_Y
+    imul eax, eax
+    mov square_Y, eax
+    
+    mov eax, ballRadius
+    imul eax, eax
+    mov edx, square_X
+    add edx, square_Y
+    cmp edx, eax
+    jg no_corner_brick_collision
+    mov eax, 1
+    jmp end_corner_brick_collision
+   
+no_corner_brick_collision:
+    mov eax, 0
+
+end_corner_brick_collision:
+    ret
+
+corner_brick_collision ENDP
 
 
 initializeBrick proc
