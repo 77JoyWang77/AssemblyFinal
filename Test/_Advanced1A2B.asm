@@ -151,10 +151,11 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL rect:RECT 
 
     .IF uMsg==WM_DESTROY 
-        invoke PostQuitMessage,NULL 
+        call Initialized
         invoke DeleteDC, hdcMem
         invoke DeleteObject, hBrush
         invoke DestroyWindow, hWnd
+        invoke PostQuitMessage,0
         ret
     .ELSEIF uMsg==WM_CREATE 
         INVOKE  GetDC,hWnd              
@@ -291,6 +292,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             invoke DeleteObject, hBrush
             invoke DestroyWindow, hWnd
             invoke PostQuitMessage, 0
+            ret
         .ENDIF
     .ELSEIF uMsg == WM_PAINT
         call UpdateText

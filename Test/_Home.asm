@@ -194,11 +194,12 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     invoke SelectObject, hdcMem, hBitmap
 
     ; ¶ñ¥R­I´ºÃC¦â
+    invoke GetClientRect, hWnd, addr rect
     invoke CreateSolidBrush, 00FFFFFFh
     mov hBrush, eax
     invoke FillRect, hdcMem, addr rect, hBrush
 
-    invoke GetClientRect, hWnd, addr rect
+    
     RGB    200,200,50
     invoke CreateSolidBrush, eax  ; ³Ð«Ø¬õ¦âµ§¨ê
     mov hBrush, eax                          ; ¦sµ§¨ê¥y¬`
