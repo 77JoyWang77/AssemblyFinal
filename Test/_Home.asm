@@ -522,7 +522,7 @@ left_brick_collision:         ; brick + (brickIndexX - 1) * 4 + brickIndexY * br
 right_brick_collision:        ; brick + (brickIndexX + 1) * 4 + brickIndexY * brickNumX * 4
     mov ebx, brickNumX
     dec ebx
-    cmp brickIndexY, ebx  
+    cmp brickIndexX, ebx  
     jge corner_brick
     mov eax, brickWidth
     sub eax, brickRemainderX
