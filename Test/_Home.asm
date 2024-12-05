@@ -23,11 +23,11 @@ AppName  db "Home",0
 Text db "Window", 0
 platform_X DWORD 350           ; 初始 X 座標
 platform_Y DWORD 550           ; 初始 Y 座標
-platform_Width DWORD 120       ; 平台寬度
-platform_Height DWORD 20       ; 平台高度
+platform_Width EQU 120       ; 平台寬度
+platform_Height EQU 20       ; 平台高度
 stepSize DWORD 10              ; 每次移動的像素數量
-winWidth DWORD 800              ; 視窗寬度
-winHeight DWORD 600             ; 視窗高度
+winWidth EQU 800              ; 視窗寬度
+winHeight EQU 600             ; 視窗高度
 ballX DWORD 400                 ; 小球 X 座標
 ballY DWORD 500                 ; 小球 Y 座標
 velocityX DWORD 0               ; 小球 X 方向速度
@@ -45,6 +45,9 @@ offset_center DWORD 0
 speed DWORD 10
 brickNum DWORD 10
 controlsCreated DWORD 0
+fallTime DWORD 30
+fallTimeCount DWORD 30
+randomNum DWORD 0
 
 .DATA? 
 hInstance1 HINSTANCE ? 
@@ -73,6 +76,8 @@ WinMain2 proc hInst:HINSTANCE, hPrevInst:HINSTANCE, CmdLine:LPSTR, CmdShow:DWORD
     LOCAL msg:MSG 
     LOCAL hwnd:HWND 
     LOCAL wr:RECT                   ; 定義 RECT 結構
+    LOCAL tempWinWidth:DWORD
+    LOCAL tempWinHeight:DWORD
 
     ; 定義窗口類別
     mov   wc.cbSize,SIZEOF WNDCLASSEX 
@@ -104,16 +109,16 @@ WinMain2 proc hInst:HINSTANCE, hPrevInst:HINSTANCE, CmdLine:LPSTR, CmdShow:DWORD
     ; 計算窗口寬度和高度
     mov eax, wr.right
     sub eax, wr.left
-    mov winWidth, eax
+    mov tempWinWidth, eax
 
     mov eax, wr.bottom
     sub eax, wr.top
-    mov winHeight, eax
+    mov tempWinHeight, eax
 
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            0, 0, winWidth, winHeight, \
+            0, 0, tempWinWidth, tempWinHeight, \
             NULL, NULL, hInst, NULL
     mov   hwnd,eax 
     invoke SetTimer, hwnd, 1, 50, NULL  ; 更新間隔從 50ms 改為 10ms
@@ -148,6 +153,17 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke PostQuitMessage, NULL
         ret
     .ELSEIF uMsg == WM_TIMER
+        mov eax, fallTimeCount
+        dec eax
+        mov fallTimeCount, eax
+        cmp eax, 0
+        jne no_brick_fall
+
+        CALL Fall
+        CALL newBrick
+        mov eax, fallTime
+        mov fallTimeCount, eax
+    no_brick_fall:
         ; 更新小球位置
         call update_ball
 
@@ -328,34 +344,26 @@ update_ball PROC
     jmp end_update                ; 若無碰撞，結束
 
 reverse_x_left:
-    mov eax, velocityX
-    neg eax
-    mov velocityX, eax
+    neg velocityX
     mov eax, ballRadius
     mov ballX, eax
     jmp end_update
 
 reverse_x_right:
-    mov eax, velocityX
-    neg eax
-    mov velocityX, eax
+    neg velocityX
     mov eax, winWidth
     sub eax, ballRadius
     mov ballX, eax
     jmp end_update
 
 reverse_y_top:
-    mov eax, velocityY
-    neg eax
-    mov velocityY, eax
+    neg velocityY
     mov eax, ballRadius
     mov ballY, eax
     jmp end_update
 
 reverse_y_bottom:
-    mov eax, velocityY
-    neg eax
-    mov velocityY, eax
+    neg velocityY
     mov eax, winHeight
     sub eax, ballRadius
     mov ballY, eax
@@ -558,9 +566,9 @@ leftup:
     mov esi, OFFSET brick
     mov eax, brickIndexX
     dec eax
-    mov tempX, eax
     cmp eax, 0
     jl rightup
+    mov tempX, eax
     shl eax, 2
     add esi, eax
     mov eax, brickIndexY
@@ -604,6 +612,7 @@ leftbottom:
     mov esi, OFFSET brick
     mov eax, brickIndexX
     dec eax
+    mov tempX, eax
     shl eax, 2
     add esi, eax
     mov eax, brickIndexY
