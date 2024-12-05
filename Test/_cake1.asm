@@ -48,9 +48,11 @@ line1Rect RECT <20, 20, 580, 40>
 .DATA? 
 hInstance HINSTANCE ? 
 CommandLine LPSTR ? 
-hBrush DWORD ?
 tempWidth DWORD ?
 tempHeight DWORD ?
+hBitmap HBITMAP ?
+hBrush HBRUSH ?
+hdcMem HDC ?
 
 .CODE 
 Cake1 PROC 
@@ -212,11 +214,24 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
+        invoke CreateCompatibleDC, hdc
+        mov hdcMem, eax
+
+        invoke CreateCompatibleBitmap, hdc, winWidth, winHeight
+        mov hBitmap, eax
+        invoke SelectObject, hdcMem, hBitmap
+
+        ; 填充背景顏色
         invoke GetClientRect, hWnd, addr rect
+        invoke CreateSolidBrush, 00FFFFFFh
+        mov hBrush, eax
+        invoke FillRect, hdcMem, addr rect, hBrush
+
+    
         RGB    200,200,50
         invoke CreateSolidBrush, eax  ; 創建紅色筆刷
         mov hBrush, eax                          ; 存筆刷句柄
-        invoke SelectObject, hdc, hBrush
+        invoke SelectObject, hdcMem, hBrush
 
         mov bl, 10
         mov al, [TriesRemaining]       ; 將 TriesRemaining 的值載入 eax
@@ -229,20 +244,28 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         nextdigit:
         add ah, '0'                     ; 將數字轉換為 ASCII (單位數)
         mov byte ptr [RemainingTriesText + 12], ah ; 將字元寫入字串
-        invoke DrawText, hdc, addr RemainingTriesText, -1, addr line1Rect,DT_CENTER
+        invoke DrawText, hdcMem, addr RemainingTriesText, -1, addr line1Rect,DT_CENTER
 
         mov eax, currentCakeIndex
     draw_cakes:
         mov ebx, SIZEOF RECT
         imul ebx
         push eax
-        invoke Rectangle, hdc, cakes[eax].left, cakes[eax].top, cakes[eax].right, cakes[eax].bottom
+        invoke Rectangle, hdcMem, cakes[eax].left, cakes[eax].top, cakes[eax].right, cakes[eax].bottom
         pop eax
         idiv ebx
         dec eax
         cmp eax, 0
         jge draw_cakes
 
+        ; 使用 BitBlt 複製內存位圖到螢幕
+        invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
+
+        ; 清理資源
+        invoke DeleteObject, hBrush
+        invoke DeleteObject, hBitmap
+        invoke DeleteDC, hdcMem
+        invoke ReleaseDC, hWnd, hdc
         invoke EndPaint, hWnd, addr ps
     .ELSE 
         invoke DefWindowProc,hWnd,uMsg,wParam,lParam 
