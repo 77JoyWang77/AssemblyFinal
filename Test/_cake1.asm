@@ -193,7 +193,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov velocityY, 0
         cmp gameover, TRUE
         je game_over
-        cmp currentCakeIndex, maxCakes
+        cmp TriesRemaining, 0
         je game_over
 
     skip_fall:
@@ -329,7 +329,7 @@ check_right:
 check_bottom:
     mov eax, cakes[ebx].top
     cmp cr.bottom, eax
-    jge collision_found
+    jge game_not_over
 
 next_check:
     dec ecx
