@@ -2,14 +2,6 @@
 .model flat,stdcall 
 option casemap:none 
 
-RGB macro red,green,blue
-	xor eax,eax
-	mov ah,blue
-	shl eax,8
-	mov ah,green
-	mov al,red
-endm
-
 include windows.inc 
 include user32.inc 
 include kernel32.inc 
@@ -18,41 +10,45 @@ include gdi32.inc
 WinMain3 proto :DWORD
 check_collision PROTO index:DWORD
 
+.CONST
+cakeWidth EQU 50        ; 平台寬度
+cakeHeight EQU 20       ; 平台高度
+stepSize EQU 50         ; 每次移動的像素數量
+winWidth EQU 600        ; 視窗寬度
+winHeight EQU 600       ; 視窗高度
+border_right EQU 450
+border_left EQU 150
+maxCakes EQU 20         ; 最大蛋糕數量
+ground EQU 560
+initialcakeX EQU 200    ; 初始 X 座標
+initialcakeY EQU 80     ; 初始 Y 座標
+initialvelocityX EQU 5  ; X 方向速度
+dropSpeed EQU 10
+
 .DATA 
 ClassName db "SimpleWinClass", 0 
 AppName  db "Cake", 0 
-ButtonClassName db "button", 0 
-cakeX DWORD 200           ; 初始 X 座標
-cakeY DWORD 80           ; 初始 Y 座標
-cakeWidth DWORD 50       ; 平台寬度
-cakeHeight DWORD 20       ; 平台高度
-stepSize DWORD 50              ; 每次移動的像素數量
-winWidth DWORD 600              ; 視窗寬度
-winHeight DWORD 600             ; 視窗高度
-velocityX DWORD 5               ; 小球 X 方向速度
-velocityY DWORD 0               ; 小球 Y 方向速度
-border_right DWORD 450
-border_left DWORD 150
-maxCakes EQU 20                         ; 最大蛋糕數量
-currentCakeIndex DWORD 0                   ; 當前蛋糕索引
-cakes RECT maxCakes DUP(<0, 0, 0, 0>)      ; 蛋糕陣列，儲存每個蛋糕的邊界
-falling BOOL FALSE                         ; 是否有蛋糕正在掉落
-gameover BOOL FALSE
-fallSpeed DWORD 5                          ; 蛋糕掉落速度
-
-TriesRemaining  byte 20
 RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
+
+cakeX DWORD 200                       ; 初始 X 座標
+cakeY DWORD 80                        ; 初始 Y 座標
+velocityX DWORD 5                     ; X 方向速度
+velocityY DWORD 0                     ; Y 方向速度
+currentCakeIndex DWORD 0              ; 當前蛋糕索引
+cakes RECT maxCakes DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
+falling BOOL FALSE                    ; 是否有蛋糕正在掉落
+gameover BOOL FALSE
+TriesRemaining BYTE 20                ; 剩餘次數
 line1Rect RECT <20, 20, 580, 40>
 
 .DATA? 
 hInstance HINSTANCE ? 
-CommandLine LPSTR ? 
 tempWidth DWORD ?
 tempHeight DWORD ?
 hBitmap HBITMAP ?
 hBrush HBRUSH ?
-yelloBrush HBRUSH ?
+blueBrush HBRUSH ?
 hdcMem HDC ?
 
 .CODE 
@@ -60,8 +56,6 @@ Cake1 PROC
 start: 
     invoke GetModuleHandle, NULL 
     mov    hInstance,eax 
-    invoke GetCommandLine
-    mov CommandLine,eax
     invoke WinMain3, hInstance
     ret
 Cake1 ENDP
@@ -70,9 +64,9 @@ WinMain3 proc hInst:HINSTANCE
     LOCAL wc:WNDCLASSEX 
     LOCAL msg:MSG 
     LOCAL hwnd:HWND 
-    LOCAL wr:RECT                   ; 定義 RECT 結構
+    LOCAL wr:RECT
 
-    ; 定義窗口類別
+    ; 初始化窗口類
     mov   wc.cbSize,SIZEOF WNDCLASSEX 
     mov   wc.style, CS_HREDRAW or CS_VREDRAW 
     mov   wc.lpfnWndProc, OFFSET WndProc3
@@ -90,20 +84,19 @@ WinMain3 proc hInst:HINSTANCE
     mov   wc.hCursor,eax 
     invoke RegisterClassEx, addr wc 
 
-    ; 設置目標客戶區大小
+    ; 設置客戶區大小
     mov wr.left, 0
     mov wr.top, 0
-    mov wr.right, 600
-    mov wr.bottom, 600
+    mov eax, winWidth
+    mov wr.right, eax
+    mov eax, winHeight
+    mov wr.bottom, eax
 
     ; 調整窗口大小
     invoke AdjustWindowRect, ADDR wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
-
-    ; 計算窗口寬度和高度
     mov eax, wr.right
     sub eax, wr.left
     mov tempWidth, eax
-
     mov eax, wr.bottom
     sub eax, wr.top
     mov tempHeight, eax
@@ -113,8 +106,7 @@ WinMain3 proc hInst:HINSTANCE
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
             0, 0, tempWidth, tempHeight, NULL, NULL, hInst, NULL
     mov   hwnd,eax 
-    invoke SetTimer, hwnd, 1, 50, NULL  ; 更新間隔從 50ms 改為 10ms
-    ; 顯示和更新窗口
+    invoke SetTimer, hwnd, 1, 50, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
 
@@ -129,7 +121,6 @@ WinMain3 proc hInst:HINSTANCE
     ret 
 WinMain3 endp
 
-
 WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
@@ -143,23 +134,10 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke ReleaseDC, hWnd, hdc
         invoke PostQuitMessage,0
     .ELSEIF uMsg==WM_CREATE 
-        mov ebx, SIZEOF RECT
-        imul ebx, currentCakeIndex
-        mov eax, cakeX
-        mov cakes[ebx].left, eax
-        add eax, cakeWidth
-        mov cakes[ebx].right, eax
-        mov eax, cakeY
-        mov cakes[ebx].top, eax
-        add eax, cakeHeight
-        mov cakes[ebx].bottom, eax
-
         INVOKE  GetDC,hWnd              
         mov     hdc,eax
-
         invoke CreateCompatibleDC, hdc
         mov hdcMem, eax
-
         invoke CreateCompatibleBitmap, hdc, winWidth, winHeight
         mov hBitmap, eax
         invoke SelectObject, hdcMem, hBitmap
@@ -182,7 +160,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         ; 初始化新蛋糕位置
         mov velocityX, 0
-        mov velocityY, 10
+        mov velocityY, dropSpeed
 
     skip_space_key:
         call update_cake
@@ -198,22 +176,19 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov cakes[ebx].bottom, eax
         
         ; 檢查是否與其他蛋糕或地面接觸
-        cmp falling, TRUE
-        jne skip_fall
+        cmp falling, FALSE
+        je skip_fall
         invoke check_collision, currentCakeIndex
         cmp eax, TRUE
-        jne handle_collision
-
-        ; 如果沒有碰撞，重繪蛋糕
-        jmp skip_fall
+        je skip_fall
 
     handle_collision:
         mov falling, FALSE
         inc currentCakeIndex  ; 下一個蛋糕
         dec TriesRemaining
-        mov cakeX, 200
-        mov cakeY, 80
-        mov velocityX, 5
+        mov cakeX, initialcakeX
+        mov cakeY, initialcakeY
+        mov velocityX, initialvelocityX
         mov velocityY, 0
         cmp gameover, TRUE
         je game_over
@@ -268,8 +243,8 @@ update_cake PROC
     jle reverse_x
 
     add eax, cakeWidth
-    cmp border_right, eax                ; 碰到右邊界
-    jle reverse_x
+    cmp eax, border_right                ; 碰到右邊界
+    jge reverse_x
 
 movedown:
     mov eax, cakeY
@@ -302,7 +277,7 @@ check_collision PROC index:DWORD
 
     ; 檢查是否碰到地面
     mov ebx, cr.bottom
-    cmp ebx, winHeight
+    cmp ebx, ground
     jge collision_found
 
     cmp index, 0
@@ -351,10 +326,9 @@ game_not_over:
 check_collision ENDP
 
 Update PROC
-    RGB    200,200,50
-    invoke CreateSolidBrush, eax  ; 創建紅色筆刷
-    mov yelloBrush, eax                          ; 存筆刷句柄
-    invoke SelectObject, hdcMem, yelloBrush
+    invoke CreateSolidBrush, 00c8c832h
+    mov blueBrush, eax
+    invoke SelectObject, hdcMem, blueBrush
 
     mov bl, 10
     xor ah, ah
