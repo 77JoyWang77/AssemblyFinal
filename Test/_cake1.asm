@@ -52,6 +52,7 @@ tempWidth DWORD ?
 tempHeight DWORD ?
 hBitmap HBITMAP ?
 hBrush HBRUSH ?
+yelloBrush HBRUSH ?
 hdcMem HDC ?
 
 .CODE 
@@ -135,6 +136,11 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL rect:RECT 
 
     .IF uMsg==WM_DESTROY 
+        invoke KillTimer, hWnd, 1
+        invoke DeleteObject, hBrush
+        invoke DeleteObject, hBitmap
+        invoke DeleteDC, hdcMem
+        invoke ReleaseDC, hWnd, hdc
         invoke PostQuitMessage,0
     .ELSEIF uMsg==WM_CREATE 
         mov ebx, SIZEOF RECT
@@ -147,6 +153,22 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov cakes[ebx].top, eax
         add eax, cakeHeight
         mov cakes[ebx].bottom, eax
+
+        INVOKE  GetDC,hWnd              
+        mov     hdc,eax
+
+        invoke CreateCompatibleDC, hdc
+        mov hdcMem, eax
+
+        invoke CreateCompatibleBitmap, hdc, winWidth, winHeight
+        mov hBitmap, eax
+        invoke SelectObject, hdcMem, hBitmap
+
+        ; 填充背景顏色
+        invoke GetClientRect, hWnd, addr rect
+        invoke CreateSolidBrush, 00FFFFFFh
+        mov hBrush, eax
+        invoke FillRect, hdcMem, addr rect, hBrush
 
     .ELSEIF uMsg == WM_TIMER
         invoke GetAsyncKeyState, VK_SPACE
@@ -199,11 +221,19 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je game_over
 
     skip_fall:
-        invoke InvalidateRect, hWnd, NULL, TRUE
+        invoke GetClientRect, hWnd, addr rect
+        invoke FillRect, hdcMem, addr rect, hBrush
+        call Update
+        invoke InvalidateRect, hWnd, NULL, FALSE
         ret
     game_over:
         ; 顯示遊戲結束訊息
         invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
+        invoke KillTimer, hWnd, 1
+        invoke DeleteObject, hBrush
+        invoke DeleteObject, hBitmap
+        invoke DeleteDC, hdcMem
+        invoke ReleaseDC, hWnd, hdc
         invoke DestroyWindow, hWnd
         invoke PostQuitMessage, 0
         ret
@@ -214,58 +244,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
-        invoke CreateCompatibleDC, hdc
-        mov hdcMem, eax
-
-        invoke CreateCompatibleBitmap, hdc, winWidth, winHeight
-        mov hBitmap, eax
-        invoke SelectObject, hdcMem, hBitmap
-
-        ; 填充背景顏色
-        invoke GetClientRect, hWnd, addr rect
-        invoke CreateSolidBrush, 00FFFFFFh
-        mov hBrush, eax
-        invoke FillRect, hdcMem, addr rect, hBrush
-
-    
-        RGB    200,200,50
-        invoke CreateSolidBrush, eax  ; 創建紅色筆刷
-        mov hBrush, eax                          ; 存筆刷句柄
-        invoke SelectObject, hdcMem, hBrush
-
-        mov bl, 10
-        mov al, [TriesRemaining]       ; 將 TriesRemaining 的值載入 eax
-        div bl
-        mov byte ptr [RemainingTriesText + 11], ' '
-        cmp al, 0
-        je nextdigit
-        add al, '0'                     ; 將數字轉換為 ASCII (單位數)
-        mov byte ptr [RemainingTriesText + 11], al ; 將字元寫入字串
-        nextdigit:
-        add ah, '0'                     ; 將數字轉換為 ASCII (單位數)
-        mov byte ptr [RemainingTriesText + 12], ah ; 將字元寫入字串
-        invoke DrawText, hdcMem, addr RemainingTriesText, -1, addr line1Rect,DT_CENTER
-
-        mov eax, currentCakeIndex
-    draw_cakes:
-        mov ebx, SIZEOF RECT
-        imul ebx
-        push eax
-        invoke Rectangle, hdcMem, cakes[eax].left, cakes[eax].top, cakes[eax].right, cakes[eax].bottom
-        pop eax
-        idiv ebx
-        dec eax
-        cmp eax, 0
-        jge draw_cakes
-
-        ; 使用 BitBlt 複製內存位圖到螢幕
         invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
-
-        ; 清理資源
-        invoke DeleteObject, hBrush
-        invoke DeleteObject, hBitmap
-        invoke DeleteDC, hdcMem
-        invoke ReleaseDC, hWnd, hdc
         invoke EndPaint, hWnd, addr ps
     .ELSE 
         invoke DefWindowProc,hWnd,uMsg,wParam,lParam 
@@ -370,4 +349,38 @@ game_not_over:
     mov eax, FALSE
     ret
 check_collision ENDP
-end
+
+Update PROC
+    RGB    200,200,50
+    invoke CreateSolidBrush, eax  ; 創建紅色筆刷
+    mov yelloBrush, eax                          ; 存筆刷句柄
+    invoke SelectObject, hdcMem, yelloBrush
+
+    mov bl, 10
+    xor ah, ah
+    mov al, [TriesRemaining]       ; 將 TriesRemaining 的值載入 eax
+    div bl
+    mov byte ptr [RemainingTriesText + 11], ' '
+    cmp al, 0
+    je nextdigit
+    add al, '0'                     ; 將數字轉換為 ASCII (單位數)
+    mov byte ptr [RemainingTriesText + 11], al ; 將字元寫入字串
+    nextdigit:
+    add ah, '0'                     ; 將數字轉換為 ASCII (單位數)
+    mov byte ptr [RemainingTriesText + 12], ah ; 將字元寫入字串
+    invoke DrawText, hdcMem, addr RemainingTriesText, -1, addr line1Rect,DT_CENTER
+
+    mov eax, currentCakeIndex
+    draw_cakes:
+    mov ebx, SIZEOF RECT
+    imul ebx
+    push eax
+    invoke Rectangle, hdcMem, cakes[eax].left, cakes[eax].top, cakes[eax].right, cakes[eax].bottom
+    pop eax
+    idiv ebx
+    dec eax
+    cmp eax, 0
+    jge draw_cakes
+    ret
+Update ENDP
+end Cake1
