@@ -7,12 +7,9 @@ include user32.inc
 include kernel32.inc 
 include gdi32.inc 
 
-WinMain3 proto :DWORD
-check_collision PROTO index:DWORD
-
 .CONST
-cakeWidth EQU 50        ; 平台寬度
-cakeHeight EQU 20       ; 平台高度
+cakeWidth EQU 50        ; 蛋糕寬度
+cakeHeight EQU 20       ; 蛋糕高度
 stepSize EQU 50         ; 每次移動的像素數量
 winWidth EQU 600        ; 視窗寬度
 winHeight EQU 600       ; 視窗高度
@@ -24,6 +21,7 @@ initialcakeX EQU 200    ; 初始 X 座標
 initialcakeY EQU 80     ; 初始 Y 座標
 initialvelocityX EQU 5  ; X 方向速度
 dropSpeed EQU 10
+time EQU 40             ; 更新速度，影響磚塊速度
 
 .DATA 
 ClassName db "SimpleWinClass", 0 
@@ -47,24 +45,19 @@ hInstance HINSTANCE ?
 tempWidth DWORD ?
 tempHeight DWORD ?
 hBitmap HBITMAP ?
+hdcMem HDC ?
 hBrush HBRUSH ?
 blueBrush HBRUSH ?
-hdcMem HDC ?
 
 .CODE 
-Cake1 PROC 
-start: 
-    invoke GetModuleHandle, NULL 
-    mov    hInstance,eax 
-    invoke WinMain3, hInstance
-    ret
-Cake1 ENDP
-
-WinMain3 proc hInst:HINSTANCE
+WinMain3 proc
     LOCAL wc:WNDCLASSEX 
     LOCAL msg:MSG 
     LOCAL hwnd:HWND 
     LOCAL wr:RECT
+
+    invoke GetModuleHandle, NULL 
+    mov    hInstance,eax
 
     ; 初始化窗口類
     mov   wc.cbSize,SIZEOF WNDCLASSEX 
@@ -72,7 +65,7 @@ WinMain3 proc hInst:HINSTANCE
     mov   wc.lpfnWndProc, OFFSET WndProc3
     mov   wc.cbClsExtra,NULL 
     mov   wc.cbWndExtra,NULL 
-    push  hInst 
+    push  hInstance
     pop   wc.hInstance 
     mov   wc.hbrBackground,COLOR_WINDOW+1 
     mov   wc.lpszMenuName,NULL 
@@ -104,9 +97,9 @@ WinMain3 proc hInst:HINSTANCE
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            0, 0, tempWidth, tempHeight, NULL, NULL, hInst, NULL
+            0, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
-    invoke SetTimer, hwnd, 1, 50, NULL
+    invoke SetTimer, hwnd, 1, time, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
 
@@ -147,7 +140,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke CreateSolidBrush, 00FFFFFFh
         mov hBrush, eax
         invoke FillRect, hdcMem, addr rect, hBrush
-
+        invoke ReleaseDC, hWnd, hdc
     .ELSEIF uMsg == WM_TIMER
         invoke GetAsyncKeyState, VK_SPACE
         test eax, 8000h ; 測試最高位
@@ -178,7 +171,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ; 檢查是否與其他蛋糕或地面接觸
         cmp falling, FALSE
         je skip_fall
-        invoke check_collision, currentCakeIndex
+        call check_collision
         cmp eax, TRUE
         je skip_fall
 
@@ -208,7 +201,6 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke DeleteObject, hBrush
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
-        invoke ReleaseDC, hWnd, hdc
         invoke DestroyWindow, hWnd
         invoke PostQuitMessage, 0
         ret
@@ -229,8 +221,8 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     ret 
 WndProc3 endp 
 
+; 更新蛋糕位置
 update_cake PROC
-    ; 更新小球位置
     cmp velocityX, 0
     je movedown
     mov eax, cakeX
@@ -243,14 +235,14 @@ update_cake PROC
     jle reverse_x
 
     add eax, cakeWidth
-    cmp eax, border_right                ; 碰到右邊界
+    cmp eax, border_right          ; 碰到右邊界
     jge reverse_x
 
 movedown:
     mov eax, cakeY
     add eax, velocityY
     mov cakeY, eax
-    jmp end_update                ; 若無碰撞，結束
+    jmp end_update                 ; 若無碰撞，結束
 
 reverse_x:
     neg velocityX
@@ -259,13 +251,13 @@ end_update:
     ret
 update_cake ENDP
 
-check_collision PROC index:DWORD
-    LOCAL i:DWORD
+; 判斷是否持續下落，是return eax TRUE
+check_collision PROC
     LOCAL cr:RECT
 
-    mov eax, index
-    mov ebx, SIZEOF RECT              ; 獲取每個 RECT 結構的大小
-    imul ebx                   ; 計算 cakes[index] 的偏移量
+    mov eax, currentCakeIndex
+    mov ebx, SIZEOF RECT
+    imul ebx
     mov ebx, cakes[eax].bottom
     mov cr.bottom, ebx
     mov ebx, cakes[eax].top
@@ -280,11 +272,11 @@ check_collision PROC index:DWORD
     cmp ebx, ground
     jge collision_found
 
-    cmp index, 0
+    cmp currentCakeIndex, 0
     je check_end
 check_other:
     ; 檢查是否碰到其他蛋糕
-    mov ecx, index
+    mov ecx, currentCakeIndex
     dec ecx
 check_loop:
     cmp ecx, 0
@@ -325,6 +317,7 @@ game_not_over:
     ret
 check_collision ENDP
 
+; 更新畫面
 Update PROC
     invoke CreateSolidBrush, 00c8c832h
     mov blueBrush, eax
@@ -357,4 +350,6 @@ Update PROC
     jge draw_cakes
     ret
 Update ENDP
-end Cake1
+
+
+end WinMain3

@@ -7,7 +7,6 @@ include user32.inc
 include kernel32.inc 
 include gdi32.inc 
 
-WinMain proto :DWORD
 UpdateLineText PROTO, LineText:PTR SDWORD, mode: Byte, do:byte
 CreateButton PROTO Text:PTR SDWORD, x:SDWORD, y:SDWORD, ID:SDWORD, hWnd:HWND
 
@@ -48,8 +47,11 @@ line6Rect RECT <20, 170, 250, 190>
 line7Rect RECT <20, 200, 250, 220>
 line8Rect RECT <20, 230, 250, 250>
 line9Rect RECT <20, 280, 250, 300>
+
 SelectedCount   dd 0
 TriesRemaining  db 8
+winWidth DWORD 270           ; 保存窗口寬度
+winHeight DWORD 400          ; 保存窗口高度
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -62,35 +64,28 @@ hBitmap HBITMAP ?
 hBrush HBRUSH ?
 hdcMem HDC ?
 hdc HDC ?
+tempWidth DWORD ?
+tempHeight DWORD ?
 
 .CODE 
-Advanced1A2B PROC 
-start: 
-    call RandomNumber2
-    call Output
-    invoke GetModuleHandle, NULL 
-    mov    hInstance,eax 
-    invoke GetCommandLine
-    mov CommandLine,eax
-    invoke WinMain, hInstance
-    ret
-Advanced1A2B ENDP
-
-WinMain proc hInst:HINSTANCE
+WinMain1 proc
     LOCAL wc:WNDCLASSEX 
     LOCAL msg:MSG 
     LOCAL hwnd:HWND 
     LOCAL wr:RECT                   ; 定義 RECT 結構
-    LOCAL winWidth:DWORD            ; 保存窗口寬度
-    LOCAL winHeight:DWORD           ; 保存窗口高度
+
+    call RandomNumber2
+    call Output
+    invoke GetModuleHandle, NULL 
+    mov    hInstance,eax 
 
     ; 定義窗口類別
     mov   wc.cbSize,SIZEOF WNDCLASSEX 
     mov   wc.style, CS_HREDRAW or CS_VREDRAW 
-    mov   wc.lpfnWndProc, OFFSET WndProc 
+    mov   wc.lpfnWndProc, OFFSET WndProc1
     mov   wc.cbClsExtra,NULL 
     mov   wc.cbWndExtra,NULL 
-    push  hInst 
+    push  hInstance
     pop   wc.hInstance 
     mov   wc.hbrBackground,COLOR_WINDOW+1 
     mov   wc.lpszMenuName,NULL 
@@ -102,23 +97,22 @@ WinMain proc hInst:HINSTANCE
     mov   wc.hCursor,eax 
     invoke RegisterClassEx, addr wc 
 
-    ; 設置目標客戶區大小
+    ; 設置客戶區大小
     mov wr.left, 0
     mov wr.top, 0
-    mov wr.right, 270
-    mov wr.bottom, 400
+    mov eax, winWidth
+    mov wr.right, eax
+    mov eax, winHeight
+    mov wr.bottom, eax
 
     ; 調整窗口大小
     invoke AdjustWindowRect, ADDR wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
-
-    ; 計算窗口寬度和高度
     mov eax, wr.right
     sub eax, wr.left
-    mov winWidth, eax
-
+    mov tempWidth, eax
     mov eax, wr.bottom
     sub eax, wr.top
-    mov winHeight, eax
+    mov tempHeight, eax
 
     invoke CreateSolidBrush, 00FFFFFFh
     mov hBrush, eax
@@ -126,8 +120,8 @@ WinMain proc hInst:HINSTANCE
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            CW_USEDEFAULT, CW_USEDEFAULT, winWidth, winHeight, \
-            NULL, NULL, hInst, NULL
+            0, 0, tempWidth, tempHeight, \
+            NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
 
     ; 顯示和更新窗口
@@ -143,10 +137,10 @@ WinMain proc hInst:HINSTANCE
     .ENDW 
     mov     eax,msg.wParam 
     ret 
-WinMain endp
+WinMain1 endp
 
 
-WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
+WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
     LOCAL ps:PAINTSTRUCT 
     LOCAL rect:RECT 
 
@@ -310,7 +304,7 @@ skip_button:
     ret
 continue_game:
     ret
-WndProc endp 
+WndProc1 endp 
 
 CalculateResult PROC uses esi edi ecx
     ; 初始化變數

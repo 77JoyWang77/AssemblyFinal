@@ -2,21 +2,10 @@
 .model flat,stdcall 
 option casemap:none 
 
-RGB macro red,green,blue
-	xor eax,eax
-	mov ah,blue
-	shl eax,8
-	mov ah,green
-	mov al,red
-endm
-
 include windows.inc 
 include user32.inc 
 include kernel32.inc 
 include gdi32.inc 
-
-WinMain4 proto :DWORD
-check_collision PROTO index:DWORD
 
 .DATA 
 ClassName db "SimpleWinClass", 0 
@@ -47,27 +36,19 @@ line1Rect RECT <20, 20, 580, 40>
 
 .DATA? 
 hInstance HINSTANCE ? 
-CommandLine LPSTR ? 
 hBrush DWORD ?
 tempWidth DWORD ?
 tempHeight DWORD ?
 
 .CODE 
-Minesweeper PROC 
-start: 
-    invoke GetModuleHandle, NULL 
-    mov    hInstance,eax 
-    invoke GetCommandLine
-    mov CommandLine,eax
-    invoke WinMain4, hInstance
-    ret
-Minesweeper ENDP
-
-WinMain4 proc hInst:HINSTANCE
+WinMain4 proc
     LOCAL wc:WNDCLASSEX 
     LOCAL msg:MSG 
     LOCAL hwnd:HWND 
     LOCAL wr:RECT                   ; 定義 RECT 結構
+
+    invoke GetModuleHandle, NULL 
+    mov    hInstance,eax 
 
     ; 定義窗口類別
     mov   wc.cbSize,SIZEOF WNDCLASSEX 
@@ -75,7 +56,7 @@ WinMain4 proc hInst:HINSTANCE
     mov   wc.lpfnWndProc, OFFSET WndProc4
     mov   wc.cbClsExtra,NULL 
     mov   wc.cbWndExtra,NULL 
-    push  hInst 
+    push  hInstance
     pop   wc.hInstance 
     mov   wc.hbrBackground,COLOR_WINDOW+1 
     mov   wc.lpszMenuName,NULL 
@@ -87,20 +68,19 @@ WinMain4 proc hInst:HINSTANCE
     mov   wc.hCursor,eax 
     invoke RegisterClassEx, addr wc 
 
-    ; 設置目標客戶區大小
+    ; 設置客戶區大小
     mov wr.left, 0
     mov wr.top, 0
-    mov wr.right, 600 ;改長寬
-    mov wr.bottom, 600
+    mov eax, winWidth
+    mov wr.right, eax
+    mov eax, winHeight
+    mov wr.bottom, eax
 
     ; 調整窗口大小
     invoke AdjustWindowRect, ADDR wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
-
-    ; 計算窗口寬度和高度
     mov eax, wr.right
     sub eax, wr.left
     mov tempWidth, eax
-
     mov eax, wr.bottom
     sub eax, wr.top
     mov tempHeight, eax
@@ -108,7 +88,7 @@ WinMain4 proc hInst:HINSTANCE
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            0, 0, tempWidth, tempHeight, NULL, NULL, hInst, NULL
+            0, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
     invoke SetTimer, hwnd, 1, 50, NULL  ; 更新間隔從 50ms 改為 10ms
     ; 顯示和更新窗口
@@ -130,7 +110,6 @@ WinMain4 endp
 WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
-    LOCAL rect:RECT 
 
     .IF uMsg==WM_DESTROY 
         invoke PostQuitMessage,0
