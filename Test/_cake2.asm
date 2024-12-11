@@ -39,6 +39,8 @@ falling BOOL FALSE                    ; 是否有蛋糕正在掉落
 gameover BOOL FALSE
 TriesRemaining BYTE 20                ; 剩餘次數
 line1Rect RECT <20, 20, 580, 40>
+initialcolor DWORD 00c8c832h
+colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -47,7 +49,7 @@ tempHeight DWORD ?
 hBitmap HBITMAP ?
 hdcMem HDC ?
 hBrush HBRUSH ?
-blueBrush HBRUSH ?
+brushes HBRUSH 20 DUP(?)
 
 .CODE 
 WinMain5 proc
@@ -55,6 +57,15 @@ WinMain5 proc
     LOCAL msg:MSG 
     LOCAL hwnd:HWND 
     LOCAL wr:RECT
+
+    mov ebx, 0
+brushesloop:
+    mov eax, colors[ebx * 4]
+    invoke CreateSolidBrush, eax
+    mov brushes[ebx * 4], eax
+    inc ebx
+    cmp ebx, 20
+    jne brushesloop
 
     invoke GetModuleHandle, NULL 
     mov    hInstance,eax
@@ -137,8 +148,6 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         invoke CreateSolidBrush, 00FFFFFFh
         mov hBrush, eax
-        invoke CreateSolidBrush, 00c8c832h
-        mov blueBrush, eax
         
         ; 填充背景顏色
         invoke GetClientRect, hWnd, addr rect
@@ -365,8 +374,6 @@ check_collision2 ENDP
 
 ; 更新畫面
 Update2 PROC
-    invoke SelectObject, hdcMem, blueBrush
-
     mov bl, 10
     xor ah, ah
     mov al, [TriesRemaining]       ; 將 TriesRemaining 的值載入 eax
@@ -383,6 +390,11 @@ Update2 PROC
 
     mov eax, currentCakeIndex
     draw_cakes:
+    push eax
+    push ecx
+    invoke SelectObject, hdcMem, brushes[eax * 4]
+    pop ecx
+    pop eax
     mov ebx, SIZEOF RECT
     imul ebx
     push eax
