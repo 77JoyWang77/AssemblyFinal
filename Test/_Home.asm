@@ -3,14 +3,18 @@
 option casemap:none 
 
 EXTERN WinMain1@0: PROC
+EXTERN WinMain2@0: PROC
 EXTERN WinMain3@0: PROC
 EXTERN WinMain4@0: PROC
-EXTERN WinMain2@0: PROC
+EXTERN WinMain5@0: PROC
 Advanced1A2B EQU WinMain1@0
 GameBrick EQU WinMain2@0
 Cake1 EQU WinMain3@0
 Minesweeper EQU WinMain4@0
+Cake2 EQU WinMain5@0
+
 WinMain proto :DWORD
+
 include windows.inc 
 include user32.inc 
 include kernel32.inc 
@@ -25,8 +29,9 @@ ButtonText1 db "1A2B", 0
 ButtonText2 db "Breakout", 0
 ButtonText3 db "Cake1", 0
 ButtonText4 db "Minesweeper", 0
+ButtonText5 db "Cake2", 0
 winWidth EQU 400        ; 視窗寬度
-winHeight EQU 400       ; 視窗高度
+winHeight EQU 600       ; 視窗高度
 
 .DATA? 
 hInstance1 HINSTANCE ? 
@@ -153,6 +158,9 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText4, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
                100, 310, 200, 50, hWnd, 4, hInstance1, NULL
+        invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText5, \
+               WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
+               100, 380, 200, 50, hWnd, 5, hInstance1, NULL
     .ELSEIF uMsg == WM_COMMAND
         mov eax, wParam
         cmp eax, 1
@@ -163,6 +171,8 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je StartGame3
         cmp eax, 4
         je StartGame4
+        cmp eax, 5
+        je StartGame5
     .ELSEIF uMsg == WM_TIMER
         ; 重繪視窗
         invoke InvalidateRect, hWnd, NULL, FALSE
@@ -196,6 +206,10 @@ StartGame3:
 StartGame4:
     ; 呼叫遊戲啟動
     call Minesweeper
+    ret
+StartGame5:
+    ; 呼叫遊戲啟動
+    call Cake2
     ret
 WndProc endp 
 

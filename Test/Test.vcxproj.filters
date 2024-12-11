@@ -39,6 +39,9 @@
     <MASM Include="_minesweeper.asm">
       <Filter>來源檔案</Filter>
     </MASM>
+    <MASM Include="_cake2.asm">
+      <Filter>來源檔案</Filter>
+    </MASM>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
