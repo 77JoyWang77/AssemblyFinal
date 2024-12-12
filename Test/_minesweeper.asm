@@ -26,6 +26,8 @@ EndGame db "Game Over!", 0
 LeftButton db "Left", 0
 RightButton db "Right", 0
 ShowText db " ", 0
+hFlagBitmapName db "IDB_BITMAP1",0
+
 borderX DWORD 80           ; 初始 X 座標
 borderY DWORD 160           ; 初始 Y 座標
 borderWidth DWORD 240       ; 平台寬度
@@ -54,18 +56,22 @@ hBrush DWORD ?
 tempWidth DWORD ?
 tempHeight DWORD ?
 OriginalProc DWORD ?
-
+hBitmap HBITMAP ?
+hMineBitmap HBITMAP ?
+hFlagBitmap HBITMAP ?
+hdcMem HDC ?
 
 .CODE 
 ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     invoke GetWindowLong, hWnd, GWL_USERDATA
     mov OriginalProc, eax
     .IF uMsg == WM_RBUTTONDOWN
-        invoke MessageBox, hWnd, ADDR RightButton, ADDR LabelText, MB_OK
+        ;invoke MessageBox, hWnd, ADDR RightButton, ADDR LabelText, MB_OK
         xor eax, eax ; 阻止訊息傳遞
         ret
     .ELSEIF uMsg == WM_LBUTTONDOWN
         invoke GetWindowLong, hWnd, GWL_ID
+        sub eax, 10
         mov eax, DWORD PTR [mineMap + eax*4]
         cmp eax, 0
         jle show_icon
@@ -74,16 +80,16 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov byte ptr [ShowText], al
         invoke SetWindowText, hWnd, ADDR ShowText
         pop eax
+        jmp skip
     show_icon:
-        ; 設置按鈕為不可按
-        invoke EnableWindow, hWnd, FALSE
-        
-        ; 移除按鈕的邊框樣式 WS_EX_CLIENTEDGE
-        invoke GetWindowLong, hWnd, GWL_EXSTYLE
-        and eax, NOT WS_EX_CLIENTEDGE   ; 清除 WS_EX_CLIENTEDGE 樣式
+        cmp eax, 0
+        je skip
+        invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hFlagBitmap
+    skip:
+        mov eax, WS_EX_CLIENTEDGE   ; 清除 WS_EX_CLIENTEDGE 樣式
         invoke SetWindowLong, hWnd, GWL_EXSTYLE, eax
         invoke SetWindowPos, hWnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE
-        invoke MessageBox, hWnd, ADDR LeftButton, ADDR LabelText, MB_OK
+        ;invoke MessageBox, hWnd, ADDR LeftButton, ADDR LabelText, MB_OK
         xor eax, eax ; 阻止訊息傳遞
         ret
     .ENDIF
@@ -167,6 +173,13 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .IF uMsg==WM_DESTROY 
         invoke PostQuitMessage,0
     .ELSEIF uMsg==WM_CREATE 
+        invoke LoadBitmap, hInstance, OFFSET hFlagBitmapName
+        mov hFlagBitmap, eax
+
+        ;invoke LoadBitmap, hInstance, IDB_MINE
+        ;mov hMineBitmap, eax
+
+
         mov ecx, mineHeight
         mov edx, borderY
     Row:
@@ -177,7 +190,7 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         push eax
         push ecx
         push edx
-        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName, NULL,\
+        invoke CreateWindowEx,NULL, ADDR ButtonClassName, NULL,\
                         WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
                         ebx,edx,30,30,hWnd,currentID,hInstance,NULL
         mov hTarget, eax

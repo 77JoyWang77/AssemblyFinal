@@ -90,6 +90,9 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IncludePaths>C:\Irvine;C:\masm32\include</IncludePaths>
       <AssembledCodeListingFile>$(ProjectName).lst</AssembledCodeListingFile>
     </MASM>
+    <ResourceCompile>
+      <ResourceOutputFileName>Test.res</ResourceOutputFileName>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -151,6 +154,9 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Test.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="flag.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
