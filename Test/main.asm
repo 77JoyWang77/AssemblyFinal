@@ -8,6 +8,7 @@ EXTERN WinMain1@0: PROC
 EXTERN WinMain2@0: PROC
 EXTERN WinMain3@0: PROC
 EXTERN WinMain4@0: PROC
+EXTERN WinMain5@0: PROC
 Game1A2B EQU Game1A2B@0
 BreakOut EQU BreakOut@0
 Home EQU Home@0
@@ -15,6 +16,7 @@ Advanced1A2B EQU WinMain1@0
 GameBrick EQU WinMain2@0
 Cake1 EQU WinMain3@0
 Minesweeper EQU WinMain4@0
+Cake2 EQU WinMain5@0
 
 .data
 Option1 byte "1. Home", 0
@@ -22,7 +24,7 @@ Option2 byte "2. BreakOut", 0
 Option3 byte "3. Cake1", 0
 Option4 byte "4. 1A2B", 0
 Option5 byte "5. Minesweeper", 0
-Option6 byte "6. Minesweeper", 0
+Option6 byte "6. Cake2", 0
 message7 byte "Please enter the game you choose:", 0
 message8 byte "Invalid Input!", 0
 
@@ -46,9 +48,9 @@ Start:
     mov edx, OFFSET Option5
     call WriteString
     call Crlf
-    ;mov edx, OFFSET Option6
-    ;call WriteString
-    ;call Crlf
+    mov edx, OFFSET Option6
+    call WriteString
+    call Crlf
     mov edx, OFFSET message7
     call WriteString
     call Crlf
@@ -84,10 +86,10 @@ Fifth:
     jmp Next
 
 Sixth:
-    ;cmp eax, 6
-    ;jne Next
-    ;call Minesweeper  ; 呼叫 Game1A2B 程式
-    ;jmp Next
+    cmp eax, 6
+    jne Next
+    call Cake2  ; 呼叫 Game1A2B 程式
+    jmp Next
 
 InvalidInput:
     mov edx, OFFSET message8

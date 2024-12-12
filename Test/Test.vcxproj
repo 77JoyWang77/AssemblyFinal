@@ -136,6 +136,7 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <MASM Include="_cake2.asm" />
     <MASM Include="_minesweeper.asm" />
     <MASM Include="_Advanced1A2B.asm" />
     <MASM Include="_Brick.asm" />
