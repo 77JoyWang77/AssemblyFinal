@@ -412,13 +412,16 @@ allDir:
     cmp edx, 0
     je Skip
     push ecx
+    push esi
     Invoke open_mine, bl, bh
+    pop esi
     pop ecx
 Skip:
     inc esi
     loop allDir
    
 Exitopen_mine:
+    mov eax, now
     mov DWORD PTR visited[eax], 0
     ret
  open_mine endp
@@ -429,9 +432,11 @@ can_go_next proc,
     tempnow: DWORD,
     tempnext: DWORD,
 
+    xor edx, edx
 
     mov eax, tempnow
     cmp SDWORD PTR mineMap[eax], 0
+    mov eax,tempnext
     je Can
  
     ;mov bh, SBYTE PTR next_y             ; 取得下個格子的 Y 座標
@@ -454,7 +459,7 @@ Cannot:
     mov edx, 0
 
 Exitcangonext:
-    mov DWORD PTR visited[eax], 1
+    ;mov DWORD PTR visited[eax], 1
     ret
 can_go_next endp
 
