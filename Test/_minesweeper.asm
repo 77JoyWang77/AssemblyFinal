@@ -361,19 +361,23 @@ calculate_num endp
 open_mine proc,
     locateX: DWORD,
     locateY: DWORD
+    LOCAL now: DWORD
+    LoCAL next_l: DWORD
 
     mov eax, locateY               ; eax = MineY
     imul eax, mineWidth          ; eax = MineY * mineWidth
     add eax, locateX               ; eax = MineY * mineWidth + MineX
     shl eax, 2
+    mov now, eax
     mov DWORD PTR mineState[eax], 1
     mov DWORD PTR visited[eax], 1
+    cmp SDWORD PTR mineMap[eax],-1
+    je Exitopen_mine
 
     mov esi, OFFSET mineDir
     mov ecx, 8
 
 allDir:
-    push eax
     mov bh, SBYTE PTR locateY               ; 取得當前格子的 Y 座標
     mov bl, SBYTE PTR locateX               ; 取得當前格子的 X 座標
     ; 取出周圍的相對位置
@@ -385,8 +389,6 @@ allDir:
     add bl, al                  ; 計算相對 X 座標 (MineX + DirX)
     add bh, ah                  ; 計算相對 Y 座標 (MineY + DirY)
 
-    pop eax
-
     ; 檢查該位置是否超出邊界
     cmp bl, 0                     ; 如果超出邊界就跳過
     jl Skip
@@ -397,17 +399,26 @@ allDir:
     cmp bh, mineHeight-1
     jg Skip
 
-    push eax
-    invoke can_go_next, bl, bh
-    pop eax
+    movzx eax, bh              ; eax = next_y
+    imul eax, mineWidth      ; eax = next_y * mineWidth
+    movzx edx, bl
+    add eax, edx              ; eax = next_y * mineWidth + next_x
+    shl eax, 2
+    cmp DWORD PTR visited[eax], 1 
+    je Skip
+    
+    mov next_l, eax
+    invoke can_go_next, now, next_l
     cmp edx, 0
     je Skip
+    push ecx
     Invoke open_mine, bl, bh
-
-   
+    pop ecx
 Skip:
     inc esi
     loop allDir
+   
+Exitopen_mine:
     mov DWORD PTR visited[eax], 0
     ret
  open_mine endp
@@ -415,28 +426,23 @@ Skip:
  
 
 can_go_next proc,
-    next_x: DWORD,
-    next_y: DWORD
-    push eax
+    tempnow: DWORD,
+    tempnext: DWORD,
 
 
+    mov eax, tempnow
     cmp SDWORD PTR mineMap[eax], 0
     je Can
  
-    mov bh, SBYTE PTR next_y             ; 取得下個格子的 Y 座標
-    mov bl, SBYTE PTR next_x               ; 取得下個格子的 X 座標
-    movzx eax, bh              ; eax = next_y
-    imul eax, mineWidth      ; eax = next_y * mineWidth
-    movzx ebx, bl
-    add eax, ebx              ; eax = next_y * mineWidth + next_x
-    shl eax, 4
+    ;mov bh, SBYTE PTR next_y             ; 取得下個格子的 Y 座標
+    ;mov bl, SBYTE PTR next_x               ; 取得下個格子的 X 座標
+    ;movzx eax, bh              ; eax = next_y
+    ;imul eax, mineWidth      ; eax = next_y * mineWidth
+    ;movzx ebx, bl
+    ;add eax, ebx              ; eax = next_y * mineWidth + next_x
+    ;shl eax, 2
 
-    cmp DWORD PTR visited[eax], 1 
-    je Cannot
-
-    cmp SDWORD PTR mineState[eax], 1
-    je Cannot
-    
+    mov eax, tempnext
     cmp SDWORD PTR mineMap[eax], 0
     je Can
     jmp Cannot
@@ -448,7 +454,7 @@ Cannot:
     mov edx, 0
 
 Exitcangonext:
-    pop eax
+    mov DWORD PTR visited[eax], 1
     ret
 can_go_next endp
 
