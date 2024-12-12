@@ -2,7 +2,7 @@
 .model flat,stdcall 
 option casemap:none 
 
-corner_brick_collision proto :DWORD,:DWORD
+corner_collision proto :DWORD,:DWORD
 include windows.inc 
 include user32.inc 
 include kernel32.inc 
@@ -12,14 +12,14 @@ include gdi32.inc
 ClassName db "SimpleWinClass",0 
 AppName  db "Home",0 
 Text db "Window", 0
-platform_X DWORD 350           ; 初始 X 座標
-platform_Y DWORD 550           ; 初始 Y 座標
-platform_Width EQU 120       ; 平台寬度
-platform_Height EQU 20       ; 平台高度
+platformX DWORD 350           ; 初始 X 座標
+platformY DWORD 550           ; 初始 Y 座標
+platformWidth EQU 120       ; 平台寬度
+platformHeight EQU 20       ; 平台高度
 stepSize DWORD 10              ; 每次移動的像素數量
 winWidth EQU 800              ; 視窗寬度
 winHeight EQU 600             ; 視窗高度
-ballX DWORD 400                 ; 小球 X 座標
+ballX DWORD 410                 ; 小球 X 座標
 ballY DWORD 500                 ; 小球 Y 座標
 velocityX DWORD 0               ; 小球 X 方向速度
 velocityY DWORD 10               ; 小球 Y 方向速度
@@ -27,17 +27,19 @@ ballRadius DWORD 10             ; 小球半徑
 initialBrickRow EQU 20
 brickNumX EQU 10
 brickNumY EQU 28
-brickTypeNum EQU 2
+brickTypeNum EQU 4
 brick DWORD brickNumY DUP(brickNumX DUP(0))
 brickWidth EQU 80
 brickHeight EQU 20
-divisor DWORD 180
+randomSeed DWORD 0                 ; 隨機數種子
 offset_center DWORD 0
-speed DWORD 10
+OFFSET_BASE EQU 150
+velocity EQU 10
+divisor EQU 180
 brickNum DWORD 10
 controlsCreated DWORD 0
-fallTime DWORD 30
-fallTimeCount DWORD 30
+fallTime EQU 300
+fallTimeCount DWORD 300
 randomNum DWORD 0
 
 .DATA? 
@@ -47,10 +49,12 @@ tempWidth DWORD ?
 tempHeight DWORD ?
 tempWidth1 DWORD ?
 tempHeight1 DWORD ?
-hBrush DWORD ?
-yellowBrush HBRUSH ?
+whiteBrush DWORD ?
 hBitmap HBITMAP ?
 hdcMem HDC ?
+redBrush DWORD ?
+yellowBrush DWORD ?
+blueBrush DWORD ?
 brickX DWORD ?
 brickY DWORD ?
 
@@ -63,7 +67,7 @@ WinMain2 proc
     LOCAL tempWinWidth:DWORD
     LOCAL tempWinHeight:DWORD
 
-    CALL initializeBrick
+    
     invoke GetModuleHandle, NULL 
     mov    hInstance1,eax 
 
@@ -136,13 +140,16 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ; 發送退出訊息
         
         ; 清理資源
-        invoke DeleteObject, hBrush
+        invoke DeleteObject, whiteBrush
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
         invoke ReleaseDC, hWnd, hdc
         invoke PostQuitMessage, NULL
         ret
     .ELSEIF uMsg == WM_CREATE
+        CALL initializeBrick
+        CALL initializeBrush
+
         ; 創建內存設備上下文 (hdcMem) 和位圖
         INVOKE  GetDC,hWnd              
         mov     hdc,eax
@@ -155,12 +162,7 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         ; 填充背景顏色
         invoke GetClientRect, hWnd, addr rect
-        invoke CreateSolidBrush, 00FFFFFFh
-        mov hBrush, eax
-        invoke FillRect, hdcMem, addr rect, hBrush
-
-        invoke CreateSolidBrush, 0032c8c8h  ; 創建紅色筆刷
-        mov yellowBrush, eax                          ; 存筆刷句柄
+        invoke FillRect, hdcMem, addr rect, whiteBrush
         invoke ReleaseDC, hWnd, hdc
     .ELSEIF uMsg == WM_TIMER
         mov eax, fallTimeCount
@@ -180,32 +182,32 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ; 檢測平台碰撞
         call check_platform_collision
 
-            invoke GetAsyncKeyState, VK_LEFT
-            test eax, 8000h ; 測試最高位
-            jz skip_left
-            mov eax, platform_X
-            cmp eax, stepSize
-            jl skip_left
-            sub eax, stepSize
-            mov platform_X, eax
-        skip_left:
+        invoke GetAsyncKeyState, VK_LEFT
+        test eax, 8000h ; 測試最高位
+        jz skip_left
+        mov eax, platformX
+        cmp eax, stepSize
+        jl skip_left
+        sub eax, stepSize
+        mov platformX, eax
+    skip_left:
 
         invoke GetAsyncKeyState, VK_RIGHT
-            test eax, 8000h ; 測試最高位
-            jz skip_right
-            mov eax, platform_X
-            add eax, stepSize
-            add eax, platform_Width
-            cmp eax, winWidth
-            jg skip_right
-            mov eax, platform_X
-            add eax, stepSize
-            mov platform_X, eax
-        skip_right:
+        test eax, 8000h ; 測試最高位
+        jz skip_right
+        mov eax, platformX
+        add eax, stepSize
+        add eax, platformWidth
+        cmp eax, winWidth
+        jg skip_right
+        mov eax, platformX
+        add eax, stepSize
+        mov platformX, eax
+    skip_right:
         call brick_collision
 
         invoke GetClientRect, hWnd, addr rect
-        ;invoke FillRect, hdcMem, addr rect, hBrush
+        invoke FillRect, hdcMem, addr rect, whiteBrush  ;刪它可得路徑圖
         call DrawScreen
 
         ; 重繪視窗
@@ -225,6 +227,21 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     ret 
 WndProc2 endp 
 
+initializeBrush PROC
+    invoke CreateSolidBrush, 00FFFFFFh
+    mov whiteBrush, eax
+
+    invoke CreateSolidBrush, 00ff901eh
+    mov blueBrush, eax
+
+    invoke CreateSolidBrush, 0032C8C8h
+    mov yellowBrush, eax
+
+    invoke CreateSolidBrush, 003c14dch
+    mov redBrush, eax
+
+initializeBrush ENDP
+
 update_ball PROC
     ; 更新小球位置
     mov eax, ballX
@@ -243,7 +260,7 @@ update_ball PROC
     mov eax, winWidth
     sub eax, ballRadius
     cmp ballX, eax                ; 碰到右邊界
-    jae reverse_x_right
+    jge reverse_x_right
 
     mov eax, ballY
     cmp eax, ballRadius           ; 碰到上邊界
@@ -252,7 +269,7 @@ update_ball PROC
     mov eax, winHeight
     sub eax, ballRadius
     cmp ballY, eax                ; 碰到下邊界
-    jae reverse_y_bottom
+    jge reverse_y_bottom
 
     jmp end_update                ; 若無碰撞，結束
 
@@ -276,46 +293,64 @@ reverse_y_top:
     jmp end_update
 
 reverse_y_bottom:
-    neg velocityY
     mov eax, winHeight
     sub eax, ballRadius
     mov ballY, eax
+    mov eax, 0
+    mov velocityX, eax
+    mov velocityY, eax
 
 end_update:
     ret
 update_ball ENDP
 
 check_platform_collision PROC
+    LOCAL speed:DWORD
+    LOCAL divisorLocal:DWORD
+    LOCAL angle:DWORD
+
+    mov eax, ballY
+    add eax, ballRadius
+    mov ebx, platformY
+    cmp eax, ebx
+    jl no_collision
+
+    mov eax, ballY
+    add ebx, platformHeight
+    add ebx, ballRadius
+    cmp eax, ebx
+    jg no_collision
+
     ; 檢查是否在平台的水平範圍內
     mov eax, ballX
-    mov ebx, platform_X
+    mov ebx, platformX
     cmp eax, ebx
-    jl no_collision
-
-    mov ecx, platform_Width
-    add ebx, ecx
+    jl side_collision
+    
+    add ebx, platformWidth
     cmp eax, ebx
-    ja no_collision
-
-    ; 檢查是否在平台的垂直範圍內
-    mov eax, ballY
-    mov ebx, platform_Y
-    add eax, ballRadius
-    cmp eax, ebx
-    jl no_collision
+    jg side_collision
+    mov ebx, platformY
     sub ebx, ballRadius
     mov ballY, ebx
 
+above_collision:
+
     ; 碰撞處理
-    mov eax, 150
-    add eax, platform_X
+    mov eax, OFFSET_BASE
+    add eax, platformX
     sub eax, ballX
     mov offset_center, eax
+    mov eax, velocity
+    mov speed, eax
+    mov eax, divisor
+    mov divisorLocal, eax
 
     ; 計算弧度
+    fstp st(0)
     fild offset_center           ; 載入角度值            
     fldpi                        ; 載入 π
-    fild divisor                 ; 載入 180
+    fild divisorLocal                 ; 載入 180
     fdiv                         ; 計算 π / 180
     fmul                         ; 計算弧度
 
@@ -334,10 +369,118 @@ check_platform_collision PROC
     
     ; 反轉 Y 速度（反彈）
     neg velocityY
+    jmp no_collision
+
+side_collision:
+    mov eax, ballY
+    mov ebx, platformY
+    cmp eax, ebx
+    jl check_leftup_corner
+
+    mov eax, ballY
+    mov ebx, platformY
+    add ebx, platformHeight
+    cmp eax, ebx
+    jg check_leftbottom_corner
+
+    mov eax, platformX
+    add eax, platformWidth
+    cmp eax, ballX
+    jl check_right_side_collision
+
+check_left_side_collision:
+    mov eax, platformX
+    sub eax, ballX
+    cmp eax, ballRadius
+    jle left_side_collision
+    jmp no_collision
+
+left_side_collision:
+    mov eax, platformX
+    sub eax, ballRadius
+    mov ballX, eax
+    mov eax, velocityX
+    cmp eax, 0
+    jl no_collision
+    neg velocityX
+    jmp no_collision
+    
+check_right_side_collision:
+    mov eax, ballX
+    sub eax, platformX
+    sub eax, platformWidth
+    cmp eax, ballRadius
+    jle right_side_collision
+    jmp no_collision
+
+right_side_collision:
+
+    mov eax, platformX
+    add eax, platformWidth
+    add eax, ballRadius
+    mov ballX, eax
+    mov eax, velocityX
+    cmp eax, 0
+    jg no_collision
+    neg velocityX
+    jmp no_collision
+
+check_leftup_corner:
+    mov angle, 150
+    INVOKE corner_collision, platformX, platformY
+    cmp eax, 1
+    jne check_rightup_corner
+    jmp do_corner_collision
+
+check_rightup_corner:
+    mov angle, 30
+    INVOKE corner_collision, (platformX + platformWidth), platformY
+    cmp eax, 1
+    jne no_collision
+    jmp do_corner_collision
+
+check_leftbottom_corner:
+    mov angle, 210
+    INVOKE corner_collision, platformX, (platformY + platformHeight)
+    cmp eax, 1
+    jne check_rightbottom_corner
+    jmp do_corner_collision
+
+check_rightbottom_corner:
+    mov angle, 330
+    INVOKE corner_collision, (platformX + platformWidth), (platformY + platformHeight)
+    cmp eax, 1
+    jne no_collision
+
+do_corner_collision:
+    mov eax, divisor
+    mov divisorLocal, eax
+    ; 將角度轉換為弧度：angle * π / 180
+    fild angle              ; 載入角度
+    fldpi                   ; 載入 π
+    fmul                    ; angle * π
+    fild divisorLocal            ; 載入 180
+    fdiv                    ; 完成弧度轉換
+
+    ; 計算 velocityX = speed * cos(angle)
+    fld st(0)               ; 將弧度載入堆疊
+    fcos
+    fild speed
+    fmul
+    fistp velocityX
+
+    ; 計算 velocityY = speed * sin(angle)
+    fld st(0)               ; 再次載入弧度
+    fsin
+    fild speed
+    fmul
+    fistp velocityY
+
 
 no_collision:
     ret
 check_platform_collision ENDP
+
 
 brick_collision PROC
     Local brickIndexX : DWORD
@@ -506,17 +649,15 @@ leftup:
     mul ebx
     mov tempY, eax
 
-    Invoke corner_brick_collision, tempX, tempY
+    Invoke corner_collision, tempX, tempY
     cmp eax, 0
     je leftbottom
     mov DWORD PTR [esi], 0
-    mov eax, velocityX
-    cmp eax, 0
+    cmp velocityX, 0
     jge skipLeftupX
     neg velocityX
 skipLeftupX:
-    mov eax, velocityY
-    cmp eax, 0
+    cmp velocityY, 0
     jge no_brick_collision
     neg velocityY
 
@@ -551,17 +692,15 @@ leftbottom:
     mul ebx
     mov tempY, eax
 
-    Invoke corner_brick_collision, tempX, tempY
+    Invoke corner_collision, tempX, tempY
     cmp eax, 0
     je rightup
     mov DWORD PTR [esi], 0
-    mov eax, velocityX
-    cmp eax, 0
+    cmp velocityX, 0
     jge skipLeftbottomX
     neg velocityX
 skipLeftbottomX:
-    mov eax, velocityY
-    cmp eax, 0
+    cmp velocityY, 0
     jle no_brick_collision
     neg velocityY
 
@@ -597,17 +736,15 @@ rightup:
     mul ebx
     mov tempY, eax
 
-    Invoke corner_brick_collision, tempX, tempY
+    Invoke corner_collision, tempX, tempY
     cmp eax, 0
     je rightbottom
     mov DWORD PTR [esi], 0
-    mov eax, velocityX
-    cmp eax, 0
+    cmp velocityX, 0
     jle skipRightupX
     neg velocityX
 skipRightupX:
-    mov eax, velocityY
-    cmp eax, 0
+    cmp velocityY, 0
     jge no_brick_collision
     neg velocityY
 
@@ -619,7 +756,7 @@ rightbottom:
     shl eax, 2
     add esi, eax
     mov eax, brickIndexY
-    dec eax
+    inc eax
     cmp eax, brickNumY
     jge no_brick_collision
     mov tempY, eax
@@ -642,7 +779,7 @@ rightbottom:
     mul ebx
     mov tempY, eax
 
-    Invoke corner_brick_collision, tempX, tempY
+    Invoke corner_collision, tempX, tempY
     cmp eax, 0
     je no_brick_collision
     mov DWORD PTR [esi], 0
@@ -661,22 +798,19 @@ no_brick_collision:
 brick_collision ENDP
 
 
-
-corner_brick_collision PROC,
-    brick_X : DWORD,
-    brick_Y : DWORD
-
+corner_collision PROC,
+    corner_X : DWORD,
+    corner_Y : DWORD
     LOCAL square_X : DWORD
     LOCAL square_Y : DWORD
 
-
     mov eax, ballX
-    sub eax, brick_X
+    sub eax, corner_X
     imul eax, eax
     mov square_X, eax
 
     mov eax, ballY
-    sub eax, brick_Y
+    sub eax, corner_Y
     imul eax, eax
     mov square_Y, eax
     
@@ -685,17 +819,15 @@ corner_brick_collision PROC,
     mov edx, square_X
     add edx, square_Y
     cmp edx, eax
-    jg no_corner_brick_collision
+    jg no_corner_collision
     mov eax, 1
-    jmp end_corner_brick_collision
-   
-no_corner_brick_collision:
+    jmp end_corner_collision
+
+no_corner_collision:
     mov eax, 0
-
-end_corner_brick_collision:
+end_corner_collision:
     ret
-
-corner_brick_collision ENDP
+corner_collision ENDP
 
 
 initializeBrick proc
@@ -719,19 +851,32 @@ initializenewRandomBrick:
 initializeBrick ENDP
 
 newBrick proc
-    mov esi, OFFSET brick
-    mov ecx, brickNumX
-    mov ebx, brickTypeNum
-    invoke GetTickCount
-    mov eax, edx
-    cdq
+    call GetRandomSeed              ; 取得隨機種子
+    mov eax, randomSeed
+    mov esi, OFFSET brick           ; 初始化磚塊陣列指標
+    mov ecx, brickNumX              ; 磚塊數量
+    mov ebx, brickTypeNum           ; 磚塊類型數
+
 newRandomBrick:
-    div ebx
-    mov [esi], edx
-    add esi, 4
-    loop newRandomBrick
+    ; 線性同餘生成器: (a * seed + c) % m
+    imul eax, eax, 1664525          ; 乘以係數 a（1664525 是常用值）
+    add eax, 1013904223             ; 加上增量 c
+    and eax, 7FFFFFFFh             ; 保證結果為正數
+    mov randomSeed, eax             ; 更新隨機種子
+    xor edx, edx                    ; 清除 edx
+    div ebx                         ; 獲得隨機類型
+    mov [esi], edx                  ; 將類型存入陣列
+    add esi, 4                      ; 移動到下一個位置
+    loop newRandomBrick             ; 重複
     ret
+
 newBrick ENDP
+
+GetRandomSeed proc
+    invoke QueryPerformanceCounter, OFFSET randomSeed
+    ret
+GetRandomSeed ENDP
+
 
 Fall proc
     mov esi, OFFSET brick + ((brickNumY-1) * brickNumX-1) * 4 
@@ -759,13 +904,13 @@ DrawScreen PROC
     invoke Ellipse, hdcMem, eax, ecx, edx, esi
 
     ; 繪製平台
-    mov eax, platform_X
-    add eax, platform_Width
-    mov edx, platform_Y
-    add edx, platform_Height
+    mov eax, platformX
+    add eax, platformWidth
+    mov edx, platformY
+    add edx, platformHeight
     mov [tempWidth], eax
     mov [tempHeight], edx
-    invoke Rectangle, hdcMem, platform_X, platform_Y, tempWidth, tempHeight
+    invoke Rectangle, hdcMem, platformX, platformY, tempWidth, tempHeight
 
     ; 繪製磚塊
     mov esi, OFFSET brick
@@ -774,7 +919,7 @@ DrawScreen PROC
 DrawBrickRow:
     push ecx
     mov ecx, brickNumX
-    DrawBrickCol:
+DrawBrickCol:
     xor edx, edx
     push eax
     mov ebx, brickNumX
@@ -792,11 +937,36 @@ DrawBrickRow:
     mov brickX, eax
 
     pop eax
-    cmp DWORD PTR [esi+eax*4], 1  ; 檢查是否繪製此磚塊
-    je DrawBrick1
-    jmp Continue
 
-DrawBrick1:
+    cmp DWORD PTR [esi+eax*4], 1
+    je YBrick
+    cmp DWORD PTR [esi+eax*4], 2
+    je RBrick
+    cmp DWORD PTR [esi+eax*4], 3
+    je BBrick
+    jmp Continue
+YBrick:
+    push eax
+    push ecx
+    invoke SelectObject, hdcMem, yellowBrush
+    pop ecx
+    pop eax
+    jmp startDrawBrick
+RBrick:
+    push eax
+    push ecx
+    invoke SelectObject, hdcMem, redBrush
+    pop ecx
+    pop eax
+    jmp startDrawBrick
+BBrick:
+    push eax
+    push ecx
+    invoke SelectObject, hdcMem, blueBrush
+    pop ecx
+    pop eax
+    
+startDrawBrick:
     push eax
     push edx
     mov eax, brickX
@@ -812,8 +982,8 @@ DrawBrick1:
     invoke Rectangle, hdcMem, brickX, brickY, tempWidth, tempHeight
     pop ecx
     pop eax
-    Continue:
-        
+
+Continue:  
     inc eax
     dec ecx
     cmp ecx, 0
@@ -824,4 +994,5 @@ DrawBrick1:
     jne DrawBrickRow
     ret
 DrawScreen ENDP
+
 end
