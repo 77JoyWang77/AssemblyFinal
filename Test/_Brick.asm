@@ -8,42 +8,43 @@ include user32.inc
 include kernel32.inc 
 include gdi32.inc 
 
-.DATA 
-ClassName db "SimpleWinClass",0 
-AppName  db "Home",0 
-Text db "Window", 0
-EndGame db "Game Over!", 0
-platformX DWORD 350           ; 初始 X 座標
-platformY DWORD 550           ; 初始 Y 座標
+.CONST
 platformWidth EQU 120       ; 平台寬度
 platformHeight EQU 20       ; 平台高度
 stepSize DWORD 10              ; 每次移動的像素數量
 winWidth EQU 800              ; 視窗寬度
 winHeight EQU 600             ; 視窗高度
+initialBrickRow EQU 20
+brickNumX EQU 10
+brickNumY EQU 28
+brickTypeNum EQU 4
+brickWidth EQU 80
+brickHeight EQU 20
+OFFSET_BASE EQU 150
+velocity EQU 10
+fallTime EQU 30
+
+.DATA 
+ClassName db "SimpleWinClass2",0 
+AppName  db "Home",0 
+Text db "Window", 0
+EndGame db "Game Over!", 0
+platformX DWORD 350           ; 初始 X 座標
+platformY DWORD 550           ; 初始 Y 座標
 ballX DWORD 410                 ; 小球 X 座標
 ballY DWORD 500                 ; 小球 Y 座標
 velocityX DWORD 0               ; 小球 X 方向速度
 velocityY DWORD 10               ; 小球 Y 方向速度
 ballRadius DWORD 10             ; 小球半徑
-initialBrickRow EQU 20
-brickNumX EQU 10
-brickNumY EQU 28
-brickTypeNum EQU 4
 brick DWORD brickNumY DUP(brickNumX DUP(0))
-brickWidth EQU 80
-brickHeight EQU 20
 randomSeed DWORD 0                 ; 隨機數種子
 offset_center DWORD 0
-OFFSET_BASE EQU 150
-velocity EQU 10
 divisor DWORD 180
 brickNum DWORD 10
 controlsCreated DWORD 0
-fallTime EQU 30
 fallTimeCount DWORD 30
 randomNum DWORD 0
 gameOver DWORD 0
-msg MSG <>
 
 .DATA? 
 hInstance1 HINSTANCE ? 
@@ -67,6 +68,7 @@ WinMain2 proc
     LOCAL wc:WNDCLASSEX 
     LOCAL hwnd:HWND 
     LOCAL wr:RECT                   ; 定義 RECT 結構
+    LOCAL msg:MSG
     LOCAL tempWinWidth:DWORD
     LOCAL tempWinHeight:DWORD
 
@@ -140,10 +142,6 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
     .IF uMsg==WM_DESTROY 
         invoke KillTimer, hWnd, 1
-        ; 發送退出訊息
-        
-        ; 清理資源
-        invoke DeleteObject, whiteBrush
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
         invoke ReleaseDC, hWnd, hdc
@@ -220,16 +218,21 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
 
     game_over:
-        invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
         invoke KillTimer, hWnd, 1
+        cmp controlsCreated, 1
+        je already_cleaned
+        mov controlsCreated, 1
+        invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
         invoke DestroyWindow, hWnd
-        invoke PostQuitMessage, 0
+        invoke PostQuitMessage, NULL
         ret
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
         invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
+    already_cleaned:
+        ret
 
     .ELSE 
         invoke DefWindowProc,hWnd,uMsg,wParam,lParam 

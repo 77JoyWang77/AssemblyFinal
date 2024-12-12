@@ -15,16 +15,15 @@ Home EQU Home@0
 Advanced1A2B EQU WinMain1@0
 GameBrick EQU WinMain2@0
 Cake1 EQU WinMain3@0
-Minesweeper EQU WinMain4@0
-Cake2 EQU WinMain5@0
-
+Cake2 EQU WinMain4@0
+Minesweeper EQU WinMain5@0
 .data
 Option1 byte "1. Home", 0
 Option2 byte "2. BreakOut", 0
 Option3 byte "3. Cake1", 0
 Option4 byte "4. 1A2B", 0
-Option5 byte "5. Minesweeper", 0
-Option6 byte "6. Cake2", 0
+Option5 byte "5. Cake2", 0
+Option6 byte "6. Minesweeper", 0
 message7 byte "Please enter the game you choose:", 0
 message8 byte "Invalid Input!", 0
 
@@ -82,13 +81,13 @@ Forth:
 Fifth:
     cmp eax, 5
     jne Sixth
-    call Minesweeper  ; ©I¥s Game1A2B µ{¦¡
+    call Cake2  ; ©I¥s Game1A2B µ{¦¡
     jmp Next
 
 Sixth:
     cmp eax, 6
     jne Next
-    call Cake2  ; ©I¥s Game1A2B µ{¦¡
+    call Minesweeper  ; ©I¥s Game1A2B µ{¦¡
     jmp Next
 
 InvalidInput:

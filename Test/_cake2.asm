@@ -23,7 +23,7 @@ dropSpeed EQU 10
 time EQU 20             ; 更新速度，影響磚塊速度
 
 .DATA 
-ClassName db "SimpleWinClass", 0 
+ClassName db "SimpleWinClass4", 0 
 AppName  db "Cake", 0 
 RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
@@ -52,7 +52,7 @@ hBrush HBRUSH ?
 brushes HBRUSH 20 DUP(?)
 
 .CODE 
-WinMain5 proc
+WinMain4 proc
     LOCAL wc:WNDCLASSEX 
     LOCAL msg:MSG 
     LOCAL hwnd:HWND 
@@ -73,7 +73,7 @@ brushesloop:
     ; 初始化窗口類
     mov   wc.cbSize,SIZEOF WNDCLASSEX 
     mov   wc.style, CS_HREDRAW or CS_VREDRAW 
-    mov   wc.lpfnWndProc, OFFSET WndProc5
+    mov   wc.lpfnWndProc, OFFSET WndProc4
     mov   wc.cbClsExtra,NULL 
     mov   wc.cbWndExtra,NULL 
     push  hInstance
@@ -123,9 +123,9 @@ brushesloop:
     .ENDW 
     mov     eax,msg.wParam 
     ret 
-WinMain5 endp
+WinMain4 endp
 
-WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
+WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
     LOCAL rect:RECT 
@@ -136,8 +136,9 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
         invoke ReleaseDC, hWnd, hdc
-        invoke PostQuitMessage,0
+        invoke PostQuitMessage,NULL
     .ELSEIF uMsg==WM_CREATE 
+        call initializeCake2
         INVOKE  GetDC,hWnd              
         mov     hdc,eax
         invoke CreateCompatibleDC, hdc
@@ -214,11 +215,9 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
     game_over:
         ; 顯示遊戲結束訊息
-        invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
+        
         invoke KillTimer, hWnd, 1
-        invoke DeleteObject, hBrush
-        invoke DeleteObject, hBitmap
-        invoke DeleteDC, hdcMem
+        invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
         invoke DestroyWindow, hWnd
         invoke PostQuitMessage, 0
         ret
@@ -237,7 +236,22 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ENDIF 
     xor   eax, eax 
     ret 
-WndProc5 endp 
+WndProc4 endp 
+
+initializeCake2 PROC
+    mov eax, 200
+    mov cakeX, eax
+    mov eax, 80
+    mov cakeY, eax
+    mov eax, 100
+    mov cakeWidth, eax
+    mov eax, 0
+    mov currentCakeIndex, eax
+    mov eax, 20
+    mov TriesRemaining, al
+    mov eax, FALSE
+    mov gameover, eax
+initializeCake2 ENDP
 
 ; 更新蛋糕位置
 update_cake2 PROC

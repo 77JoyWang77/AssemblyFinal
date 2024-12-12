@@ -24,7 +24,7 @@ dropSpeed EQU 10
 time EQU 40             ; 更新速度，影響磚塊速度
 
 .DATA 
-ClassName db "SimpleWinClass", 0 
+ClassName db "SimpleWinClass3", 0 
 AppName  db "Cake", 0 
 RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
@@ -125,8 +125,9 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
         invoke ReleaseDC, hWnd, hdc
-        invoke PostQuitMessage,0
+        invoke PostQuitMessage,NULL
     .ELSEIF uMsg==WM_CREATE 
+        call initializeCake1
         INVOKE  GetDC,hWnd              
         mov     hdc,eax
         invoke CreateCompatibleDC, hdc
@@ -196,8 +197,8 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
     game_over:
         ; 顯示遊戲結束訊息
-        invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
         invoke KillTimer, hWnd, 1
+        invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
         invoke DeleteObject, hBrush
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
@@ -220,6 +221,19 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     xor   eax, eax 
     ret 
 WndProc3 endp 
+
+initializeCake1 PROC
+    mov eax, 200
+    mov cakeX, eax
+    mov eax, 80
+    mov cakeY, eax
+    mov eax, 0
+    mov currentCakeIndex, eax
+    mov eax, 20
+    mov TriesRemaining, al
+    mov eax, FALSE
+    mov gameover, eax
+initializeCake1 ENDP
 
 ; 更新蛋糕位置
 update_cake PROC

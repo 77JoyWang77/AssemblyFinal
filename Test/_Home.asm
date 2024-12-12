@@ -10,8 +10,8 @@ EXTERN WinMain5@0: PROC
 Advanced1A2B EQU WinMain1@0
 GameBrick EQU WinMain2@0
 Cake1 EQU WinMain3@0
-Minesweeper EQU WinMain4@0
-Cake2 EQU WinMain5@0
+Cake2 EQU WinMain4@0
+Minesweeper EQU WinMain5@0
 
 WinMain proto :DWORD
 
@@ -27,8 +27,8 @@ ButtonClassName db "button", 0
 ButtonText1 db "1A2B", 0
 ButtonText2 db "Breakout", 0
 ButtonText3 db "Cake1", 0
-ButtonText4 db "Minesweeper", 0
-ButtonText5 db "Cake2", 0
+ButtonText4 db "Cake2", 0
+ButtonText5 db "Minesweeper", 0
 winWidth EQU 400        ; 視窗寬度
 winHeight EQU 600       ; 視窗高度
 
@@ -203,11 +203,11 @@ StartGame3:
     ret
 StartGame4:
     ; 呼叫遊戲啟動
-    call Minesweeper
+    call Cake2
     ret
 StartGame5:
     ; 呼叫遊戲啟動
-    call Cake2
+    call Minesweeper
     ret
 WndProc endp 
 

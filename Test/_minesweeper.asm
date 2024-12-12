@@ -10,7 +10,7 @@ include kernel32.inc
 include gdi32.inc 
 
 .DATA 
-ClassName db "SimpleWinClass", 0 
+ClassName db "SimpleWinClass5", 0 
 AppName  db "Minesweeper", 0 
 ButtonClassName db "button", 0 
 ButtonText0 db "-1", 0
@@ -115,7 +115,7 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     ret
 ButtonSubclassProc endp
 
-WinMain4 proc
+WinMain5 proc
     LOCAL wc:WNDCLASSEX 
     LOCAL msg:MSG 
     LOCAL hwnd:HWND 
@@ -127,7 +127,7 @@ WinMain4 proc
     ; 定義窗口類別
     mov   wc.cbSize,SIZEOF WNDCLASSEX 
     mov   wc.style, CS_HREDRAW or CS_VREDRAW 
-    mov   wc.lpfnWndProc, OFFSET WndProc4
+    mov   wc.lpfnWndProc, OFFSET WndProc5
     mov   wc.cbClsExtra,NULL 
     mov   wc.cbWndExtra,NULL 
     push  hInstance
@@ -179,9 +179,9 @@ WinMain4 proc
     .ENDW 
     mov     eax,msg.wParam 
     ret 
-WinMain4 endp
+WinMain5 endp
 
-WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
+WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
     LOCAL hTarget:HWND
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
@@ -239,7 +239,7 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ENDIF 
     xor   eax, eax 
     ret 
-WndProc4 endp 
+WndProc5 endp 
 
 initialize_map proc
     call GetRandomSeed_mine              ; 取得隨機種子

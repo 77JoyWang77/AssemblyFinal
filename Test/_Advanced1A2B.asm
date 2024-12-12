@@ -11,7 +11,7 @@ UpdateLineText PROTO, LineText:PTR SDWORD, mode: Byte, do:byte
 CreateButton PROTO Text:PTR SDWORD, x:SDWORD, y:SDWORD, ID:SDWORD, hWnd:HWND
 
 .DATA 
-ClassName db "SimpleWinClass", 0 
+ClassName db "SimpleWinClass1", 0 
 AppName  db "1A2B", 0 
 ButtonClassName db "button", 0 
 ButtonText1 db "1", 0 
