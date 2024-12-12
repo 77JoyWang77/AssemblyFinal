@@ -35,6 +35,19 @@ winHeight DWORD 480             ; 視窗高度
 line1Rect RECT <20, 20, 380, 140>
 currentID DWORD 10
 
+mineWidth EQU 8                        
+mineHeight EQU 8
+mineTypeNum EQU 2
+mineNum EQU 10
+mineMapSize EQU 64
+minerandomSeed DWORD 0                 ; 隨機數種子
+MineX DWORD ?
+MineY DWORD ?
+DirX SDWORD ?
+DirY SDWORD ?
+mineMap SDWORD mineHeight DUP (mineWidth DUP (0))
+mineDir SBYTE -1,-1, 0,-1, 1,-1, -1,0, 1,0, -1,1, 0,1, 1,1 
+
 .DATA? 
 hInstance HINSTANCE ? 
 hBrush DWORD ?
@@ -118,6 +131,7 @@ WinMain4 proc
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
 
+    call initialize_map
     ; 主消息循環
     .WHILE TRUE 
         invoke GetMessage, ADDR msg,NULL,0,0 
@@ -188,6 +202,139 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     xor   eax, eax 
     ret 
 WndProc4 endp 
+
+initialize_map proc
+    call GetRandomSeed_mine              ; 取得隨機種子
+    mov eax, minerandomSeed
+    mov esi, OFFSET mineMap           ; 初始化磚塊陣列指標
+    mov ebx, mineMapSize
+    mov ecx, mineNum
+
+CreateMine:
+    call RandomLocate
+    mov eax, MineY               ; eax = MineY
+    imul eax, mineWidth          ; eax = MineY * mineWidth
+    add eax, MineX               ; eax = MineY * mineWidth + MineX
+    shl eax, 2                   ; eax = (MineY * mineWidth + MineX) * 4
+    cmp SDWORD PTR [esi+eax], -1
+    jne IsMine
+
+Notmine:
+    jmp CreateMine
+
+IsMine:
+    mov DWORD PTR [esi+eax], -1
+    loop CreateMine
+
+SetValue:
+    mov eax, 0
+    mov ecx, mineHeight
+   
+MineRow:
+    push ecx
+    mov ecx, mineWidth
+MineCol:
+    push eax
+    mov ebx, mineWidth
+    xor edx, edx
+    div ebx
+    mov MineX, edx
+    mov MineY, eax
+    pop eax
+    cmp DWORD PTR [esi+eax*4], -1
+    je Continue
+    call calculate_num
+Continue:
+    inc eax
+    loop MineCol
+    pop ecx
+    loop MineRow
+    ret
+initialize_map endp
+
+
+RandomLocate proc
+    ; 線性同餘生成器: (a * seed + c) % m
+    mov ebx, mineMapSize
+    mov eax, minerandomSeed
+    imul eax, eax, 1664525          ; 乘以係數 a（1664525 是常用值）
+    add eax, 1013904223             ; 加上增量 c
+    and eax, 7FFFFFFFh             ; 保證結果為正數
+    mov minerandomSeed, eax             ; 更新隨機種子
+    xor edx, edx                    ; 清除 edx
+    div ebx                           ; 獲得隨機類型
+    mov eax, edx
+    mov ebx, mineWidth
+    xor edx, edx
+    div ebx
+    mov MineX, edx
+    mov MineY, eax
+    ret
+RandomLocate endp
+
+calculate_num proc uses eax edx ecx esi
+    mov edx, 0                   ; 初始化計數器，記錄地雷數量
+    mov ecx, 8                   ; 8 個方向
+    mov esi, OFFSET mineDir
+
+    
+Calculate:
+    mov bh, SBYTE PTR MineY               ; 取得當前格子的 Y 座標
+    mov bl, SBYTE PTR MineX               ; 取得當前格子的 X 座標
+    ; 取出周圍的相對位置
+    mov al, [esi]      ; 取得相對位置 X 偏移量
+    inc esi
+    mov ah, [esi]  ; 取得相對位置 Y 偏移量
+
+    ; 計算相對位置的實際座標
+    add bl, al                  ; 計算相對 X 座標 (MineX + DirX)
+    add bh, ah                  ; 計算相對 Y 座標 (MineY + DirY)
+
+    ; 檢查該位置是否超出邊界
+    cmp bl, 0                     ; 如果超出邊界就跳過
+    jl Skip
+    cmp bl, mineWidth-1
+    jg Skip
+    cmp bh, 0
+    jl Skip
+    cmp bh, mineHeight-1
+    jg Skip
+
+    ; 檢查該位置是否為地雷 (如果是 -1 就算地雷)
+    push edx
+    movzx eax, bh              ; eax = MineY
+    imul eax, mineWidth      ; eax = MineY * mineWidth
+    movzx ebx, bl
+    add eax, ebx              ; eax = MineY * mineWidth + MineX
+    shl eax, 2               ; eax = (MineY * mineWidth + MineX) * 4
+    pop edx
+    cmp SDWORD PTR mineMap[eax], -1
+    jne Skip
+    ; 增加地雷數量
+    inc edx
+    
+Skip:
+    ; 計算下個相對位置
+    inc esi
+    loop Calculate
+
+    mov bh, SBYTE PTR MineY               ; 取得當前格子的 Y 座標
+    mov bl, SBYTE PTR MineX               ; 取得當前格子的 X 座標
+    push edx
+    movzx eax, bh              ; eax = MineY
+    imul eax, mineWidth      ; eax = MineY * mineWidth
+    movzx ebx, bl
+    add eax, ebx              ; eax = MineY * mineWidth + MineX
+    shl eax, 2               ; eax = (MineY * mineWidth + MineX) * 4
+    pop edx
+    mov SDWORD PTR mineMap[eax], edx
+    ret
+calculate_num endp
+
+GetRandomSeed_mine proc
+    invoke QueryPerformanceCounter, OFFSET minerandomSeed
+    ret
+GetRandomSeed_mine ENDP
 
 
 end
