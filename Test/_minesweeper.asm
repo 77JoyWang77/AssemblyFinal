@@ -25,7 +25,7 @@ LabelText db "Minesweeper ", 0
 EndGame db "Game Over!", 0
 LeftButton db "Left", 0
 RightButton db "Right", 0
-
+ShowText db " ", 0
 borderX DWORD 80           ; 初始 X 座標
 borderY DWORD 160           ; 初始 Y 座標
 borderWidth DWORD 240       ; 平台寬度
@@ -61,12 +61,28 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     invoke GetWindowLong, hWnd, GWL_USERDATA
     mov OriginalProc, eax
     .IF uMsg == WM_RBUTTONDOWN
-        ; 處理右鍵邏輯
         invoke MessageBox, hWnd, ADDR RightButton, ADDR LabelText, MB_OK
         xor eax, eax ; 阻止訊息傳遞
         ret
     .ELSEIF uMsg == WM_LBUTTONDOWN
-        ; 處理右鍵邏輯
+        invoke GetWindowLong, hWnd, GWL_ID
+        mov eax, DWORD PTR [mineMap + eax*4]
+        cmp eax, 0
+        jle show_icon
+        push eax
+        add al, '0'
+        mov byte ptr [ShowText], al
+        invoke SetWindowText, hWnd, ADDR ShowText
+        pop eax
+    show_icon:
+        ; 設置按鈕為不可按
+        invoke EnableWindow, hWnd, FALSE
+        
+        ; 移除按鈕的邊框樣式 WS_EX_CLIENTEDGE
+        invoke GetWindowLong, hWnd, GWL_EXSTYLE
+        and eax, NOT WS_EX_CLIENTEDGE   ; 清除 WS_EX_CLIENTEDGE 樣式
+        invoke SetWindowLong, hWnd, GWL_EXSTYLE, eax
+        invoke SetWindowPos, hWnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE
         invoke MessageBox, hWnd, ADDR LeftButton, ADDR LabelText, MB_OK
         xor eax, eax ; 阻止訊息傳遞
         ret
@@ -151,11 +167,11 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .IF uMsg==WM_DESTROY 
         invoke PostQuitMessage,0
     .ELSEIF uMsg==WM_CREATE 
-        mov ecx, 8
+        mov ecx, mineHeight
         mov edx, borderY
     Row:
         push ecx
-        mov ecx, 8
+        mov ecx, mineWidth
         mov ebx, borderX
     Col:
         push eax
@@ -187,13 +203,6 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
-        mov eax, borderX
-        add eax, borderWidth
-        mov edx, borderY
-        add edx, borderHeight
-        mov [tempWidth], eax
-        mov [tempHeight], edx
-        invoke Rectangle, hdc, borderX, borderY, tempWidth, tempHeight
         invoke EndPaint, hWnd, addr ps
     .ELSE 
         invoke DefWindowProc,hWnd,uMsg,wParam,lParam 
