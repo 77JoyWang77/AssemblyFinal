@@ -2,6 +2,8 @@
 .model flat,stdcall 
 option casemap:none 
 
+open_mine proto :DWORD,:DWORD
+can_go_next proto :DWORD, :DWORD
 include windows.inc 
 include user32.inc 
 include kernel32.inc 
@@ -48,6 +50,8 @@ MineY DWORD ?
 DirX SDWORD ?
 DirY SDWORD ?
 mineMap SDWORD mineHeight DUP (mineWidth DUP (0))
+mineState SDWORD mineHeight DUP (mineWidth DUP (0))
+visited DWORD mineHeight DUP (mineWidth DUP(0))
 mineDir SBYTE -1,-1, 0,-1, 1,-1, -1,0, 1,0, -1,1, 0,1, 1,1 
 
 .DATA? 
@@ -72,6 +76,18 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ELSEIF uMsg == WM_LBUTTONDOWN
         invoke GetWindowLong, hWnd, GWL_ID
         sub eax, 10
+
+        push eax
+        mov ebx, mineMapSize
+        xor edx, edx                    ; 清除 edx
+        div ebx                           ; 獲得隨機類型
+        mov eax, edx
+        mov ebx, mineWidth
+        xor edx, edx
+        div ebx
+        invoke open_mine, edx, eax
+        pop eax
+
         mov eax, DWORD PTR [mineMap + eax*4]
         cmp eax, 0
         jle show_icon
@@ -352,6 +368,112 @@ Skip:
     mov SDWORD PTR mineMap[eax], edx
     ret
 calculate_num endp
+
+
+open_mine proc,
+    locateX: DWORD,
+    locateY: DWORD
+    LOCAL now: DWORD
+    LoCAL next_l: DWORD
+
+    mov eax, locateY               ; eax = MineY
+    imul eax, mineWidth          ; eax = MineY * mineWidth
+    add eax, locateX               ; eax = MineY * mineWidth + MineX
+    shl eax, 2
+    mov now, eax
+    mov DWORD PTR mineState[eax], 1
+    mov DWORD PTR visited[eax], 1
+    cmp SDWORD PTR mineMap[eax],-1
+    je Exitopen_mine
+
+    mov esi, OFFSET mineDir
+    mov ecx, 8
+
+allDir:
+    mov bh, SBYTE PTR locateY               ; 取得當前格子的 Y 座標
+    mov bl, SBYTE PTR locateX               ; 取得當前格子的 X 座標
+    ; 取出周圍的相對位置
+    mov al, [esi]      ; 取得相對位置 X 偏移量
+    inc esi
+    mov ah, [esi]  ; 取得相對位置 Y 偏移量
+
+    ; 計算相對位置的實際座標
+    add bl, al                  ; 計算相對 X 座標 (MineX + DirX)
+    add bh, ah                  ; 計算相對 Y 座標 (MineY + DirY)
+
+    ; 檢查該位置是否超出邊界
+    cmp bl, 0                     ; 如果超出邊界就跳過
+    jl Skip
+    cmp bl, mineWidth-1
+    jg Skip
+    cmp bh, 0
+    jl Skip
+    cmp bh, mineHeight-1
+    jg Skip
+
+    movzx eax, bh              ; eax = next_y
+    imul eax, mineWidth      ; eax = next_y * mineWidth
+    movzx edx, bl
+    add eax, edx              ; eax = next_y * mineWidth + next_x
+    shl eax, 2
+    cmp DWORD PTR visited[eax], 1 
+    je Skip
+    
+    mov next_l, eax
+    invoke can_go_next, now, next_l
+    cmp edx, 0
+    je Skip
+    push ecx
+    push esi
+    Invoke open_mine, bl, bh
+    pop esi
+    pop ecx
+Skip:
+    inc esi
+    loop allDir
+   
+Exitopen_mine:
+    mov eax, now
+    mov DWORD PTR visited[eax], 0
+    ret
+ open_mine endp
+
+ 
+
+can_go_next proc,
+    tempnow: DWORD,
+    tempnext: DWORD,
+
+    xor edx, edx
+
+    mov eax, tempnow
+    cmp SDWORD PTR mineMap[eax], 0
+    mov eax,tempnext
+    je Can
+ 
+    ;mov bh, SBYTE PTR next_y             ; 取得下個格子的 Y 座標
+    ;mov bl, SBYTE PTR next_x               ; 取得下個格子的 X 座標
+    ;movzx eax, bh              ; eax = next_y
+    ;imul eax, mineWidth      ; eax = next_y * mineWidth
+    ;movzx ebx, bl
+    ;add eax, ebx              ; eax = next_y * mineWidth + next_x
+    ;shl eax, 2
+
+    mov eax, tempnext
+    cmp SDWORD PTR mineMap[eax], 0
+    je Can
+    jmp Cannot
+
+Can:
+    mov edx, 1
+    jmp Exitcangonext
+Cannot:
+    mov edx, 0
+
+Exitcangonext:
+    ;mov DWORD PTR visited[eax], 1
+    ret
+can_go_next endp
 
 GetRandomSeed_mine proc
     invoke QueryPerformanceCounter, OFFSET minerandomSeed

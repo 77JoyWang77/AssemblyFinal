@@ -12,6 +12,7 @@ include gdi32.inc
 ClassName db "SimpleWinClass",0 
 AppName  db "Home",0 
 Text db "Window", 0
+EndGame db "Game Over!", 0
 platformX DWORD 350           ; 初始 X 座標
 platformY DWORD 550           ; 初始 Y 座標
 platformWidth EQU 120       ; 平台寬度
@@ -35,12 +36,14 @@ randomSeed DWORD 0                 ; 隨機數種子
 offset_center DWORD 0
 OFFSET_BASE EQU 150
 velocity EQU 10
-divisor EQU 180
+divisor DWORD 180
 brickNum DWORD 10
 controlsCreated DWORD 0
-fallTime EQU 300
-fallTimeCount DWORD 300
+fallTime EQU 30
+fallTimeCount DWORD 30
 randomNum DWORD 0
+gameOver DWORD 0
+msg MSG <>
 
 .DATA? 
 hInstance1 HINSTANCE ? 
@@ -55,13 +58,13 @@ hdcMem HDC ?
 redBrush DWORD ?
 yellowBrush DWORD ?
 blueBrush DWORD ?
+purpleBrush DWORD ?
 brickX DWORD ?
 brickY DWORD ?
 
 .CODE 
 WinMain2 proc
     LOCAL wc:WNDCLASSEX 
-    LOCAL msg:MSG 
     LOCAL hwnd:HWND 
     LOCAL wr:RECT                   ; 定義 RECT 結構
     LOCAL tempWinWidth:DWORD
@@ -165,6 +168,8 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke FillRect, hdcMem, addr rect, whiteBrush
         invoke ReleaseDC, hWnd, hdc
     .ELSEIF uMsg == WM_TIMER
+        cmp gameOver, 1
+        je game_over
         mov eax, fallTimeCount
         dec eax
         mov fallTimeCount, eax
@@ -212,7 +217,14 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         ; 重繪視窗
         invoke InvalidateRect, hWnd, NULL, FALSE
+        ret
 
+    game_over:
+        invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
+        invoke KillTimer, hWnd, 1
+        invoke DestroyWindow, hWnd
+        invoke PostQuitMessage, 0
+        ret
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
@@ -239,6 +251,9 @@ initializeBrush PROC
 
     invoke CreateSolidBrush, 003c14dch
     mov redBrush, eax
+
+    invoke CreateSolidBrush, 00CC6699h
+    mov purpleBrush, eax
 
 initializeBrush ENDP
 
@@ -299,6 +314,8 @@ reverse_y_bottom:
     mov eax, 0
     mov velocityX, eax
     mov velocityY, eax
+    mov eax, 1
+    mov gameOver, eax
 
 end_update:
     ret
@@ -306,7 +323,6 @@ update_ball ENDP
 
 check_platform_collision PROC
     LOCAL speed:DWORD
-    LOCAL divisorLocal:DWORD
     LOCAL angle:DWORD
 
     mov eax, ballY
@@ -323,10 +339,24 @@ check_platform_collision PROC
 
     ; 檢查是否在平台的水平範圍內
     mov eax, ballX
+    add eax, ballRadius
+    mov ebx, platformX
+    cmp eax, ebx
+    jl no_collision
+
+    mov eax, ballX
+    sub eax, ballRadius
+    mov ebx, platformX
+    add ebx, platformWidth
+    cmp eax, ebx
+    jg no_collision
+
+    mov eax, ballX
     mov ebx, platformX
     cmp eax, ebx
     jl side_collision
-    
+
+    mov ebx, platformX
     add ebx, platformWidth
     cmp eax, ebx
     jg side_collision
@@ -343,14 +373,12 @@ above_collision:
     mov offset_center, eax
     mov eax, velocity
     mov speed, eax
-    mov eax, divisor
-    mov divisorLocal, eax
 
     ; 計算弧度
     fstp st(0)
     fild offset_center           ; 載入角度值            
     fldpi                        ; 載入 π
-    fild divisorLocal                 ; 載入 180
+    fild divisor                 ; 載入 180
     fdiv                         ; 計算 π / 180
     fmul                         ; 計算弧度
 
@@ -427,39 +455,49 @@ right_side_collision:
 
 check_leftup_corner:
     mov angle, 150
-    INVOKE corner_collision, platformX, platformY
+    mov eax, platformX
+    mov ebx, platformY
+    INVOKE corner_collision, eax, ebx
     cmp eax, 1
     jne check_rightup_corner
     jmp do_corner_collision
 
 check_rightup_corner:
     mov angle, 30
-    INVOKE corner_collision, (platformX + platformWidth), platformY
+    mov eax, platformX
+    add eax, platformWidth
+    mov ebx, platformY
+    INVOKE corner_collision, eax, ebx
     cmp eax, 1
     jne no_collision
     jmp do_corner_collision
 
 check_leftbottom_corner:
     mov angle, 210
-    INVOKE corner_collision, platformX, (platformY + platformHeight)
+    mov eax, platformX
+    mov ebx, platformY
+    add ebx, platformHeight
+    INVOKE corner_collision, eax, ebx
     cmp eax, 1
     jne check_rightbottom_corner
     jmp do_corner_collision
 
 check_rightbottom_corner:
     mov angle, 330
-    INVOKE corner_collision, (platformX + platformWidth), (platformY + platformHeight)
+    mov eax, platformX
+    add eax, platformWidth
+    mov ebx, platformY
+    add ebx, platformHeight
+    INVOKE corner_collision, eax, ebx
     cmp eax, 1
     jne no_collision
 
 do_corner_collision:
-    mov eax, divisor
-    mov divisorLocal, eax
     ; 將角度轉換為弧度：angle * π / 180
     fild angle              ; 載入角度
     fldpi                   ; 載入 π
     fmul                    ; angle * π
-    fild divisorLocal            ; 載入 180
+    fild divisor            ; 載入 180
     fdiv                    ; 完成弧度轉換
 
     ; 計算 velocityX = speed * cos(angle)
@@ -503,6 +541,9 @@ brick_collision PROC
     div ebx
     mov brickIndexY, eax
     mov brickRemainderY, edx
+    mov eax, brickNumY
+    cmp eax, brickIndexY
+    jle no_brick_collision
 
 up_brick_collision:           ; brick + brickIndexX * 4 + (brickIndexY - 1) * brickNumX * 4
     cmp brickIndexY, 0
@@ -516,6 +557,8 @@ up_brick_collision:           ; brick + brickIndexX * 4 + (brickIndexY - 1) * br
 
     mov ebx, brickIndexY
     dec ebx
+    cmp ebx, brickNumY
+    jge left_brick_collision
     imul ebx, brickNumX
     shl ebx, 2
 
@@ -658,7 +701,7 @@ leftup:
     neg velocityX
 skipLeftupX:
     cmp velocityY, 0
-    jge no_brick_collision
+    jge leftbottom
     neg velocityY
 
 
@@ -701,7 +744,7 @@ leftbottom:
     neg velocityX
 skipLeftbottomX:
     cmp velocityY, 0
-    jle no_brick_collision
+    jle rightup
     neg velocityY
 
 rightup:
@@ -745,7 +788,7 @@ rightup:
     neg velocityX
 skipRightupX:
     cmp velocityY, 0
-    jge no_brick_collision
+    jge rightbottom
     neg velocityY
 
 rightbottom:
@@ -890,7 +933,7 @@ Fall endp
 
 DrawScreen PROC
 
-    invoke SelectObject, hdcMem, yellowBrush
+    invoke SelectObject, hdcMem, purpleBrush
 
     ; 繪製小球
     mov eax, ballX
