@@ -24,7 +24,6 @@ include gdi32.inc
 ClassName db "SimpleWinClass",0 
 AppName  db "Home",0 
 ButtonClassName db "button", 0 
-Text db "Window", 0
 ButtonText1 db "1A2B", 0
 ButtonText2 db "Breakout", 0
 ButtonText3 db "Cake1", 0
@@ -34,10 +33,9 @@ winWidth EQU 400        ; 視窗寬度
 winHeight EQU 600       ; 視窗高度
 
 .DATA? 
-hInstance1 HINSTANCE ? 
+hInstance HINSTANCE ? 
 hBitmap HBITMAP ?
 hBrush HBRUSH ?
-blueBrush HBRUSH ?
 hdcMem HDC ?
 tempWidth DWORD ?
 tempHeight DWORD ?
@@ -45,8 +43,8 @@ tempHeight DWORD ?
 .CODE 
 Home PROC 
     invoke GetModuleHandle, NULL 
-    mov    hInstance1,eax 
-    invoke WinMain, hInstance1
+    mov    hInstance,eax 
+    invoke WinMain, hInstance
     ret
 Home ENDP
 
@@ -148,19 +146,19 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText1, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
-               100, 100, 200, 50, hWnd, 1, hInstance1, NULL
+               100, 100, 200, 50, hWnd, 1, hInstance, NULL
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText2, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
-               100, 170, 200, 50, hWnd, 2, hInstance1, NULL
+               100, 170, 200, 50, hWnd, 2, hInstance, NULL
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText3, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
-               100, 240, 200, 50, hWnd, 3, hInstance1, NULL
+               100, 240, 200, 50, hWnd, 3, hInstance, NULL
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText4, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
-               100, 310, 200, 50, hWnd, 4, hInstance1, NULL
+               100, 310, 200, 50, hWnd, 4, hInstance, NULL
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText5, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
-               100, 380, 200, 50, hWnd, 5, hInstance1, NULL
+               100, 380, 200, 50, hWnd, 5, hInstance, NULL
     .ELSEIF uMsg == WM_COMMAND
         mov eax, wParam
         cmp eax, 1

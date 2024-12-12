@@ -9,38 +9,61 @@ include gdi32.inc
 
 .DATA 
 ClassName db "SimpleWinClass", 0 
-AppName  db "Cake", 0 
+AppName  db "Minesweeper", 0 
 ButtonClassName db "button", 0 
-cakeX DWORD 200           ; 初始 X 座標
-cakeY DWORD 80           ; 初始 Y 座標
-cakeWidth DWORD 50       ; 平台寬度
-cakeHeight DWORD 20       ; 平台高度
-stepSize DWORD 50              ; 每次移動的像素數量
-winWidth DWORD 600              ; 視窗寬度
-winHeight DWORD 600             ; 視窗高度
-velocityX DWORD 5               ; 小球 X 方向速度
-velocityY DWORD 0               ; 小球 Y 方向速度
-border_right DWORD 450
-border_left DWORD 150
-maxCakes EQU 10                          ; 最大蛋糕數量
-currentCakeIndex DWORD 0                   ; 當前蛋糕索引
-cakes RECT maxCakes DUP(<0, 0, 0, 0>)      ; 蛋糕陣列，儲存每個蛋糕的邊界
-falling BOOL FALSE                         ; 是否有蛋糕正在掉落
-gameover BOOL TRUE
-fallSpeed DWORD 5                          ; 蛋糕掉落速度
-
-TriesRemaining  db 9
-RemainingTriesText db "Remaining:  ", 0
+ButtonText0 db "-1", 0
+ButtonText1 db "0", 0
+ButtonText2 db "1", 0
+ButtonText3 db "2", 0
+ButtonText4 db "3", 0
+ButtonText5 db "4", 0
+ButtonText6 db "5", 0
+ButtonText7 db "6", 0
+ButtonText8 db "7", 0
+ButtonText9 db "8", 0
+LabelText db "Minesweeper ", 0
 EndGame db "Game Over!", 0
-line1Rect RECT <20, 20, 580, 40>
+LeftButton db "Left", 0
+RightButton db "Right", 0
+
+borderX DWORD 80           ; 初始 X 座標
+borderY DWORD 160           ; 初始 Y 座標
+borderWidth DWORD 240       ; 平台寬度
+borderHeight DWORD 240       ; 平台高度
+winWidth DWORD 400              ; 視窗寬度
+winHeight DWORD 480             ; 視窗高度
+line1Rect RECT <20, 20, 380, 140>
+currentID DWORD 10
 
 .DATA? 
 hInstance HINSTANCE ? 
 hBrush DWORD ?
 tempWidth DWORD ?
 tempHeight DWORD ?
+OriginalProc DWORD ?
+
 
 .CODE 
+ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
+    invoke GetWindowLong, hWnd, GWL_USERDATA
+    mov OriginalProc, eax
+    .IF uMsg == WM_RBUTTONDOWN
+        ; 處理右鍵邏輯
+        invoke MessageBox, hWnd, ADDR RightButton, ADDR LabelText, MB_OK
+        xor eax, eax ; 阻止訊息傳遞
+        ret
+    .ELSEIF uMsg == WM_LBUTTONDOWN
+        ; 處理右鍵邏輯
+        invoke MessageBox, hWnd, ADDR LeftButton, ADDR LabelText, MB_OK
+        xor eax, eax ; 阻止訊息傳遞
+        ret
+    .ENDIF
+
+    ; 調用預設窗口過程
+    invoke CallWindowProc, OriginalProc, hWnd, uMsg, wParam, lParam
+    ret
+ButtonSubclassProc endp
+
 WinMain4 proc
     LOCAL wc:WNDCLASSEX 
     LOCAL msg:MSG 
@@ -106,32 +129,57 @@ WinMain4 proc
     ret 
 WinMain4 endp
 
-
 WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
+    LOCAL hTarget:HWND
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
 
     .IF uMsg==WM_DESTROY 
         invoke PostQuitMessage,0
     .ELSEIF uMsg==WM_CREATE 
-    .ELSEIF uMsg == WM_KEYDOWN
-    .ELSEIF uMsg == WM_COMMAND
-        mov eax, wParam
+        mov ecx, 8
+        mov edx, borderY
+    Row:
+        push ecx
+        mov ecx, 8
+        mov ebx, borderX
+    Col:
+        push eax
+        push ecx
+        push edx
+        invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName, NULL,\
+                        WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
+                        ebx,edx,30,30,hWnd,currentID,hInstance,NULL
+        mov hTarget, eax
+        invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonSubclassProc
+        mov OriginalProc, eax
+        invoke SetWindowLong, hTarget, GWL_USERDATA, eax
+        pop edx
+        pop ecx
+        pop eax
+        dec ecx
+        add ebx, 30
+        inc currentID
+        cmp ecx, 0
+        jne Col
+        
+        pop ecx
+        dec ecx
+        add edx, 30
+        
+        cmp ecx, 0
+        jne Row
 
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
-        
-
-        ; 繪製平台
-        mov eax, cakeX
-        add eax, cakeWidth
-        mov edx, cakeY
-        add edx, cakeHeight
+        mov eax, borderX
+        add eax, borderWidth
+        mov edx, borderY
+        add edx, borderHeight
         mov [tempWidth], eax
         mov [tempHeight], edx
-        invoke Rectangle, hdc, cakeX, cakeY, tempWidth, tempHeight
-
+        invoke Rectangle, hdc, borderX, borderY, tempWidth, tempHeight
         invoke EndPaint, hWnd, addr ps
     .ELSE 
         invoke DefWindowProc,hWnd,uMsg,wParam,lParam 
