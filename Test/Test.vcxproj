@@ -156,6 +156,7 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <ResourceCompile Include="Test.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="mine.bmp" />
     <Image Include="flag.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

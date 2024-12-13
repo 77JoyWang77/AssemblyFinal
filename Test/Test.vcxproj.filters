@@ -54,6 +54,9 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
+    <Image Include="mine.bmp">
+      <Filter>資源檔</Filter>
+    </Image>
     <Image Include="flag.bmp">
       <Filter>資源檔</Filter>
     </Image>
