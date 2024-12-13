@@ -50,6 +50,7 @@ MineX DWORD ?
 MineY DWORD ?
 DirX SDWORD ?
 DirY SDWORD ?
+hButton DWORD mineHeight DUP (mineWidth DUP(?))
 mineMap SDWORD mineHeight DUP (mineWidth DUP (0))
 mineState SDWORD mineHeight DUP (mineWidth DUP (0))
 visited DWORD mineHeight DUP (mineWidth DUP(0))
@@ -71,26 +72,43 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     invoke GetWindowLong, hWnd, GWL_USERDATA
     mov OriginalProc, eax
     .IF uMsg == WM_RBUTTONDOWN
-        
-        ; 插旗
+
+        invoke GetWindowLong, hWnd, GWL_ID
+        sub eax, 10
+        cmp SDWORD PTR mineState[eax*4], 0
+        je setFlag
+        cmp SDWORD PTR mineState[eax*4], 2
+        je clearFlag
+        jmp EndRight
+    ; 插旗
+    setFlag:
+        mov SDWORD PTR mineState[eax*4], 2
         invoke GetWindowLong, hWnd, GWL_STYLE
         or eax, BS_BITMAP
         invoke SetWindowLong, hWnd, GWL_STYLE, eax
         invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hFlagBitmap
         jmp EndRight
 
-        ;拔旗
+    ;拔旗
+    clearFlag:
+        mov SDWORD PTR mineState[eax*4], 0
         invoke GetWindowLong, hWnd, GWL_STYLE
         and eax, Not BS_BITMAP
         invoke SetWindowLong, hWnd, GWL_STYLE, eax
+        invoke SetWindowPos, hWnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE
         ;invoke MessageBox, hWnd, ADDR RightButton, ADDR LabelText, MB_OK
 
     EndRight:
+        invoke InvalidateRect, hWnd, NULL, TRUE
+        invoke UpdateWindow, hWnd
         xor eax, eax ; 阻止訊息傳遞
         ret
     .ELSEIF uMsg == WM_LBUTTONDOWN
         invoke GetWindowLong, hWnd, GWL_ID
         sub eax, 10
+
+        cmp DWORD PTR mineState[eax*4], 1
+        je skip
 
         push eax
         mov ebx, mineMapSize
@@ -231,10 +249,15 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke CreateWindowEx,NULL, ADDR ButtonClassName, NULL,\
                         WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
                         ebx,edx,30,30,hWnd,currentID,hInstance,NULL
+        push ebx
+        mov ebx, currentID
+        sub ebx, 10
+        mov DWORD PTR hButton[ebx*4], eax
         mov hTarget, eax
         invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonSubclassProc
         mov OriginalProc, eax
         invoke SetWindowLong, hTarget, GWL_USERDATA, eax
+        pop ebx
         pop edx
         pop ecx
         pop eax
@@ -403,6 +426,16 @@ open_mine proc,
     add eax, locateX               ; eax = MineY * mineWidth + MineX
     shl eax, 2
     mov now, eax
+
+    cmp DWORD PTR visited[eax], 1 
+    je NotClickButton
+
+ClickButton:
+    push eax
+    invoke SendMessage, hButton[eax], BM_CLICK, 0, 0
+    pop eax
+
+NotClickButton:
     mov DWORD PTR mineState[eax], 1
     mov DWORD PTR visited[eax], 1
     cmp SDWORD PTR mineMap[eax],-1
@@ -460,32 +493,23 @@ Exitopen_mine:
     ret
  open_mine endp
 
- 
-
 can_go_next proc,
     tempnow: DWORD,
     tempnext: DWORD,
 
     xor edx, edx
-
     mov eax, tempnow
     cmp SDWORD PTR mineMap[eax], 0
     mov eax,tempnext
     je Can
- 
-    ;mov bh, SBYTE PTR next_y             ; 取得下個格子的 Y 座標
-    ;mov bl, SBYTE PTR next_x               ; 取得下個格子的 X 座標
-    ;movzx eax, bh              ; eax = next_y
-    ;imul eax, mineWidth      ; eax = next_y * mineWidth
-    ;movzx ebx, bl
-    ;add eax, ebx              ; eax = next_y * mineWidth + next_x
-    ;shl eax, 2
+
+    cmp DWORD PTR mineState[eax], 1
+    je Cannot
 
     mov eax, tempnext
     cmp SDWORD PTR mineMap[eax], 0
     je Can
     jmp Cannot
-
 Can:
     mov edx, 1
     jmp Exitcangonext
