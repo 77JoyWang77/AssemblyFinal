@@ -107,9 +107,6 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke GetWindowLong, hWnd, GWL_ID
         sub eax, 10
 
-        cmp DWORD PTR mineState[eax*4], 1
-        je skip
-
         push eax
         mov ebx, mineMapSize
         xor edx, edx                    ; ²M°£ edx
@@ -427,15 +424,9 @@ open_mine proc,
     shl eax, 2
     mov now, eax
 
-    cmp DWORD PTR visited[eax], 1 
-    je NotClickButton
-
-ClickButton:
     push eax
     invoke SendMessage, hButton[eax], BM_CLICK, 0, 0
     pop eax
-
-NotClickButton:
     mov DWORD PTR mineState[eax], 1
     mov DWORD PTR visited[eax], 1
     cmp SDWORD PTR mineMap[eax],-1
@@ -473,6 +464,8 @@ allDir:
     shl eax, 2
     cmp DWORD PTR visited[eax], 1 
     je Skip
+    cmp DWORD PTR mineState[eax], 1
+    je Skip
     
     mov next_l, eax
     invoke can_go_next, now, next_l
@@ -501,13 +494,6 @@ can_go_next proc,
     mov eax, tempnow
     cmp SDWORD PTR mineMap[eax], 0
     mov eax,tempnext
-    je Can
-
-    cmp DWORD PTR mineState[eax], 1
-    je Cannot
-
-    mov eax, tempnext
-    cmp SDWORD PTR mineMap[eax], 0
     je Can
     jmp Cannot
 Can:
