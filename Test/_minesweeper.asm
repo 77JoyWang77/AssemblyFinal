@@ -71,11 +71,21 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     invoke GetWindowLong, hWnd, GWL_USERDATA
     mov OriginalProc, eax
     .IF uMsg == WM_RBUTTONDOWN
+        
+        ; ´¡ºX
         invoke GetWindowLong, hWnd, GWL_STYLE
         or eax, BS_BITMAP
         invoke SetWindowLong, hWnd, GWL_STYLE, eax
         invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hFlagBitmap
+        jmp EndRight
+
+        ;©ÞºX
+        invoke GetWindowLong, hWnd, GWL_STYLE
+        and eax, Not BS_BITMAP
+        invoke SetWindowLong, hWnd, GWL_STYLE, eax
         ;invoke MessageBox, hWnd, ADDR RightButton, ADDR LabelText, MB_OK
+
+    EndRight:
         xor eax, eax ; ªý¤î°T®§¶Ç»¼
         ret
     .ELSEIF uMsg == WM_LBUTTONDOWN
