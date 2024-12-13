@@ -28,7 +28,7 @@ EndGame db "Game Over!", 0
 LeftButton db "Left", 0
 RightButton db "Right", 0
 ShowText db " ", 0
-hFlagBitmapName db "IDB_BITMAP1",0
+hFlagBitmapName db "flag.bmp",0
 
 borderX DWORD 80           ; 初始 X 座標
 borderY DWORD 160           ; 初始 Y 座標
@@ -189,8 +189,9 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .IF uMsg==WM_DESTROY 
         invoke PostQuitMessage,0
     .ELSEIF uMsg==WM_CREATE 
-        invoke LoadBitmap, hInstance, OFFSET hFlagBitmapName
-        mov hFlagBitmap, eax
+        call LoadAndScaleFlag
+        ;invoke LoadImage, hInstance, addr hFlagBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        ;mov hFlagBitmap, eax
 
         ;invoke LoadBitmap, hInstance, IDB_MINE
         ;mov hMineBitmap, eax
@@ -479,6 +480,54 @@ GetRandomSeed_mine proc
     invoke QueryPerformanceCounter, OFFSET minerandomSeed
     ret
 GetRandomSeed_mine ENDP
+
+LoadAndScaleFlag proc
+    LOCAL temphdcMem: HDC
+    LOCAL hdcCompat: HDC
+    LOCAL hBitmapOriginal: HBITMAP
+    LOCAL bitmap: BITMAP
+    LOCAL originalWidth: DWORD
+    LOCAL originalHeight: DWORD
+
+    ; 加載原始位圖
+    invoke CreateCompatibleDC, NULL
+    mov temphdcMem, eax
+    invoke LoadImage, hInstance, ADDR hFlagBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+    mov hBitmapOriginal, eax
+    invoke SelectObject, temphdcMem, hBitmapOriginal
+
+    ; 取得原始位圖的大小
+    invoke GetObject, hBitmapOriginal, SIZEOF BITMAP, ADDR bitmap
+    mov ecx, dword ptr [bitmap + 4] ; bmWidth
+    mov originalWidth, ecx
+    mov ecx, dword ptr [bitmap + 8] ; bmHeight
+    mov originalHeight, ecx
+
+    ; 創建一個兼容的內存 DC
+    invoke CreateCompatibleDC, NULL
+    mov hdcCompat, eax
+
+    ; 創建與顯示屏兼容的位圖（縮小的位圖）
+    invoke CreateCompatibleBitmap, hdcCompat, 30, 30  ; 假設我們縮放到 30x30
+    mov hFlagBitmap, eax
+
+    ; 選擇縮小後的位圖進行繪製
+    invoke SelectObject, hdcCompat, hFlagBitmap
+
+    ; 縮放原始位圖到新位圖大小
+    invoke StretchBlt, hdcCompat, 0, 0, 30, 30, temphdcMem, 0, 0, originalWidth, originalHeight, SRCCOPY
+
+    ; 此時 hBitmapScaled 中儲存了縮放後的位圖，可以用於顯示
+    ; 使用這個位圖來更新按鈕圖片或其他顯示方式
+
+    ; 最後清理 DC 和位圖資源
+    invoke DeleteObject, hBitmapOriginal ; 釋放原始位圖
+    invoke DeleteObject, hFlagBitmap     ; 釋放縮小後的位圖
+    invoke DeleteDC, temphdcMem          ; 釋放原始位圖的 DC
+    invoke DeleteDC, hdcCompat          ; 釋放縮小位圖的 DC
+
+    ret
+LoadAndScaleFlag endp
 
 
 end

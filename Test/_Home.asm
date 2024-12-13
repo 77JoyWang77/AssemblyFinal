@@ -129,18 +129,16 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ELSEIF uMsg == WM_CREATE
         INVOKE  GetDC,hWnd              
         mov     hdc,eax
+        INVOKE  CreateCompatibleDC,eax  
+        mov     hdcMem,eax
 
-        ; 創建內存設備上下文 (hdcMem) 和位圖
-        invoke CreateCompatibleDC, hdc
-        mov hdcMem, eax
-
-        invoke CreateCompatibleBitmap, hdc, winWidth, winHeight
+        invoke GetClientRect, hWnd, addr rect
+        invoke CreateCompatibleBitmap, hdc, rect.right, rect.bottom
         mov hBitmap, eax
         invoke SelectObject, hdcMem, hBitmap
 
-        ; 填充背景顏色
-        invoke GetClientRect, hWnd, addr rect
-        invoke CreateSolidBrush, 00FFFFFFh
+        ; 填充背景色
+        invoke CreateSolidBrush,  00FFFFFFh
         mov hBrush, eax
         invoke FillRect, hdcMem, addr rect, hBrush
 
@@ -159,6 +157,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText5, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
                100, 380, 200, 50, hWnd, 5, hInstance, NULL
+        INVOKE  ReleaseDC,hWnd,hdc
     .ELSEIF uMsg == WM_COMMAND
         mov eax, wParam
         cmp eax, 1
@@ -171,9 +170,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je StartGame4
         cmp eax, 5
         je StartGame5
-    .ELSEIF uMsg == WM_TIMER
-        ; 重繪視窗
-        invoke InvalidateRect, hWnd, NULL, FALSE
 
     .ELSEIF uMsg == WM_PAINT
         ; 先開始繪製
