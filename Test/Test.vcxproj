@@ -148,6 +148,7 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <MASM Include="_Breakout.asm" />
     <MASM Include="main.asm" />
     <MASM Include="_Home.asm" />
+    <MASM Include="_tofu.asm" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />

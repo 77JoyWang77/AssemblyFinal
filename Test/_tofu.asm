@@ -16,17 +16,16 @@ winHeight EQU 600       ; 視窗高度
 border_right EQU 450
 border_left EQU 150
 maxCakes EQU 20         ; 最大蛋糕數量
+ground EQU 560
 initialcakeX EQU 200    ; 初始 X 座標
 initialcakeY EQU 80     ; 初始 Y 座標
 initialvelocityX EQU 5  ; X 方向速度
 dropSpeed EQU 10
 time EQU 40             ; 更新速度，影響磚塊速度
 
-cakeMoveSize EQU 5
-
 .DATA 
-ClassName db "SimpleWinClass3", 0 
-AppName  db "Cake", 0 
+ClassName db "SimpleWinClass6", 0 
+AppName  db "Tofu", 0 
 RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
 
@@ -41,10 +40,7 @@ velocityY DWORD 0                     ; Y 方向速度
 currentCakeIndex DWORD 0              ; 當前蛋糕索引
 gameover BOOL FALSE
 TriesRemaining BYTE 20                ; 剩餘次數
-groundMoveCount DWORD 0    ; 記錄地面已移動的像素總數
-maxMovePerCake DWORD 20    ; 每次放置蛋糕，地面總共移動的最大像素
-needMove DWORD 0
-ground DWORD 300
+
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -56,7 +52,7 @@ hBrush HBRUSH ?
 blueBrush HBRUSH ?
 
 .CODE 
-WinMain3 proc
+WinMain6 proc
     LOCAL wc:WNDCLASSEX 
     LOCAL msg:MSG 
     LOCAL hwnd:HWND 
@@ -68,7 +64,7 @@ WinMain3 proc
     ; 初始化窗口類
     mov   wc.cbSize,SIZEOF WNDCLASSEX 
     mov   wc.style, CS_HREDRAW or CS_VREDRAW 
-    mov   wc.lpfnWndProc, OFFSET WndProc3
+    mov   wc.lpfnWndProc, OFFSET WndProc6
     mov   wc.cbClsExtra,NULL 
     mov   wc.cbWndExtra,NULL 
     push  hInstance
@@ -118,9 +114,9 @@ WinMain3 proc
     .ENDW 
     mov     eax,msg.wParam 
     ret 
-WinMain3 endp
+WinMain6 endp
 
-WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
+WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
     LOCAL rect:RECT 
@@ -133,7 +129,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke ReleaseDC, hWnd, hdc
         invoke PostQuitMessage,NULL
     .ELSEIF uMsg==WM_CREATE 
-        call initializeCake1
+        call initialTofu
         INVOKE  GetDC,hWnd              
         mov     hdc,eax
         invoke CreateCompatibleDC, hdc
@@ -163,7 +159,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov velocityY, dropSpeed
 
     skip_space_key:
-        call update_cake
+        call update_tofu
         mov ebx, SIZEOF RECT
         imul ebx, currentCakeIndex
         mov eax, cakeX
@@ -177,10 +173,10 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         
         ; 檢查是否與其他蛋糕或地面接觸
         cmp falling, FALSE
-        je move_ground
-        call check_collision
+        je skip_fall
+        call check_collision3
         cmp eax, TRUE
-        je move_ground
+        je skip_fall
 
     handle_collision:
         mov falling, FALSE
@@ -189,16 +185,10 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov cakeY, initialcakeY
         mov velocityX, initialvelocityX
         mov velocityY, 0
-        
-        cmp currentCakeIndex, 0
-        je skip_move_ground
-        mov eax, maxMovePerCake
-        add needMove, eax
 
-    skip_move_ground:
         invoke GetClientRect, hWnd, addr rect
         invoke FillRect, hdcMem, addr rect, hBrush
-        call Update
+        call Update3
         invoke InvalidateRect, hWnd, NULL, FALSE
 
         inc currentCakeIndex  ; 下一個蛋糕
@@ -208,32 +198,10 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je game_over
         ret
 
-    move_ground:
-        mov ebx, needMove
-        cmp ebx, groundMoveCount
-        jle skip_fall
-
-        ; 地面和蛋糕繼續移動
-        add groundMoveCount, cakeMoveSize
-        add ground, cakeMoveSize
-
-        mov ecx, currentCakeIndex
-        dec ecx
-    move_ground_loop:
-        mov eax, ecx
-        cmp eax, 0
-        jl skip_fall
-        mov ebx, SIZEOF RECT
-        imul ebx
-        add cakes[eax].top, cakeMoveSize
-        add cakes[eax].bottom, cakeMoveSize
-        dec ecx
-        jmp move_ground_loop
-
     skip_fall:
         invoke GetClientRect, hWnd, addr rect
         invoke FillRect, hdcMem, addr rect, hBrush
-        call Update
+        call Update3
         invoke InvalidateRect, hWnd, NULL, FALSE
         ret
     game_over:
@@ -261,9 +229,9 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ENDIF 
     xor   eax, eax 
     ret 
-WndProc3 endp 
+WndProc6 endp 
 
-initializeCake1 PROC
+initialTofu PROC
     mov eax, 200
     mov cakeX, eax
     mov eax, 80
@@ -274,10 +242,10 @@ initializeCake1 PROC
     mov TriesRemaining, al
     mov eax, FALSE
     mov gameover, eax
-initializeCake1 ENDP
+initialTofu ENDP
 
 ; 更新蛋糕位置
-update_cake PROC
+update_tofu PROC
     cmp velocityX, 0
     je movedown
     mov eax, cakeX
@@ -304,10 +272,10 @@ reverse_x:
 
 end_update:
     ret
-update_cake ENDP
+update_tofu ENDP
 
 ; 判斷是否持續下落，是return eax TRUE
-check_collision PROC
+check_collision3 PROC
     LOCAL cr:RECT
 
     mov eax, currentCakeIndex
@@ -370,10 +338,10 @@ collision_found:
 game_not_over:
     mov eax, FALSE
     ret
-check_collision ENDP
+check_collision3 ENDP
 
 ; 更新畫面
-Update PROC
+Update3 PROC
     invoke CreateSolidBrush, 00c8c832h
     mov blueBrush, eax
     invoke SelectObject, hdcMem, blueBrush
@@ -404,7 +372,5 @@ Update PROC
     cmp eax, 0
     jge draw_cakes
     ret
-Update ENDP
-
-
-end WinMain3
+Update3 ENDP
+end

@@ -7,11 +7,13 @@ EXTERN WinMain2@0: PROC
 EXTERN WinMain3@0: PROC
 EXTERN WinMain4@0: PROC
 EXTERN WinMain5@0: PROC
+EXTERN WinMain6@0: PROC
 Advanced1A2B EQU WinMain1@0
 GameBrick EQU WinMain2@0
 Cake1 EQU WinMain3@0
 Cake2 EQU WinMain4@0
 Minesweeper EQU WinMain5@0
+Tofu EQU WinMain6@0
 
 WinMain proto :DWORD
 
@@ -29,6 +31,7 @@ ButtonText2 db "Breakout", 0
 ButtonText3 db "Cake1", 0
 ButtonText4 db "Cake2", 0
 ButtonText5 db "Minesweeper", 0
+ButtonText6 db "Tofu", 0
 winWidth EQU 400        ; 視窗寬度
 winHeight EQU 600       ; 視窗高度
 
@@ -157,6 +160,9 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText5, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
                100, 380, 200, 50, hWnd, 5, hInstance, NULL
+        invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText6, \
+               WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
+               100, 450, 200, 50, hWnd, 6, hInstance, NULL
         INVOKE  ReleaseDC,hWnd,hdc
     .ELSEIF uMsg == WM_COMMAND
         mov eax, wParam
@@ -170,6 +176,8 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je StartGame4
         cmp eax, 5
         je StartGame5
+        cmp eax, 6
+        je StartGame6
 
     .ELSEIF uMsg == WM_PAINT
         ; 先開始繪製
@@ -204,6 +212,10 @@ StartGame4:
 StartGame5:
     ; 呼叫遊戲啟動
     call Minesweeper
+    ret
+StartGame6:
+    ; 呼叫遊戲啟動
+    call Tofu
     ret
 WndProc endp 
 
