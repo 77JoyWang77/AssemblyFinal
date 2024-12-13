@@ -39,6 +39,7 @@ winWidth DWORD 400              ; 視窗寬度
 winHeight DWORD 480             ; 視窗高度
 line1Rect RECT <20, 20, 380, 140>
 currentID DWORD 10
+mainh HWND ?
 
 mineWidth EQU 8                        
 mineHeight EQU 8
@@ -50,6 +51,7 @@ MineX DWORD ?
 MineY DWORD ?
 DirX SDWORD ?
 DirY SDWORD ?
+endGamebool DWORD 0
 hButton DWORD mineHeight DUP (mineWidth DUP(?))
 mineMap SDWORD mineHeight DUP (mineWidth DUP (0))
 mineState SDWORD mineHeight DUP (mineWidth DUP (0))
@@ -120,16 +122,18 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         mov eax, DWORD PTR [mineMap + eax*4]
         cmp eax, 0
-        jle show_icon
+        jle clickMine
         push eax
         add al, '0'
         mov byte ptr [ShowText], al
         invoke SetWindowText, hWnd, ADDR ShowText
         pop eax
         jmp skip
-    show_icon:
+  
+    clickMine:
         cmp eax, 0
         je skip
+        mov endGamebool, 1
         invoke GetWindowLong, hWnd, GWL_STYLE
         or eax, BS_BITMAP
         invoke SetWindowLong, hWnd, GWL_STYLE, eax
@@ -144,6 +148,19 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke InvalidateRect, hWnd, NULL, TRUE
         invoke UpdateWindow, hWnd
         xor eax, eax ; 阻止訊息傳遞
+
+        cmp endGamebool, 1
+        je gameover
+        call check
+        cmp endGamebool, 1
+        je gameover
+        
+        ret
+        gameover:
+            invoke MessageBox, mainh, addr EndGame, addr AppName, MB_OK
+            invoke DestroyWindow, mainh
+            invoke PostQuitMessage, 0
+            ret
         ret
     .ENDIF
 
@@ -206,7 +223,6 @@ WinMain5 proc
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
 
-    call initialize_map
     ; 主消息循環
     .WHILE TRUE 
         invoke GetMessage, ADDR msg,NULL,0,0 
@@ -225,7 +241,13 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
     .IF uMsg==WM_DESTROY 
         invoke PostQuitMessage,0
+
     .ELSEIF uMsg==WM_CREATE 
+        call initialize
+        call initialize_map
+        mov eax, hWnd
+        mov mainh, eax
+        mov currentID, 10
         invoke LoadImage, hInstance, addr hFlagBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hFlagBitmap, eax
 
@@ -275,6 +297,7 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
         invoke EndPaint, hWnd, addr ps
+
     .ELSE 
         invoke DefWindowProc,hWnd,uMsg,wParam,lParam 
         ret
@@ -282,6 +305,26 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     xor   eax, eax 
     ret 
 WndProc5 endp 
+
+initialize proc
+    mov eax, 0
+    mov ecx, mineHeight
+   
+InitialRow:
+    push ecx
+    mov ecx, mineWidth
+InitialCol:
+    mov SDWORD PTR mineMap[eax*4], 0
+    mov SDWORD PTR mineState[eax*4], 0
+    mov DWORD PTR visited[eax*4], 0
+    
+    inc eax
+    loop InitialCol
+    pop ecx
+    loop InitialRow
+    mov endGamebool, 0
+    ret
+initialize endp
 
 initialize_map proc
     call GetRandomSeed_mine              ; 取得隨機種子
@@ -411,7 +454,6 @@ Skip:
     ret
 calculate_num endp
 
-
 open_mine proc,
     locateX: DWORD,
     locateY: DWORD
@@ -503,9 +545,33 @@ Cannot:
     mov edx, 0
 
 Exitcangonext:
-    ;mov DWORD PTR visited[eax], 1
     ret
 can_go_next endp
+
+check proc
+    mov eax, 0
+    mov ecx, mineMapSize
+checkloop:
+
+    cmp SDWORD PTR mineMap[eax*4],-1
+    je Continuecheck
+
+    cmp SDWORD PTR mineState[eax*4], 1
+    jne gamenotEnd
+
+Continuecheck:
+    inc eax
+    loop checkloop
+    jmp gameEnd
+
+gamenotEnd:
+    mov endGamebool, 0
+    jmp Exitcheck
+gameEnd:
+    mov endGamebool, 1
+Exitcheck:
+    ret
+check endp
 
 GetRandomSeed_mine proc
     invoke QueryPerformanceCounter, OFFSET minerandomSeed
