@@ -28,6 +28,7 @@ EndGame db "Game Over!", 0
 LeftButton db "Left", 0
 RightButton db "Right", 0
 ShowText db " ", 0
+hMineBitmapName db "mine.bmp",0
 hFlagBitmapName db "flag.bmp",0
 
 borderX DWORD 80           ; 初始 X 座標
@@ -70,6 +71,10 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     invoke GetWindowLong, hWnd, GWL_USERDATA
     mov OriginalProc, eax
     .IF uMsg == WM_RBUTTONDOWN
+        invoke GetWindowLong, hWnd, GWL_STYLE
+        or eax, BS_BITMAP
+        invoke SetWindowLong, hWnd, GWL_STYLE, eax
+        invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hFlagBitmap
         ;invoke MessageBox, hWnd, ADDR RightButton, ADDR LabelText, MB_OK
         xor eax, eax ; 阻止訊息傳遞
         ret
@@ -100,12 +105,19 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     show_icon:
         cmp eax, 0
         je skip
-        invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hFlagBitmap
+        invoke GetWindowLong, hWnd, GWL_STYLE
+        or eax, BS_BITMAP
+        invoke SetWindowLong, hWnd, GWL_STYLE, eax
+        invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hMineBitmap
+        
     skip:
         mov eax, WS_EX_CLIENTEDGE   ; 清除 WS_EX_CLIENTEDGE 樣式
         invoke SetWindowLong, hWnd, GWL_EXSTYLE, eax
         invoke SetWindowPos, hWnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE
         ;invoke MessageBox, hWnd, ADDR LeftButton, ADDR LabelText, MB_OK
+
+        invoke InvalidateRect, hWnd, NULL, TRUE
+        invoke UpdateWindow, hWnd
         xor eax, eax ; 阻止訊息傳遞
         ret
     .ENDIF
@@ -189,12 +201,11 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .IF uMsg==WM_DESTROY 
         invoke PostQuitMessage,0
     .ELSEIF uMsg==WM_CREATE 
-        call LoadAndScaleFlag
-        ;invoke LoadImage, hInstance, addr hFlagBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
-        ;mov hFlagBitmap, eax
+        invoke LoadImage, hInstance, addr hFlagBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hFlagBitmap, eax
 
-        ;invoke LoadBitmap, hInstance, IDB_MINE
-        ;mov hMineBitmap, eax
+        invoke LoadImage, hInstance, addr hMineBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hMineBitmap, eax
 
 
         mov ecx, mineHeight
@@ -480,54 +491,5 @@ GetRandomSeed_mine proc
     invoke QueryPerformanceCounter, OFFSET minerandomSeed
     ret
 GetRandomSeed_mine ENDP
-
-LoadAndScaleFlag proc
-    LOCAL temphdcMem: HDC
-    LOCAL hdcCompat: HDC
-    LOCAL hBitmapOriginal: HBITMAP
-    LOCAL bitmap: BITMAP
-    LOCAL originalWidth: DWORD
-    LOCAL originalHeight: DWORD
-
-    ; 加載原始位圖
-    invoke CreateCompatibleDC, NULL
-    mov temphdcMem, eax
-    invoke LoadImage, hInstance, ADDR hFlagBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
-    mov hBitmapOriginal, eax
-    invoke SelectObject, temphdcMem, hBitmapOriginal
-
-    ; 取得原始位圖的大小
-    invoke GetObject, hBitmapOriginal, SIZEOF BITMAP, ADDR bitmap
-    mov ecx, dword ptr [bitmap + 4] ; bmWidth
-    mov originalWidth, ecx
-    mov ecx, dword ptr [bitmap + 8] ; bmHeight
-    mov originalHeight, ecx
-
-    ; 創建一個兼容的內存 DC
-    invoke CreateCompatibleDC, NULL
-    mov hdcCompat, eax
-
-    ; 創建與顯示屏兼容的位圖（縮小的位圖）
-    invoke CreateCompatibleBitmap, hdcCompat, 30, 30  ; 假設我們縮放到 30x30
-    mov hFlagBitmap, eax
-
-    ; 選擇縮小後的位圖進行繪製
-    invoke SelectObject, hdcCompat, hFlagBitmap
-
-    ; 縮放原始位圖到新位圖大小
-    invoke StretchBlt, hdcCompat, 0, 0, 30, 30, temphdcMem, 0, 0, originalWidth, originalHeight, SRCCOPY
-
-    ; 此時 hBitmapScaled 中儲存了縮放後的位圖，可以用於顯示
-    ; 使用這個位圖來更新按鈕圖片或其他顯示方式
-
-    ; 最後清理 DC 和位圖資源
-    invoke DeleteObject, hBitmapOriginal ; 釋放原始位圖
-    invoke DeleteObject, hFlagBitmap     ; 釋放縮小後的位圖
-    invoke DeleteDC, temphdcMem          ; 釋放原始位圖的 DC
-    invoke DeleteDC, hdcCompat          ; 釋放縮小位圖的 DC
-
-    ret
-LoadAndScaleFlag endp
-
 
 end
