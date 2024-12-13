@@ -20,31 +20,33 @@ brickNumY EQU 28
 brickTypeNum EQU 4
 brickWidth EQU 80
 brickHeight EQU 20
-OFFSET_BASE EQU 150
 velocity EQU 10
 fallTime EQU 30
+ballRadius EQU 10             ; 小球半徑
+OFFSET_BASE EQU 150
 
 .DATA 
 ClassName db "SimpleWinClass2",0 
-AppName  db "Home",0 
+AppName  db "BreakOut",0 
 Text db "Window", 0
 EndGame db "Game Over!", 0
+offset_center DWORD 0
+divisor DWORD 180
+controlsCreated DWORD 0
+
 platformX DWORD 350           ; 初始 X 座標
 platformY DWORD 550           ; 初始 Y 座標
 ballX DWORD 410                 ; 小球 X 座標
 ballY DWORD 500                 ; 小球 Y 座標
 velocityX DWORD 0               ; 小球 X 方向速度
 velocityY DWORD 10               ; 小球 Y 方向速度
-ballRadius DWORD 10             ; 小球半徑
 brick DWORD brickNumY DUP(brickNumX DUP(0))
-randomSeed DWORD 0                 ; 隨機數種子
-offset_center DWORD 0
-divisor DWORD 180
-brickNum DWORD 10
-controlsCreated DWORD 0
 fallTimeCount DWORD 30
-randomNum DWORD 0
 gameOver DWORD 0
+
+randomNum DWORD 0
+randomSeed DWORD 0                 ; 隨機數種子
+
 
 .DATA? 
 hInstance1 HINSTANCE ? 
@@ -71,7 +73,6 @@ WinMain2 proc
     LOCAL msg:MSG
     LOCAL tempWinWidth:DWORD
     LOCAL tempWinHeight:DWORD
-
     
     invoke GetModuleHandle, NULL 
     mov    hInstance1,eax 
@@ -97,8 +98,10 @@ WinMain2 proc
     ; 設置目標客戶區大小
     mov wr.left, 0
     mov wr.top, 0
-    mov wr.right, 800
-    mov wr.bottom, 600
+    mov eax, winWidth
+    mov wr.right, eax
+    mov eax, winHeight
+    mov wr.bottom, eax
 
     ; 調整窗口大小
     invoke AdjustWindowRect, ADDR wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
@@ -107,7 +110,6 @@ WinMain2 proc
     mov eax, wr.right
     sub eax, wr.left
     mov tempWinWidth, eax
-
     mov eax, wr.bottom
     sub eax, wr.top
     mov tempWinHeight, eax
@@ -142,12 +144,15 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
     .IF uMsg==WM_DESTROY 
         invoke KillTimer, hWnd, 1
+        invoke DeleteObject, whiteBrush
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
         invoke ReleaseDC, hWnd, hdc
         invoke PostQuitMessage, NULL
         ret
+
     .ELSEIF uMsg == WM_CREATE
+        CALL initializeBreakOut
         CALL initializeBrick
         CALL initializeBrush
 
@@ -156,7 +161,6 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov     hdc,eax
         invoke CreateCompatibleDC, hdc
         mov hdcMem, eax
-
         invoke CreateCompatibleBitmap, hdc, winWidth, winHeight
         mov hBitmap, eax
         invoke SelectObject, hdcMem, hBitmap
@@ -219,20 +223,16 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
     game_over:
         invoke KillTimer, hWnd, 1
-        cmp controlsCreated, 1
-        je already_cleaned
-        mov controlsCreated, 1
         invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
         invoke DestroyWindow, hWnd
-        invoke PostQuitMessage, NULL
+        invoke PostQuitMessage, 0
         ret
+
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
         invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
-    already_cleaned:
-        ret
 
     .ELSE 
         invoke DefWindowProc,hWnd,uMsg,wParam,lParam 
@@ -241,6 +241,36 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     xor   eax, eax 
     ret 
 WndProc2 endp 
+
+initializeBreakOut PROC
+    mov eax, 350
+    mov platformX, eax
+    mov eax, 550
+    mov platformY, eax
+    mov eax, 410
+    mov ballX, eax
+    mov eax, 500
+    mov ballY, eax
+    mov eax, 0
+    mov velocityX, eax
+    mov eax, 10
+    mov velocityY, eax
+    mov eax, 30
+    mov fallTimeCount, eax
+    mov eax, 0
+    mov gameOver, eax
+    
+    mov eax, brickNumX
+    mov ebx, brickNumY
+    mul ebx
+    mov ecx, eax
+    mov esi, OFFSET brick
+LoopBrick:
+    mov DWORD PTR [esi], 0
+    add esi, 4
+    loop LoopBrick
+    ret
+initializeBreakOut ENDP
 
 initializeBrush PROC
     invoke CreateSolidBrush, 00FFFFFFh
@@ -257,7 +287,7 @@ initializeBrush PROC
 
     invoke CreateSolidBrush, 00CC6699h
     mov purpleBrush, eax
-
+    ret
 initializeBrush ENDP
 
 update_ball PROC
@@ -544,6 +574,8 @@ brick_collision PROC
     div ebx
     mov brickIndexY, eax
     mov brickRemainderY, edx
+
+    ;這邊會突然有bug
     mov eax, brickNumY
     cmp eax, brickIndexY
     jle no_brick_collision
@@ -931,8 +963,26 @@ Fall proc
     mov ecx, (brickNumY-1)*brickNumX                               
     rep movsd                                    
     cld       
+    call checkBrick
     ret
 Fall endp
+    
+checkBrick PROC
+    mov esi, OFFSET brick + ((brickNumY-1) * brickNumX) * 4
+    mov ecx, brickNumX
+Loopcheck:
+    cmp DWORD PTR [esi], 0
+    jne hasBrick
+    add esi, 4
+    loop Loopcheck
+    jmp noBrick
+
+hasBrick:
+    mov eax, 1
+    mov gameOver, eax
+noBrick:
+    ret
+checkBrick ENDP
 
 DrawScreen PROC
 
