@@ -8,21 +8,21 @@ include kernel32.inc
 include gdi32.inc 
 
 .CONST
-cakeWidth EQU 50        ; 蛋糕寬度
-cakeHeight EQU 20       ; 蛋糕高度
-stepSize EQU 50         ; 每次移動的像素數量
-winWidth EQU 600        ; 視窗寬度
-winHeight EQU 600       ; 視窗高度
-border_right EQU 450
-border_left EQU 150
-maxCakes EQU 20         ; 最大蛋糕數量
-initialcakeX EQU 200    ; 初始 X 座標
-initialcakeY EQU 80     ; 初始 Y 座標
-initialvelocityX EQU 5  ; X 方向速度
+cakeWidth EQU 50         ; 蛋糕寬度
+cakeHeight EQU 20        ; 蛋糕高度
+winWidth EQU 300         ; 視窗寬度
+winHeight EQU 350        ; 視窗高度
+border_left EQU 30
+border_right EQU 270
+maxCakes EQU 99          ; 最大蛋糕數量
+initialcakeX EQU 50      ; 初始 X 座標
+initialcakeY EQU 80      ; 初始 Y 座標
+initialground EQU 300
+initialvelocityX EQU 10  ; X 方向速度
 dropSpeed EQU 10
-time EQU 40             ; 更新速度，影響磚塊速度
-
+time EQU 40              ; 更新速度，影響磚塊速度
 cakeMoveSize EQU 5
+heighest EQU 280
 
 .DATA 
 ClassName db "SimpleWinClass3", 0 
@@ -30,30 +30,30 @@ AppName  db "Cake", 0
 RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
 
-line1Rect RECT <20, 20, 580, 40>
+line1Rect RECT <20, 20, 280, 40>
 cakes RECT maxCakes DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
-falling BOOL FALSE                    ; 是否有蛋糕正在掉落
 
-cakeX DWORD 200                       ; 初始 X 座標
-cakeY DWORD 80                        ; 初始 Y 座標
-velocityX DWORD 5                     ; X 方向速度
-velocityY DWORD 0                     ; Y 方向速度
-currentCakeIndex DWORD 0              ; 當前蛋糕索引
-gameover BOOL FALSE
-TriesRemaining BYTE 20                ; 剩餘次數
-groundMoveCount DWORD 0    ; 記錄地面已移動的像素總數
-maxMovePerCake DWORD 20    ; 每次放置蛋糕，地面總共移動的最大像素
-needMove DWORD 0
-ground DWORD 300
-
-.DATA? 
+.DATA?
 hInstance HINSTANCE ? 
-tempWidth DWORD ?
-tempHeight DWORD ?
 hBitmap HBITMAP ?
 hdcMem HDC ?
 hBrush HBRUSH ?
 blueBrush HBRUSH ?
+
+tempWidth DWORD ?
+tempHeight DWORD ?
+cakeX DWORD ?                         ; X 座標
+cakeY DWORD ?                         ; Y 座標
+velocityX DWORD ?                     ; X 方向速度
+velocityY DWORD ?                     ; Y 方向速度
+currentCakeIndex DWORD ?              ; 當前蛋糕索引
+gameover BOOL ?
+TriesRemaining BYTE ?                ; 剩餘次數
+groundMoveCount DWORD ?              ; 記錄地面已移動的像素總數
+needMove DWORD ?
+ground DWORD ?
+moveDown BOOL ?
+falling BOOL ?                       ; 是否有蛋糕正在掉落
 
 .CODE 
 WinMain3 proc
@@ -192,7 +192,9 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         
         cmp currentCakeIndex, 0
         je skip_move_ground
-        mov eax, maxMovePerCake
+        cmp moveDown, FALSE
+        je skip_move_ground
+        mov eax, cakeHeight
         add needMove, eax
 
     skip_move_ground:
@@ -264,16 +266,17 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 WndProc3 endp 
 
 initializeCake1 PROC
-    mov eax, 200
-    mov cakeX, eax
-    mov eax, 80
-    mov cakeY, eax
-    mov eax, 0
-    mov currentCakeIndex, eax
-    mov eax, 20
-    mov TriesRemaining, al
-    mov eax, FALSE
-    mov gameover, eax
+    mov cakeX, initialcakeX
+    mov cakeY, initialcakeY
+    mov ground, initialground
+    mov velocityX, initialvelocityX
+    mov velocityY, 0
+    mov TriesRemaining, maxCakes
+    mov groundMoveCount, 0
+    mov needMove, 0
+    mov currentCakeIndex, 0
+    mov gameover, FALSE
+    mov falling, FALSE
 initializeCake1 ENDP
 
 ; 更新蛋糕位置
@@ -326,6 +329,8 @@ check_collision PROC
     mov ebx, cr.bottom
     cmp ebx, ground
     jge collision_found
+    cmp ebx, winHeight
+    jge collision_found
 
     cmp currentCakeIndex, 0
     je check_end
@@ -365,9 +370,17 @@ check_end:
 
 collision_found:
     cmp currentCakeIndex, 0
-    je game_not_over
+    je move_down_false
     mov gameover, TRUE
+move_down_false:
+    mov moveDown, FALSE
+    mov eax, FALSE
+    ret
+
 game_not_over:
+    cmp cr.top, heighest
+    jge move_down_false
+    mov moveDown, TRUE
     mov eax, FALSE
     ret
 check_collision ENDP
