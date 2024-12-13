@@ -27,6 +27,11 @@ ClassName db "SimpleWinClass4", 0
 AppName  db "Cake", 0 
 RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
+cakes RECT maxCakes DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
+falling BOOL FALSE                    ; 是否有蛋糕正在掉落
+line1Rect RECT <20, 20, 580, 40>
+initialcolor DWORD 00c8c832h
+colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
 
 cakeWidth DWORD 100       ; 蛋糕寬度
 cakeX DWORD 200                       ; 初始 X 座標
@@ -34,13 +39,9 @@ cakeY DWORD 80                        ; 初始 Y 座標
 velocityX DWORD 5                     ; X 方向速度
 velocityY DWORD 0                     ; Y 方向速度
 currentCakeIndex DWORD 0              ; 當前蛋糕索引
-cakes RECT maxCakes DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
-falling BOOL FALSE                    ; 是否有蛋糕正在掉落
 gameover BOOL FALSE
 TriesRemaining BYTE 20                ; 剩餘次數
-line1Rect RECT <20, 20, 580, 40>
-initialcolor DWORD 00c8c832h
-colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
+
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -196,16 +197,23 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         sub ecx, eax
         mov cakeWidth, ecx
         mov falling, FALSE
-        inc currentCakeIndex  ; 下一個蛋糕
         dec TriesRemaining
         mov cakeX, initialcakeX
         mov cakeY, initialcakeY
         mov velocityX, initialvelocityX
         mov velocityY, 0
+
+        invoke GetClientRect, hWnd, addr rect
+        invoke FillRect, hdcMem, addr rect, hBrush
+        call Update2
+        invoke InvalidateRect, hWnd, NULL, FALSE
+
+        inc currentCakeIndex  ; 下一個蛋糕
         cmp gameover, TRUE
         je game_over
         cmp TriesRemaining, 0
         je game_over
+        ret
 
     skip_fall:
         invoke GetClientRect, hWnd, addr rect
@@ -251,6 +259,7 @@ initializeCake2 PROC
     mov TriesRemaining, al
     mov eax, FALSE
     mov gameover, eax
+
 initializeCake2 ENDP
 
 ; 更新蛋糕位置

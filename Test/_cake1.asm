@@ -29,16 +29,18 @@ AppName  db "Cake", 0
 RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
 
+line1Rect RECT <20, 20, 580, 40>
+cakes RECT maxCakes DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
+falling BOOL FALSE                    ; 是否有蛋糕正在掉落
+
 cakeX DWORD 200                       ; 初始 X 座標
 cakeY DWORD 80                        ; 初始 Y 座標
 velocityX DWORD 5                     ; X 方向速度
 velocityY DWORD 0                     ; Y 方向速度
 currentCakeIndex DWORD 0              ; 當前蛋糕索引
-cakes RECT maxCakes DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
-falling BOOL FALSE                    ; 是否有蛋糕正在掉落
 gameover BOOL FALSE
 TriesRemaining BYTE 20                ; 剩餘次數
-line1Rect RECT <20, 20, 580, 40>
+
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -178,16 +180,23 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
     handle_collision:
         mov falling, FALSE
-        inc currentCakeIndex  ; 下一個蛋糕
         dec TriesRemaining
         mov cakeX, initialcakeX
         mov cakeY, initialcakeY
         mov velocityX, initialvelocityX
         mov velocityY, 0
+
+        invoke GetClientRect, hWnd, addr rect
+        invoke FillRect, hdcMem, addr rect, hBrush
+        call Update
+        invoke InvalidateRect, hWnd, NULL, FALSE
+
+        inc currentCakeIndex  ; 下一個蛋糕
         cmp gameover, TRUE
         je game_over
         cmp TriesRemaining, 0
         je game_over
+        ret
 
     skip_fall:
         invoke GetClientRect, hWnd, addr rect

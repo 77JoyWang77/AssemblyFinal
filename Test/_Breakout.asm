@@ -88,7 +88,7 @@ BreakOut PROC
 	CALL drawBall
 	CALL drawWall
 	CALL setBallDir
-	call checkBrick
+;	call checkBrick
 	CALL checkBall
 	cmp endGame, 1
 	je endBrickGame
@@ -595,24 +595,23 @@ setColor ENDP
 ;    ret
 ;Fall endp
 
-checkBrick proc
-	xor al,al
-	mov esi, OFFSET brick+ (brickmaxY-1) * brickmaxX * 4
-	mov ecx, brickmaxX
-Check:
-	cmp DWORD PTR [esi],1
-	je HaveBrick
-	add esi,4
-	Loop Check
-	jmp Exitcheck
+;checkBrick proc
+;	xor al,al
+;	mov esi, OFFSET brick+ (brickmaxY-1) * brickmaxX * 4
+;	mov ecx, brickmaxX
+;	cmp DWORD PTR [esi],1
+;	je HaveBrick
+;	add esi,4
+;	Loop Check
+;	jmp Exitcheck
 
-HaveBrick:
-	mov al, 1
-	jmp Exitcheck
-	
-Exitcheck:
-	mov endGame, al
-	ret
-checkBrick endp
+;HaveBrick:
+;	mov al, 1
+;	jmp Exitcheck
+;	
+;Exitcheck:
+;	mov endGame, al
+;	ret
+;checkBrick endp
 
 END
