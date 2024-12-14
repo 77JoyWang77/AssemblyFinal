@@ -55,6 +55,7 @@ endGamebool DWORD 0
 hButton DWORD mineHeight DUP (mineWidth DUP(?))
 mineMap SDWORD mineHeight DUP (mineWidth DUP (0))
 mineState SDWORD mineHeight DUP (mineWidth DUP (0))
+mineClicked SDWORD mineHeight DUP (mineWidth DUP(0))
 visited DWORD mineHeight DUP (mineWidth DUP(0))
 mineDir SBYTE -1,-1, 0,-1, 1,-1, -1,0, 1,0, -1,1, 0,1, 1,1 
 
@@ -119,7 +120,8 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         div ebx
         invoke open_mine, edx, eax
         pop eax
-
+        
+        mov DWORD PTR mineClicked[eax*4], 1
         mov eax, DWORD PTR [mineMap + eax*4]
         cmp eax, 0
         jle clickMine
@@ -140,6 +142,7 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hMineBitmap
         
     skip:
+  
         mov eax, WS_EX_CLIENTEDGE   ; 清除 WS_EX_CLIENTEDGE 樣式
         invoke SetWindowLong, hWnd, GWL_EXSTYLE, eax
         invoke SetWindowPos, hWnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE
@@ -317,6 +320,7 @@ InitialCol:
     mov SDWORD PTR mineMap[eax*4], 0
     mov SDWORD PTR mineState[eax*4], 0
     mov DWORD PTR visited[eax*4], 0
+    mov DWORD PTR mineClicked[eax*4], 0
     
     inc eax
     loop InitialCol
@@ -469,6 +473,7 @@ open_mine proc,
     push eax
     invoke SendMessage, hButton[eax], BM_CLICK, 0, 0
     pop eax
+
     mov DWORD PTR mineState[eax], 1
     mov DWORD PTR visited[eax], 1
     cmp SDWORD PTR mineMap[eax],-1
@@ -556,7 +561,7 @@ checkloop:
     cmp SDWORD PTR mineMap[eax*4],-1
     je Continuecheck
 
-    cmp SDWORD PTR mineState[eax*4], 1
+    cmp SDWORD PTR mineClicked[eax*4], 1
     jne gamenotEnd
 
 Continuecheck:
