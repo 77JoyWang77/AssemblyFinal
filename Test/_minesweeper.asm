@@ -4,6 +4,7 @@ option casemap:none
 
 open_mine proto :DWORD,:DWORD
 can_go_next proto :DWORD, :DWORD
+update_Text proto :DWORD
 include windows.inc 
 include user32.inc 
 include kernel32.inc 
@@ -24,12 +25,14 @@ ButtonText7 db "6", 0
 ButtonText8 db "7", 0
 ButtonText9 db "8", 0
 LabelText db "Minesweeper ", 0
+RemainingFlagsText db "Remaining:  ", 0
 EndGame db "Game Over!", 0
 LeftButton db "Left", 0
 RightButton db "Right", 0
 ShowText db " ", 0
 hMineBitmapName db "mine.bmp",0
 hFlagBitmapName db "flag.bmp",0
+
 
 borderX DWORD 80           ; 初始 X 座標
 borderY DWORD 160           ; 初始 Y 座標
@@ -58,6 +61,7 @@ mineState SDWORD mineHeight DUP (mineWidth DUP (0))
 mineClicked SDWORD mineHeight DUP (mineWidth DUP(0))
 visited DWORD mineHeight DUP (mineWidth DUP(0))
 mineDir SBYTE -1,-1, 0,-1, 1,-1, -1,0, 1,0, -1,1, 0,1, 1,1 
+flagRemaining db mineNum
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -85,11 +89,15 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         jmp EndRight
     ; 插旗
     setFlag:
+        cmp flagRemaining, 0
+        je EndRight
+
         mov SDWORD PTR mineState[eax*4], 2
         invoke GetWindowLong, hWnd, GWL_STYLE
         or eax, BS_BITMAP
         invoke SetWindowLong, hWnd, GWL_STYLE, eax
         invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hFlagBitmap
+        dec flagRemaining
         jmp EndRight
 
     ;拔旗
@@ -99,6 +107,7 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         and eax, Not BS_BITMAP
         invoke SetWindowLong, hWnd, GWL_STYLE, eax
         invoke SetWindowPos, hWnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE
+        inc flagRemaining
         ;invoke MessageBox, hWnd, ADDR RightButton, ADDR LabelText, MB_OK
 
     EndRight:
@@ -160,6 +169,7 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         
         ret
         gameover:
+            call show_mine
             invoke MessageBox, mainh, addr EndGame, addr AppName, MB_OK
             invoke DestroyWindow, mainh
             invoke PostQuitMessage, 0
@@ -299,6 +309,7 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
+        invoke update_Text, hdc
         invoke EndPaint, hWnd, addr ps
 
     .ELSE 
@@ -327,6 +338,7 @@ InitialCol:
     pop ecx
     loop InitialRow
     mov endGamebool, 0
+    mov flagRemaining, mineNum
     ret
 initialize endp
 
@@ -398,6 +410,11 @@ RandomLocate proc
     mov MineY, eax
     ret
 RandomLocate endp
+
+GetRandomSeed_mine proc
+    invoke QueryPerformanceCounter, OFFSET minerandomSeed
+    ret
+GetRandomSeed_mine ENDP
 
 calculate_num proc uses eax edx ecx esi
     mov edx, 0                   ; 初始化計數器，記錄地雷數量
@@ -578,9 +595,45 @@ Exitcheck:
     ret
 check endp
 
-GetRandomSeed_mine proc
-    invoke QueryPerformanceCounter, OFFSET minerandomSeed
+show_mine proc
+    mov ecx, mineMapSize
+    mov ebx, 0
+    Showloop:
+        cmp SDWORD PTR mineMap[ebx*4], -1
+        jne continueShow
+    show:
+        push ebx
+        push ecx
+        call draw_mine
+        pop ecx
+        pop ebx
+    continueShow:
+        inc ebx
+        loop Showloop
+        ret
+show_mine endp
+
+draw_mine proc
+
+    invoke GetWindowLong, hButton[ebx*4], GWL_STYLE
+    or eax, BS_BITMAP
+    invoke SetWindowLong, hButton[ebx*4], GWL_STYLE, eax
+    invoke SendMessage, hButton[ebx*4], BM_SETIMAGE, IMAGE_BITMAP, hMineBitmap
+    mov eax, WS_EX_CLIENTEDGE   ; 清除 WS_EX_CLIENTEDGE 樣式
+    invoke SetWindowLong, hButton[ebx*4], GWL_EXSTYLE, eax
+    invoke SetWindowPos, hButton[ebx*4], NULL, 0, 0, 0, 0, SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE
+    invoke InvalidateRect, hButton[ebx*4], NULL, TRUE
+    invoke UpdateWindow, hButton[ebx*4]
     ret
-GetRandomSeed_mine ENDP
+draw_mine endp
+
+update_Text proc,
+        hdc: DWORD
+        mov al, [flagRemaining]       ; 將 flagRemaining 的值載入 eax
+        add al, '0'                     ; 將數字轉換為 ASCII (單位數)
+        mov byte ptr [RemainingFlagsText + 11], al ; 將字元寫入字串
+        invoke DrawText, hdc, addr RemainingFlagsText, -1, addr line1Rect,DT_CENTER
+        ret
+update_Text endp
 
 end
