@@ -27,9 +27,6 @@
     <MASM Include="_Advanced1A2B.asm">
       <Filter>來源檔案</Filter>
     </MASM>
-    <MASM Include="_Brick.asm">
-      <Filter>來源檔案</Filter>
-    </MASM>
     <MASM Include="_Home.asm">
       <Filter>來源檔案</Filter>
     </MASM>
@@ -40,6 +37,12 @@
       <Filter>來源檔案</Filter>
     </MASM>
     <MASM Include="_cake2.asm">
+      <Filter>來源檔案</Filter>
+    </MASM>
+    <MASM Include="_AdvancedBreakOut.asm">
+      <Filter>來源檔案</Filter>
+    </MASM>
+    <MASM Include="_tofu.asm">
       <Filter>來源檔案</Filter>
     </MASM>
   </ItemGroup>
@@ -58,6 +61,15 @@
       <Filter>資源檔</Filter>
     </Image>
     <Image Include="flag.bmp">
+      <Filter>資源檔</Filter>
+    </Image>
+    <Image Include="..\..\..\..\Downloads\1A2B_background.bmp">
+      <Filter>資源檔</Filter>
+    </Image>
+    <Image Include="flag_red.bmp">
+      <Filter>資源檔</Filter>
+    </Image>
+    <Image Include="mine_red.bmp">
       <Filter>資源檔</Filter>
     </Image>
   </ItemGroup>
