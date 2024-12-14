@@ -113,7 +113,7 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     EndRight:
         invoke InvalidateRect, hWnd, NULL, TRUE
         invoke UpdateWindow, hWnd
-        invoke PostMessage, mainh, WM_PAINT, 0, 0
+        invoke InvalidateRect, mainh, NULL, TRUE
         xor eax, eax ; ªý¤î°T®§¶Ç»¼
         ret
     .ELSEIF uMsg == WM_LBUTTONDOWN
