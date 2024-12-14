@@ -256,6 +256,7 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL hTarget:HWND
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
+    LOCAL rect:RECT 
 
     .IF uMsg==WM_DESTROY 
         invoke PostQuitMessage,0
@@ -271,6 +272,20 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         invoke LoadImage, hInstance, addr hMineBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hMineBitmap, eax
+        INVOKE  GetDC,hWnd              
+        mov     hdc,eax
+        invoke CreateCompatibleDC, hdc
+        mov hdcMem, eax
+        invoke CreateCompatibleBitmap, hdc, winWidth, winHeight
+        mov hBitmap, eax
+        invoke SelectObject, hdcMem, hBitmap
+
+        ; 填充背景顏色
+        invoke GetClientRect, hWnd, addr rect
+        invoke CreateSolidBrush, 00FFFFFFh
+        mov hBrush, eax
+        invoke FillRect, hdcMem, addr rect, hBrush
+        invoke ReleaseDC, hWnd, hdc
 
 
         mov ecx, mineHeight
@@ -315,6 +330,7 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
         invoke update_Text, hdc
+        invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
 
     .ELSE 
@@ -646,8 +662,8 @@ update_Text proc,
     nextdigit:
     add ah, '0'                     ; 將數字轉換為 ASCII (單位數)
     mov byte ptr [RemainingFlagsText + 12], ah ; 將字元寫入字串
-    invoke FillRect, hdc, addr line1Rect, hBrush
-    invoke DrawText, hdc, addr RemainingFlagsText, -1, addr line1Rect,DT_CENTER
+    invoke FillRect, hdcMem, addr line1Rect, hBrush
+    invoke DrawText, hdcMem, addr RemainingFlagsText, -1, addr line1Rect,DT_CENTER
     ret
 update_Text endp
 
