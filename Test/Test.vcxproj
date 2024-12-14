@@ -81,15 +81,18 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Irvine;D:\masm32\include</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Irvine;C:\masm32\include</AdditionalLibraryDirectories>
       <AdditionalDependencies>Irvine32.lib;user32.lib;
 kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateMapFile>true</GenerateMapFile>
     </Link>
     <MASM>
-      <IncludePaths>C:\Irvine;D:\masm32\include</IncludePaths>
+      <IncludePaths>C:\Irvine;C:\masm32\include</IncludePaths>
       <AssembledCodeListingFile>$(ProjectName).lst</AssembledCodeListingFile>
     </MASM>
+    <ResourceCompile>
+      <ResourceOutputFileName>Test.res</ResourceOutputFileName>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -140,19 +143,26 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <MASM Include="_AdvancedBreakOut.asm" />
+    <MASM Include="_cake2.asm" />
+    <MASM Include="_minesweeper.asm" />
     <MASM Include="_Advanced1A2B.asm" />
-    <MASM Include="_Brick.asm" />
     <MASM Include="_cake1.asm" />
     <MASM Include="_Game1A2B.asm" />
     <MASM Include="_Breakout.asm" />
     <MASM Include="main.asm" />
     <MASM Include="_Home.asm" />
+    <MASM Include="_tofu.asm" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Test.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="mine.bmp" />
+    <Image Include="flag.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

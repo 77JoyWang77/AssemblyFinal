@@ -2,25 +2,16 @@
 .model flat,stdcall 
 option casemap:none 
 
-RGB macro red,green,blue
-	xor eax,eax
-	mov ah,blue
-	shl eax,8
-	mov ah,green
-	mov al,red
-endm
-
 include windows.inc 
 include user32.inc 
 include kernel32.inc 
 include gdi32.inc 
 
-WinMain proto :DWORD
 UpdateLineText PROTO, LineText:PTR SDWORD, mode: Byte, do:byte
 CreateButton PROTO Text:PTR SDWORD, x:SDWORD, y:SDWORD, ID:SDWORD, hWnd:HWND
 
 .DATA 
-ClassName db "SimpleWinClass", 0 
+ClassName db "SimpleWinClass1", 0 
 AppName  db "1A2B", 0 
 ButtonClassName db "button", 0 
 ButtonText1 db "1", 0 
@@ -35,8 +26,6 @@ ButtonText9 db "9", 0
 ButtonText0 db "0", 0 
 DeleteText db "C", 0 
 OKText db "OK", 0 
-SelectedCount   dd 0
-TriesRemaining  db 8
 RemainingTriesText db "Remaining:  ", 0
 EndGame db "Game Over!", 0
 AnswerText db "The answer is     ", 0
@@ -59,6 +48,11 @@ line7Rect RECT <20, 200, 250, 220>
 line8Rect RECT <20, 230, 250, 250>
 line9Rect RECT <20, 280, 250, 300>
 
+SelectedCount   dd 0
+TriesRemaining  db 8
+winWidth DWORD 270           ; 保存窗口寬度
+winHeight DWORD 400          ; 保存窗口高度
+
 .DATA? 
 hInstance HINSTANCE ? 
 CommandLine LPSTR ? 
@@ -66,36 +60,32 @@ SelectedNumbers db 4 dup(?)
 Answer db 4 DUP(?)
 Acount byte ? 
 Bcount byte ? 
-hBrush DWORD ?
+hBitmap HBITMAP ?
+hBrush HBRUSH ?
+hdcMem HDC ?
+hdc HDC ?
+tempWidth DWORD ?
+tempHeight DWORD ?
 
 .CODE 
-Advanced1A2B PROC 
-start: 
-    call RandomNumber2
-    call Output
-    invoke GetModuleHandle, NULL 
-    mov    hInstance,eax 
-    invoke GetCommandLine
-    mov CommandLine,eax
-    invoke WinMain, hInstance
-    ret
-Advanced1A2B ENDP
-
-WinMain proc hInst:HINSTANCE
+WinMain1 proc
     LOCAL wc:WNDCLASSEX 
     LOCAL msg:MSG 
     LOCAL hwnd:HWND 
     LOCAL wr:RECT                   ; 定義 RECT 結構
-    LOCAL winWidth:DWORD            ; 保存窗口寬度
-    LOCAL winHeight:DWORD           ; 保存窗口高度
+
+    call RandomNumber2
+    call Output
+    invoke GetModuleHandle, NULL 
+    mov    hInstance,eax 
 
     ; 定義窗口類別
     mov   wc.cbSize,SIZEOF WNDCLASSEX 
     mov   wc.style, CS_HREDRAW or CS_VREDRAW 
-    mov   wc.lpfnWndProc, OFFSET WndProc 
+    mov   wc.lpfnWndProc, OFFSET WndProc1
     mov   wc.cbClsExtra,NULL 
     mov   wc.cbWndExtra,NULL 
-    push  hInst 
+    push  hInstance
     pop   wc.hInstance 
     mov   wc.hbrBackground,COLOR_WINDOW+1 
     mov   wc.lpszMenuName,NULL 
@@ -107,33 +97,31 @@ WinMain proc hInst:HINSTANCE
     mov   wc.hCursor,eax 
     invoke RegisterClassEx, addr wc 
 
-    ; 設置目標客戶區大小
+    ; 設置客戶區大小
     mov wr.left, 0
     mov wr.top, 0
-    mov wr.right, 270
-    mov wr.bottom, 400
+    mov eax, winWidth
+    mov wr.right, eax
+    mov eax, winHeight
+    mov wr.bottom, eax
 
     ; 調整窗口大小
     invoke AdjustWindowRect, ADDR wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
-
-    ; 計算窗口寬度和高度
     mov eax, wr.right
     sub eax, wr.left
-    mov winWidth, eax
-
+    mov tempWidth, eax
     mov eax, wr.bottom
     sub eax, wr.top
-    mov winHeight, eax
+    mov tempHeight, eax
 
-    RGB    255,255,255
-    invoke CreateSolidBrush, eax  ; 創建紅色筆刷
+    invoke CreateSolidBrush, 00FFFFFFh
     mov hBrush, eax
 
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            CW_USEDEFAULT, CW_USEDEFAULT, winWidth, winHeight, \
-            NULL, NULL, hInst, NULL
+            0, 0, tempWidth, tempHeight, \
+            NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
 
     ; 顯示和更新窗口
@@ -143,30 +131,42 @@ WinMain proc hInst:HINSTANCE
     ; 主消息循環
     .WHILE TRUE 
         invoke GetMessage, ADDR msg,NULL,0,0 
-        .BREAK .IF (!eax) 
+    .BREAK .IF (!eax) 
         invoke TranslateMessage, ADDR msg 
         invoke DispatchMessage, ADDR msg 
     .ENDW 
     mov     eax,msg.wParam 
     ret 
-WinMain endp
+WinMain1 endp
 
 
-WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
-    LOCAL hdc:HDC 
+WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
     LOCAL ps:PAINTSTRUCT 
     LOCAL rect:RECT 
 
     .IF uMsg==WM_DESTROY 
-        invoke PostQuitMessage,NULL 
+        call Initialized
+        invoke DeleteDC, hdcMem
+        invoke DeleteObject, hBrush
         invoke DestroyWindow, hWnd
-        ret
-    .ELSEIF uMsg==WM_CLOSE
-        invoke PostQuitMessage,NULL 
-        invoke DestroyWindow, hWnd
+        invoke PostQuitMessage,0
         ret
     .ELSEIF uMsg==WM_CREATE 
-        ; Create the buttons for numbers 1 to 9
+        INVOKE  GetDC,hWnd              
+        mov     hdc,eax
+        INVOKE  CreateCompatibleDC,eax  
+        mov     hdcMem,eax
+
+        invoke GetClientRect, hWnd, addr rect
+        invoke CreateCompatibleBitmap, hdc, rect.right, rect.bottom
+        mov hBitmap, eax
+        invoke SelectObject, hdcMem, hBitmap
+
+        ; 填充背景色
+        invoke CreateSolidBrush,  00FFFFFFh
+        mov hBrush, eax
+        invoke FillRect, hdcMem, addr rect, hBrush
+        
         invoke CreateButton, addr ButtonText1, 20, 310, 11, hWnd
         invoke CreateButton, addr ButtonText2, 60, 310, 12, hWnd
         invoke CreateButton, addr ButtonText3, 100, 310, 13, hWnd
@@ -179,6 +179,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke CreateButton, addr ButtonText0, 180, 350, 10, hWnd
         invoke CreateButton, addr DeleteText, 220, 310, 21, hWnd
         invoke CreateButton, addr OKText, 220, 350, 22, hWnd
+        INVOKE  ReleaseDC,hWnd,hdc
 
     .ELSEIF uMsg == WM_COMMAND
         mov eax, wParam
@@ -203,7 +204,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             invoke EnableWindow, eax, FALSE
             ;invoke MessageBox, NULL, addr GuessLineText, NULL, MB_OK 
 
-            invoke InvalidateRect, hWnd, NULL, TRUE
+            invoke InvalidateRect, hWnd, addr line9Rect, TRUE
 
         ; 按下 Delete 按鈕
         .ELSEIF eax == 21
@@ -226,7 +227,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             ;invoke MessageBox, NULL, addr GuessLineText, NULL, MB_OK
 
             ; 更新顯示
-            invoke InvalidateRect, hWnd, NULL, TRUE
+            invoke InvalidateRect, hWnd, addr line9Rect, TRUE
         .ELSEIF eax == 22
             mov eax, SelectedCount
             cmp eax, 4
@@ -281,28 +282,17 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             call Output
             call Initialized
             invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
-            invoke PostQuitMessage, 0
+            invoke DeleteDC, hdcMem
+            invoke DeleteObject, hBrush
             invoke DestroyWindow, hWnd
+            invoke PostQuitMessage, 0
             ret
-
         .ENDIF
     .ELSEIF uMsg == WM_PAINT
+        call UpdateText
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
-        invoke GetClientRect, hWnd, addr rect
-        mov al, [TriesRemaining]       ; 將 TriesRemaining 的值載入 eax
-        add al, '0'                     ; 將數字轉換為 ASCII (單位數)
-        mov byte ptr [RemainingTriesText + 11], al ; 將字元寫入字串
-        invoke DrawText, hdc, addr RemainingTriesText, -1, addr line1Rect,DT_CENTER
-        invoke DrawText, hdc, addr GuessLineText, -1, addr line9Rect,DT_CENTER
-        invoke DrawText, hdc, addr Line1Text, -1, addr line2Rect,DT_CENTER
-        invoke DrawText, hdc, addr Line2Text, -1, addr line3Rect,DT_CENTER
-        invoke DrawText, hdc, addr Line3Text, -1, addr line4Rect,DT_CENTER
-        invoke DrawText, hdc, addr Line4Text, -1, addr line5Rect,DT_CENTER
-        invoke DrawText, hdc, addr Line5Text, -1, addr line6Rect,DT_CENTER
-        invoke DrawText, hdc, addr Line6Text, -1, addr line7Rect,DT_CENTER
-        invoke DrawText, hdc, addr Line7Text, -1, addr line8Rect,DT_CENTER
-
+        invoke BitBlt, hdc, 0, 0, rect.right, rect.bottom, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
     .ELSE 
         invoke DefWindowProc,hWnd,uMsg,wParam,lParam 
@@ -314,7 +304,7 @@ skip_button:
     ret
 continue_game:
     ret
-WndProc endp 
+WndProc1 endp 
 
 CalculateResult PROC uses esi edi ecx
     ; 初始化變數
@@ -463,4 +453,25 @@ CreateButton PROC Text:PTR SDWORD, x:SDWORD, y:SDWORD, ID:SDWORD, hWnd:HWND
                         x,y,30,30,hWnd,ID,hInstance,NULL 
     ret
 CreateButton ENDP
+
+UpdateText PROC
+    mov al, [TriesRemaining]       ; 將 TriesRemaining 的值載入 eax
+        add al, '0'                     ; 將數字轉換為 ASCII (單位數)
+        mov byte ptr [RemainingTriesText + 11], al ; 將字元寫入字串
+        invoke DrawText, hdcMem, addr RemainingTriesText, -1, addr line1Rect,DT_CENTER
+        invoke GetStockObject, NULL_PEN
+        invoke SelectObject, hdcMem, eax
+        invoke GetStockObject, WHITE_BRUSH
+        invoke SelectObject, hdcMem, eax
+        invoke Rectangle, hdcMem, line9Rect.right, line9Rect.top, line9Rect.left, line9Rect.bottom
+        invoke DrawText, hdcMem, addr GuessLineText, -1, addr line9Rect,DT_CENTER
+        invoke DrawText, hdcMem, addr Line1Text, -1, addr line2Rect,DT_CENTER
+        invoke DrawText, hdcMem, addr Line2Text, -1, addr line3Rect,DT_CENTER
+        invoke DrawText, hdcMem, addr Line3Text, -1, addr line4Rect,DT_CENTER
+        invoke DrawText, hdcMem, addr Line4Text, -1, addr line5Rect,DT_CENTER
+        invoke DrawText, hdcMem, addr Line5Text, -1, addr line6Rect,DT_CENTER
+        invoke DrawText, hdcMem, addr Line6Text, -1, addr line7Rect,DT_CENTER
+        invoke DrawText, hdcMem, addr Line7Text, -1, addr line8Rect,DT_CENTER
+        ret
+UpdateText ENDP
 end

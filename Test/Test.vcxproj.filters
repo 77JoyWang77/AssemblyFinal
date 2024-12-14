@@ -36,6 +36,12 @@
     <MASM Include="_cake1.asm">
       <Filter>來源檔案</Filter>
     </MASM>
+    <MASM Include="_minesweeper.asm">
+      <Filter>來源檔案</Filter>
+    </MASM>
+    <MASM Include="_cake2.asm">
+      <Filter>來源檔案</Filter>
+    </MASM>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -46,5 +52,13 @@
     <ResourceCompile Include="Test.rc">
       <Filter>資源檔</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="mine.bmp">
+      <Filter>資源檔</Filter>
+    </Image>
+    <Image Include="flag.bmp">
+      <Filter>資源檔</Filter>
+    </Image>
   </ItemGroup>
 </Project>
