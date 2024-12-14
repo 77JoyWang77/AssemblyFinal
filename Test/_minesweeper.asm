@@ -25,7 +25,7 @@ ButtonText7 db "6", 0
 ButtonText8 db "7", 0
 ButtonText9 db "8", 0
 LabelText db "Minesweeper ", 0
-RemainingFlagsText db "Remaining:  ", 0
+RemainingFlagsText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
 LeftButton db "Left", 0
 RightButton db "Right", 0
@@ -113,6 +113,7 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     EndRight:
         invoke InvalidateRect, hWnd, NULL, TRUE
         invoke UpdateWindow, hWnd
+        invoke PostMessage, mainh, WM_PAINT, 0, 0
         xor eax, eax ; ゎ癟肚患
         ret
     .ELSEIF uMsg == WM_LBUTTONDOWN
@@ -225,6 +226,10 @@ WinMain5 proc
     mov eax, wr.bottom
     sub eax, wr.top
     mov tempHeight, eax
+
+    
+    invoke CreateSolidBrush, 00FFFFFFh
+    mov hBrush, eax
 
     ; 承怠
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
@@ -628,12 +633,22 @@ draw_mine proc
 draw_mine endp
 
 update_Text proc,
-        hdc: DWORD
-        mov al, [flagRemaining]       ; 盢 flagRemaining 更 eax
-        add al, '0'                     ; 盢计锣传 ASCII (虫计)
-        mov byte ptr [RemainingFlagsText + 11], al ; 盢じ糶﹃
-        invoke DrawText, hdc, addr RemainingFlagsText, -1, addr line1Rect,DT_CENTER
-        ret
+    hdc: DWORD
+    mov bl, 10
+    xor ah, ah
+    mov al, [flagRemaining]       ; 盢 TriesRemaining 更 eax
+    div bl
+    mov byte ptr [RemainingFlagsText + 11], ' '
+    cmp al, 0
+    je nextdigit
+    add al, '0'                     ; 盢计锣传 ASCII (虫计)
+    mov byte ptr [RemainingFlagsText + 11], al ; 盢じ糶﹃
+    nextdigit:
+    add ah, '0'                     ; 盢计锣传 ASCII (虫计)
+    mov byte ptr [RemainingFlagsText + 12], ah ; 盢じ糶﹃
+    invoke FillRect, hdc, addr line1Rect, hBrush
+    invoke DrawText, hdc, addr RemainingFlagsText, -1, addr line1Rect,DT_CENTER
+    ret
 update_Text endp
 
 end
