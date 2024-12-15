@@ -278,6 +278,8 @@ initializeCake2 PROC
     mov cakeWidth, initialcakeWidth
     mov currentCakeIndex, 0
     mov TriesRemaining, maxCakes
+    mov groundMoveCount, 0
+    mov needMove, 0
     mov gameover, FALSE
     mov falling, FALSE
 initializeCake2 ENDP
