@@ -9,48 +9,53 @@ include gdi32.inc
 
 .CONST
 cakeHeight EQU 20       ; 蛋糕高度
-stepSize EQU 50         ; 每次移動的像素數量
-winWidth EQU 600        ; 視窗寬度
-winHeight EQU 600       ; 視窗高度
-border_right EQU 450
-border_left EQU 150
-maxCakes EQU 20         ; 最大蛋糕數量
-ground EQU 560
-initialcakeX EQU 200    ; 初始 X 座標
+winWidth EQU 300        ; 視窗寬度
+winHeight EQU 350       ; 視窗高度
+border_left EQU 30
+border_right EQU 270
+maxCakes EQU 99         ; 最大蛋糕數量
+initialcakeX EQU 50    ; 初始 X 座標
 initialcakeY EQU 80     ; 初始 Y 座標
 initialvelocityX EQU 5  ; X 方向速度
+initialcakeWidth EQU 100
+initialground EQU 300
 dropSpeed EQU 10
 time EQU 20             ; 更新速度，影響磚塊速度
+cakeMoveSize EQU 5
+heighest EQU 280
 
 .DATA 
 ClassName db "SimpleWinClass4", 0 
 AppName  db "Cake", 0 
 RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
+
 cakes RECT maxCakes DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
-falling BOOL FALSE                    ; 是否有蛋糕正在掉落
-line1Rect RECT <20, 20, 580, 40>
-initialcolor DWORD 00c8c832h
+line1Rect RECT <20, 20, 280, 40>
 colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
-
-cakeWidth DWORD 100       ; 蛋糕寬度
-cakeX DWORD 200                       ; 初始 X 座標
-cakeY DWORD 80                        ; 初始 Y 座標
-velocityX DWORD 5                     ; X 方向速度
-velocityY DWORD 0                     ; Y 方向速度
-currentCakeIndex DWORD 0              ; 當前蛋糕索引
-gameover BOOL FALSE
-TriesRemaining BYTE 20                ; 剩餘次數
-
 
 .DATA? 
 hInstance HINSTANCE ? 
-tempWidth DWORD ?
-tempHeight DWORD ?
 hBitmap HBITMAP ?
 hdcMem HDC ?
 hBrush HBRUSH ?
-brushes HBRUSH 20 DUP(?)
+brushes HBRUSH maxCakes DUP(?)
+
+tempWidth DWORD ?
+tempHeight DWORD ?
+cakeWidth DWORD ?                   ; 蛋糕寬度
+cakeX DWORD ?                       ; 初始 X 座標
+cakeY DWORD ?                       ; 初始 Y 座標
+velocityX DWORD ?                   ; X 方向速度
+velocityY DWORD ?                   ; Y 方向速度
+ground DWORD ?
+currentCakeIndex DWORD ?            ; 當前蛋糕索引
+TriesRemaining BYTE ?               ; 剩餘次數
+groundMoveCount DWORD ? 
+needMove DWORD ?
+gameover BOOL ?
+falling BOOL ?                  ; 是否有蛋糕正在掉落
+moveDown BOOL ?
 
 .CODE 
 WinMain4 proc
@@ -58,15 +63,6 @@ WinMain4 proc
     LOCAL msg:MSG 
     LOCAL hwnd:HWND 
     LOCAL wr:RECT
-
-    mov ebx, 0
-brushesloop:
-    mov eax, colors[ebx * 4]
-    invoke CreateSolidBrush, eax
-    mov brushes[ebx * 4], eax
-    inc ebx
-    cmp ebx, 20
-    jne brushesloop
 
     invoke GetModuleHandle, NULL 
     mov    hInstance,eax
@@ -139,17 +135,16 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke ReleaseDC, hWnd, hdc
         invoke PostQuitMessage,NULL
     .ELSEIF uMsg==WM_CREATE 
+        call SetBrushes
         call initializeCake2
-        INVOKE  GetDC,hWnd              
-        mov     hdc,eax
+
+        INVOKE  GetDC, hWnd              
+        mov hdc,eax
         invoke CreateCompatibleDC, hdc
         mov hdcMem, eax
         invoke CreateCompatibleBitmap, hdc, winWidth, winHeight
         mov hBitmap, eax
         invoke SelectObject, hdcMem, hBitmap
-
-        invoke CreateSolidBrush, 00FFFFFFh
-        mov hBrush, eax
         
         ; 填充背景顏色
         invoke GetClientRect, hWnd, addr rect
@@ -184,10 +179,10 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         
         ; 檢查是否與其他蛋糕或地面接觸
         cmp falling, FALSE
-        je skip_fall
+        je move_ground
         call check_collision2
         cmp eax, TRUE
-        je skip_fall
+        je move_ground
 
     handle_collision:
         mov ebx, SIZEOF RECT
@@ -203,6 +198,14 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov velocityX, initialvelocityX
         mov velocityY, 0
 
+        cmp currentCakeIndex, 0
+        je skip_move_ground
+        cmp moveDown, FALSE
+        je skip_move_ground
+        mov eax, cakeHeight
+        add needMove, eax
+
+    skip_move_ground:
         invoke GetClientRect, hWnd, addr rect
         invoke FillRect, hdcMem, addr rect, hBrush
         call Update2
@@ -215,6 +218,28 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je game_over
         ret
 
+    move_ground:
+        mov ebx, needMove
+        cmp ebx, groundMoveCount
+        jle skip_fall
+
+        ; 地面和蛋糕繼續移動
+        add groundMoveCount, cakeMoveSize
+        add ground, cakeMoveSize
+
+        mov ecx, currentCakeIndex
+        dec ecx
+    move_ground_loop:
+        mov eax, ecx
+        cmp eax, 0
+        jl skip_fall
+        mov ebx, SIZEOF RECT
+        imul ebx
+        add cakes[eax].top, cakeMoveSize
+        add cakes[eax].bottom, cakeMoveSize
+        dec ecx
+        jmp move_ground_loop
+
     skip_fall:
         invoke GetClientRect, hWnd, addr rect
         invoke FillRect, hdcMem, addr rect, hBrush
@@ -222,8 +247,6 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke InvalidateRect, hWnd, NULL, FALSE
         ret
     game_over:
-        ; 顯示遊戲結束訊息
-        
         invoke KillTimer, hWnd, 1
         invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
         invoke DestroyWindow, hWnd
@@ -247,19 +270,16 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 WndProc4 endp 
 
 initializeCake2 PROC
-    mov eax, 200
-    mov cakeX, eax
-    mov eax, 80
-    mov cakeY, eax
-    mov eax, 100
-    mov cakeWidth, eax
-    mov eax, 0
-    mov currentCakeIndex, eax
-    mov eax, 20
-    mov TriesRemaining, al
-    mov eax, FALSE
-    mov gameover, eax
-
+    mov cakeX, initialcakeX
+    mov cakeY, initialcakeY
+    mov velocityX, initialvelocityX
+    mov velocityY, 0
+    mov ground, initialground
+    mov cakeWidth, initialcakeWidth
+    mov currentCakeIndex, 0
+    mov TriesRemaining, maxCakes
+    mov gameover, FALSE
+    mov falling, FALSE
 initializeCake2 ENDP
 
 ; 更新蛋糕位置
@@ -314,6 +334,8 @@ check_collision2 PROC
     mov ebx, cr.bottom
     cmp ebx, ground
     jge collision_found
+    cmp ebx, winHeight
+    jge collision_found
 
     cmp currentCakeIndex, 0
     je check_end
@@ -356,7 +378,7 @@ check_right:
 check_bottom:
     mov eax, cakes[ebx].top
     cmp cr.bottom, eax
-    jge check_goal
+    jge collision_found
 
 next_check:
     dec ecx
@@ -369,16 +391,14 @@ check_end:
 collision_found:
     cmp currentCakeIndex, 0
     je dont_cut
-    mov gameover, TRUE
-check_goal:
     mov edx, cr.bottom
     cmp gr.top, edx
     je game_not_over
     mov gameover, TRUE
+    mov moveDown, FALSE
     jmp dont_cut
 game_not_over:
-    cmp currentCakeIndex, 0
-    je dont_cut
+    mov moveDown, TRUE
     mov ebx, SIZEOF RECT
     imul ebx, goal
     mov eax, cakes[ebx].left
@@ -429,4 +449,26 @@ Update2 PROC
     jge draw_cakes
     ret
 Update2 ENDP
+
+SetBrushes PROC
+    invoke CreateSolidBrush, 00FFFFFFh
+    mov hBrush, eax
+
+    mov esi, 0
+    mov edi, 0
+brushesloop:
+    mov eax, colors[esi * 4]
+    invoke CreateSolidBrush, eax
+    mov brushes[edi * 4], eax
+    inc esi
+    inc edi
+    cmp edi, maxCakes
+    je end_brushesloop
+    cmp esi, 20
+    jne brushesloop
+    mov esi, 0
+    jmp brushesloop
+end_brushesloop:
+    ret
+SetBrushes ENDP
 end
