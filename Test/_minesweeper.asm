@@ -31,7 +31,10 @@ LeftButton db "Left", 0
 RightButton db "Right", 0
 ShowText db " ", 0
 hMineBitmapName db "mine.bmp",0
+hMineRedBitmapName db "mine_red.bmp",0
 hFlagBitmapName db "flag.bmp",0
+hFlagRedBitmapName db "flag_red.bmp",0
+
 
 
 borderX DWORD 80           ; 初始 X 座標
@@ -71,7 +74,9 @@ tempHeight DWORD ?
 OriginalProc DWORD ?
 hBitmap HBITMAP ?
 hMineBitmap HBITMAP ?
+hMineRedBitmap HBITMAP ?
 hFlagBitmap HBITMAP ?
+hFlagRedBitmap HBITMAP ?
 hdcMem HDC ?
 
 .CODE 
@@ -119,6 +124,8 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ELSEIF uMsg == WM_LBUTTONDOWN
         invoke GetWindowLong, hWnd, GWL_ID
         sub eax, 10
+        cmp DWORD PTR mineState[eax*4], 2
+        je isflag
 
         push eax
         mov ebx, mineMapSize
@@ -130,7 +137,8 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         div ebx
         invoke open_mine, edx, eax
         pop eax
-        
+
+clicked:
         mov DWORD PTR mineClicked[eax*4], 1
         mov eax, DWORD PTR [mineMap + eax*4]
         cmp eax, 0
@@ -149,10 +157,9 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke GetWindowLong, hWnd, GWL_STYLE
         or eax, BS_BITMAP
         invoke SetWindowLong, hWnd, GWL_STYLE, eax
-        invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hMineBitmap
+        invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hMineRedBitmap
         
     skip:
-  
         mov eax, WS_EX_CLIENTEDGE   ; 清除 WS_EX_CLIENTEDGE 樣式
         invoke SetWindowLong, hWnd, GWL_EXSTYLE, eax
         invoke SetWindowPos, hWnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE
@@ -167,10 +174,11 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         call check
         cmp endGamebool, 1
         je gameover
-        
         ret
-        gameover:
-            call show_mine
+     isflag:
+            ret
+     gameover:
+            call show_result
             invoke MessageBox, mainh, addr EndGame, addr AppName, MB_OK
             invoke DestroyWindow, mainh
             invoke PostQuitMessage, 0
@@ -270,8 +278,16 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke LoadImage, hInstance, addr hFlagBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hFlagBitmap, eax
 
+        invoke LoadImage, hInstance, addr hFlagRedBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hFlagRedBitmap, eax
+
         invoke LoadImage, hInstance, addr hMineBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hMineBitmap, eax
+
+        invoke LoadImage, hInstance, addr hMineRedBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hMineRedBitmap, eax
+
+
         INVOKE  GetDC,hWnd              
         mov     hdc,eax
         invoke CreateCompatibleDC, hdc
@@ -549,8 +565,8 @@ allDir:
     shl eax, 2
     cmp DWORD PTR visited[eax], 1 
     je Skip
-    cmp DWORD PTR mineState[eax], 1
-    je Skip
+    cmp DWORD PTR mineState[eax], 0
+    jne Skip
     
     mov next_l, eax
     invoke can_go_next, now, next_l
@@ -577,6 +593,7 @@ can_go_next proc,
 
     xor edx, edx
     mov eax, tempnow
+
     cmp SDWORD PTR mineMap[eax], 0
     mov eax,tempnext
     je Can
@@ -616,26 +633,32 @@ Exitcheck:
     ret
 check endp
 
-show_mine proc
+show_result proc,
+    
     mov ecx, mineMapSize
     mov ebx, 0
     Showloop:
+        cmp SDWORD PTR mineState[ebx*4], 2
+        je falseflag
+        cmp SDWORD PTR mineState[ebx*4],1
+        je continueShow
         cmp SDWORD PTR mineMap[ebx*4], -1
-        jne continueShow
-    show:
-        push ebx
-        push ecx
+        je mine
+        jmp continueShow
+    mine:
         call draw_mine
-        pop ecx
-        pop ebx
+        jmp continueShow
+    falseflag:
+        cmp SDWORD PTR mineMap[ebx*4], -1
+        je continueShow
+        call draw_falseflag
     continueShow:
         inc ebx
         loop Showloop
         ret
-show_mine endp
+show_result endp
 
-draw_mine proc
-
+draw_mine proc uses ebx ecx
     invoke GetWindowLong, hButton[ebx*4], GWL_STYLE
     or eax, BS_BITMAP
     invoke SetWindowLong, hButton[ebx*4], GWL_STYLE, eax
@@ -647,6 +670,16 @@ draw_mine proc
     invoke UpdateWindow, hButton[ebx*4]
     ret
 draw_mine endp
+
+draw_falseflag proc uses ebx ecx
+     invoke GetWindowLong, hButton[ebx*4], GWL_STYLE
+     or eax, BS_BITMAP
+     invoke SetWindowLong, hButton[ebx*4], GWL_STYLE, eax
+     invoke SendMessage, hButton[ebx*4], BM_SETIMAGE, IMAGE_BITMAP, hFlagRedBitmap
+     invoke InvalidateRect, hButton[ebx*4], NULL, TRUE
+     invoke UpdateWindow, hButton[ebx*4]
+     ret
+draw_falseflag endp
 
 update_Text proc,
     hdc: DWORD
