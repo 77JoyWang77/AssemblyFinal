@@ -270,7 +270,7 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke PostQuitMessage,0
 
     .ELSEIF uMsg==WM_CREATE 
-        call initialize
+
         call initialize_map
         mov eax, hWnd
         mov mainh, eax

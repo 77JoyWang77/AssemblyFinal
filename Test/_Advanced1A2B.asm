@@ -47,6 +47,7 @@ line6Rect RECT <20, 170, 250, 190>
 line7Rect RECT <20, 200, 250, 220>
 line8Rect RECT <20, 230, 250, 250>
 line9Rect RECT <20, 280, 250, 300>
+
 backgrounfBitmapName db "1A2B_background.bmp",0
 
 SelectedCount   dd 0

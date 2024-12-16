@@ -162,6 +162,8 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\..\Downloads\1A2B_background.bmp" />
+    <Image Include="..\..\..\..\Downloads\home_1A2B.bmp" />
+    <Image Include="..\..\..\..\Downloads\home_background.bmp" />
     <Image Include="flag_red.bmp" />
     <Image Include="mine.bmp" />
     <Image Include="flag.bmp" />

@@ -62,7 +62,7 @@ WinMain proc hInst:HINSTANCE
     mov   wc.style, CS_HREDRAW or CS_VREDRAW 
     mov   wc.lpfnWndProc, OFFSET WndProc
     mov   wc.cbClsExtra,NULL 
-    mov   wc.cbWndExtra,NULL 
+    mov    wc.cbWndExtra,NULL 
     push  hInst 
     pop   wc.hInstance
     mov   wc.hbrBackground,COLOR_WINDOW+1 

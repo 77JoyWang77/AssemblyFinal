@@ -72,5 +72,11 @@
     <Image Include="mine_red.bmp">
       <Filter>資源檔</Filter>
     </Image>
+    <Image Include="..\..\..\..\Downloads\home_background.bmp">
+      <Filter>資源檔</Filter>
+    </Image>
+    <Image Include="..\..\..\..\Downloads\home_1A2B.bmp">
+      <Filter>資源檔</Filter>
+    </Image>
   </ItemGroup>
 </Project>
