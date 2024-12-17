@@ -38,6 +38,9 @@ Line5Text db "                    ", 0
 Line6Text db "                    ", 0
 Line7Text db "                    ", 0
 Line8Text db "                    ", 0
+
+hBackBitmapName db "bitmap3.bmp",0
+
 line1Rect RECT <20, 20, 250, 40>
 line2Rect RECT <20, 50, 250, 70> 
 line3Rect RECT <20, 80, 250, 100>
@@ -47,6 +50,7 @@ line6Rect RECT <20, 170, 250, 190>
 line7Rect RECT <20, 200, 250, 220>
 line8Rect RECT <20, 230, 250, 250>
 line9Rect RECT <20, 280, 250, 300>
+winRect RECT <0, 0, 270, 400>
 
 backgrounfBitmapName db "1A2B_background.bmp",0
 
@@ -58,9 +62,11 @@ winHeight DWORD 400          ; 保存窗口高度
 .DATA? 
 hInstance HINSTANCE ? 
 hBitmap HBITMAP ?
+hBackBitmap HBITMAP ?
 hBrush HBRUSH ?
 hdcMem HDC ?
 hdc HDC ?
+hdcBack HDC ?
 
 SelectedNumbers db 4 dup(?)
 Answer db 4 DUP(?)
@@ -151,21 +157,27 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
     .ELSEIF uMsg==WM_CREATE 
         call Initialized
+        invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hBackBitmap, eax
 
         INVOKE  GetDC,hWnd              
         mov     hdc,eax
-        INVOKE  CreateCompatibleDC,eax  
-        mov     hdcMem,eax
+        
+        INVOKE  CreateCompatibleDC,hdc  
+        mov hdcMem,eax
+        INVOKE  CreateCompatibleDC,hdc 
+        mov hdcBack,eax
 
-        invoke GetClientRect, hWnd, addr rect
-        invoke CreateCompatibleBitmap, hdc, rect.right, rect.bottom
-        mov hBitmap, eax
-        invoke SelectObject, hdcMem, hBitmap
+        ;invoke GetClientRect, hWnd, addr rect
+        ;invoke CreateCompatibleBitmap, hdc, rect.right, rect.bottom
+        ;mov hBitmap, eax
+        invoke SelectObject, hdcMem, hBackBitmap
+        invoke SelectObject, hdcBack, hBackBitmap
 
         ; 填充背景色
         invoke CreateSolidBrush,  00FFFFFFh
         mov hBrush, eax
-        invoke FillRect, hdcMem, addr rect, hBrush
+        ;invoke FillRect, hdcMem, addr rect, hBrush
         
         invoke CreateButton, addr ButtonText1, 20, 310, 11, hWnd
         invoke CreateButton, addr ButtonText2, 60, 310, 12, hWnd
@@ -290,6 +302,7 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
+        invoke BitBlt, hdcMem, 0, 0, rect.right, rect.bottom, hdcBack, 0, 0, SRCCOPY
         call UpdateText
         invoke BitBlt, hdc, 0, 0, rect.right, rect.bottom, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
@@ -456,11 +469,11 @@ CreateButton PROC Text:PTR DWORD, x:DWORD, y:DWORD, ID:DWORD, hWnd:HWND
 CreateButton ENDP
 
 UpdateText PROC
+    invoke SetBkMode, hdcMem, TRANSPARENT
     mov al, [TriesRemaining]       ; 將 TriesRemaining 的值載入 eax
     add al, '0'                     ; 將數字轉換為 ASCII (單位數)
     mov byte ptr [RemainingTriesText + 11], al ; 將字元寫入字串
     invoke DrawText, hdcMem, addr RemainingTriesText, -1, addr line1Rect,DT_CENTER
-    invoke FillRect, hdcMem, addr line9Rect, hBrush
     invoke DrawText, hdcMem, addr GuessLineText, -1, addr line9Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line1Text, -1, addr line2Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line2Text, -1, addr line3Rect,DT_CENTER
