@@ -32,18 +32,43 @@ ButtonText3 db "Cake1", 0
 ButtonText4 db "Cake2", 0
 ButtonText5 db "Minesweeper", 0
 ButtonText6 db "Tofu", 0
+
+hButton1BitmapName db "home_1A2B.bmp", 0
+hBackBitmapName db "bitmap4.bmp", 0
+
 winWidth EQU 400        ; 視窗寬度
 winHeight EQU 600       ; 視窗高度
 
 .DATA? 
 hInstance HINSTANCE ? 
 hBitmap HBITMAP ?
+hBackBitmap HBITMAP ?
+hButton1Bitmap HBITMAP ?
 hBrush HBRUSH ?
 hdcMem HDC ?
 tempWidth DWORD ?
 tempHeight DWORD ?
+OriginalProc DWORD ?
 
 .CODE 
+ButtonSubclassProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
+    LOCAL hdc:HDC 
+    LOCAL ps:PAINTSTRUCT 
+    invoke GetWindowLong, hWnd, GWL_USERDATA
+    mov OriginalProc, eax
+    .IF uMsg == WM_PAINT
+        invoke BeginPaint, hWnd, addr ps
+        mov hdc, eax
+        invoke SelectObject, hdcMem, hButton1Bitmap ; 預設狀態
+        invoke BitBlt, hdc, 0, 0, 200, 50, hdcMem, 0, 0, SRCCOPY
+        invoke EndPaint, hWnd, addr ps
+        ret
+    .ENDIF
+
+    invoke CallWindowProc, OriginalProc, hWnd, uMsg, wParam, lParam
+    ret
+ButtonSubclassProc2 endp
+
 Home PROC 
     invoke GetModuleHandle, NULL 
     mov    hInstance,eax 
@@ -119,6 +144,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
     LOCAL rect:RECT
+    LOCAL hTarget:HWND
 
     .IF uMsg==WM_DESTROY 
         invoke KillTimer, hWnd, 1
@@ -130,24 +156,32 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke PostQuitMessage, NULL
         ret
     .ELSEIF uMsg == WM_CREATE
+        invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hBackBitmap, eax
+
         INVOKE  GetDC,hWnd              
         mov     hdc,eax
         INVOKE  CreateCompatibleDC,eax  
         mov     hdcMem,eax
 
+        invoke SelectObject, hdcMem, hBackBitmap
         invoke GetClientRect, hWnd, addr rect
-        invoke CreateCompatibleBitmap, hdc, rect.right, rect.bottom
-        mov hBitmap, eax
-        invoke SelectObject, hdcMem, hBitmap
 
         ; 填充背景色
         invoke CreateSolidBrush,  00FFFFFFh
         mov hBrush, eax
-        invoke FillRect, hdcMem, addr rect, hBrush
 
-        invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText1, \
-               WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
-               100, 100, 200, 50, hWnd, 1, hInstance, NULL
+        invoke LoadImage, hInstance, addr hButton1BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hButton1Bitmap, eax
+
+        invoke CreateWindowEx, NULL,  ADDR ButtonClassName, NULL, \
+               WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON  or BS_OWNERDRAW, \
+               100, 100, 200, 40, hWnd, 1, hInstance, NULL
+        mov hTarget, eax
+        invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonSubclassProc2
+        mov OriginalProc, eax
+        invoke SetWindowLong, hTarget, GWL_USERDATA, eax
+
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText2, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
                100, 170, 200, 50, hWnd, 2, hInstance, NULL

@@ -162,6 +162,7 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
   </ItemGroup>
   <ItemGroup>
     <Image Include="bitmap3.bmp" />
+    <Image Include="bitmap4.bmp" />
     <Image Include="flag_red.bmp" />
     <Image Include="home_1A2B.bmp" />
     <Image Include="home_background.bmp" />
