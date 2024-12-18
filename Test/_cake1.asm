@@ -30,15 +30,22 @@ AppName  db "Cake", 0
 RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
 
-line1Rect RECT <20, 20, 280, 40>
+hBackBitmapName db "cake1_background.bmp",0
+
+line1Rect RECT <30, 30, 280, 50>
 cakes RECT maxCakes DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
+colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
+colors_count EQU ($ - colors) / 4
 
 .DATA?
 hInstance HINSTANCE ? 
 hBitmap HBITMAP ?
+hBackBitmap HBITMAP ?
+hBackBitmap2 HBITMAP ?
 hdcMem HDC ?
+hdcBack HDC ?
 hBrush HBRUSH ?
-blueBrush HBRUSH ?
+brushes HBRUSH maxCakes DUP(?)
 
 tempWidth DWORD ?
 tempHeight DWORD ?
@@ -133,20 +140,21 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke ReleaseDC, hWnd, hdc
         invoke PostQuitMessage,NULL
     .ELSEIF uMsg==WM_CREATE 
+        call SetBrushes
         call initializeCake1
-        INVOKE  GetDC,hWnd              
-        mov     hdc,eax
-        invoke CreateCompatibleDC, hdc
+        invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hBackBitmap, eax
+        invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hBackBitmap2, eax
+        invoke GetDC,hWnd              
+        mov hdc, eax
+        invoke CreateCompatibleDC,hdc  
         mov hdcMem, eax
-        invoke CreateCompatibleBitmap, hdc, winWidth, winHeight
-        mov hBitmap, eax
-        invoke SelectObject, hdcMem, hBitmap
-
-        ; 填充背景顏色
+        invoke CreateCompatibleDC,hdc 
+        mov hdcBack, eax
+        invoke SelectObject, hdcMem, hBackBitmap
+        invoke SelectObject, hdcBack, hBackBitmap2
         invoke GetClientRect, hWnd, addr rect
-        invoke CreateSolidBrush, 00FFFFFFh
-        mov hBrush, eax
-        invoke FillRect, hdcMem, addr rect, hBrush
         invoke ReleaseDC, hWnd, hdc
     .ELSEIF uMsg == WM_TIMER
         invoke GetAsyncKeyState, VK_SPACE
@@ -198,11 +206,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         add needMove, eax
 
     skip_move_ground:
-        invoke GetClientRect, hWnd, addr rect
-        invoke FillRect, hdcMem, addr rect, hBrush
-        call Update
         invoke InvalidateRect, hWnd, NULL, FALSE
-
         inc currentCakeIndex  ; 下一個蛋糕
         cmp gameover, TRUE
         je game_over
@@ -233,16 +237,12 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         jmp move_ground_loop
 
     skip_fall:
-        invoke GetClientRect, hWnd, addr rect
-        invoke FillRect, hdcMem, addr rect, hBrush
-        call Update
         invoke InvalidateRect, hWnd, NULL, FALSE
         ret
     game_over:
         ; 顯示遊戲結束訊息
         invoke KillTimer, hWnd, 1
         invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
-        invoke DeleteObject, hBrush
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
         invoke DestroyWindow, hWnd
@@ -255,6 +255,8 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
+        invoke BitBlt, hdcMem, 0, 0, winWidth, winHeight, hdcBack, 0, 0, SRCCOPY  ; 覆蓋位圖
+        call Update
         invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
     .ELSE 
@@ -387,9 +389,7 @@ check_collision ENDP
 
 ; 更新畫面
 Update PROC
-    invoke CreateSolidBrush, 00c8c832h
-    mov blueBrush, eax
-    invoke SelectObject, hdcMem, blueBrush
+    invoke SetBkMode, hdcMem, TRANSPARENT
 
     mov bl, 10
     xor ah, ah
@@ -407,6 +407,11 @@ Update PROC
 
     mov eax, currentCakeIndex
     draw_cakes:
+    push eax
+    push ecx
+    invoke SelectObject, hdcMem, brushes[eax * 4]
+    pop ecx
+    pop eax
     mov ebx, SIZEOF RECT
     imul ebx
     push eax
@@ -419,5 +424,25 @@ Update PROC
     ret
 Update ENDP
 
+SetBrushes PROC
+    invoke CreateSolidBrush, 00FFFFFFh
+    mov hBrush, eax
 
+    mov esi, 0
+    mov edi, 0
+brushesloop:
+    mov eax, colors[esi * 4]
+    invoke CreateSolidBrush, eax
+    mov brushes[edi * 4], eax
+    inc esi
+    inc edi
+    cmp edi, maxCakes
+    je end_brushesloop
+    cmp esi, colors_count
+    jne brushesloop
+    mov esi, 0
+    jmp brushesloop
+end_brushesloop:
+    ret
+SetBrushes ENDP
 end WinMain3
