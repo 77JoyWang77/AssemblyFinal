@@ -140,7 +140,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke ReleaseDC, hWnd, hdc
         invoke PostQuitMessage,NULL
     .ELSEIF uMsg==WM_CREATE 
-        call SetBrushes2
+        call SetBrushes
         call initializeCake1
         invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hBackBitmap, eax
@@ -424,7 +424,7 @@ Update PROC
     ret
 Update ENDP
 
-SetBrushes2 PROC
+SetBrushes PROC
     invoke CreateSolidBrush, 00FFFFFFh
     mov hBrush, eax
 
@@ -444,5 +444,5 @@ brushesloop:
     jmp brushesloop
 end_brushesloop:
     ret
-SetBrushes2 ENDP
+SetBrushes ENDP
 end WinMain3
