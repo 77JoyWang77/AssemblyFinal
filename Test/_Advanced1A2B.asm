@@ -40,7 +40,6 @@ Line7Text db "                    ", 0
 Line8Text db "                    ", 0
 
 hBackBitmapName db "bitmap3.bmp",0
-backgrounfBitmapName db "1A2B_background.bmp",0
 
 line1Rect RECT <20, 20, 250, 40>
 line2Rect RECT <20, 50, 250, 70> 
@@ -63,8 +62,8 @@ hBitmap HBITMAP ?
 hBackBitmap HBITMAP ?
 hBackBitmap2 HBITMAP ?
 hBrush HBRUSH ?
-hdcMem HDC ?
 hdc HDC ?
+hdcMem HDC ?
 hdcBack HDC ?
 
 SelectedNumbers db 4 dup(?)

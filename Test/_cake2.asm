@@ -33,6 +33,7 @@ EndGame db "Game Over!", 0
 cakes RECT maxCakes DUP(<0, 0, 0, 0>) ; ¿x¶s≥Jø|√‰¨…
 line1Rect RECT <20, 20, 280, 40>
 colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
+colors_count EQU ($ - colors) / 4
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -466,7 +467,7 @@ brushesloop:
     inc edi
     cmp edi, maxCakes
     je end_brushesloop
-    cmp esi, 20
+    cmp esi, colors_count
     jne brushesloop
     mov esi, 0
     jmp brushesloop
