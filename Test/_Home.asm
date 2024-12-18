@@ -35,10 +35,10 @@ ButtonText6 db "Tofu", 0
 
 hButton1BitmapName db "home_1A2B.bmp", 0
 hButton2BitmapName db "home_BREAKOUT.bmp", 0
-hButton3BitmapName db "home_BREAKOUT.bmp", 0
-hButton4BitmapName db "home_BREAKOUT.bmp", 0
-hButton5BitmapName db "home_BREAKOUT.bmp", 0
-hButton6BitmapName db "home_BREAKOUT.bmp", 0
+hButton3BitmapName db "home_cake1.bmp", 0
+hButton4BitmapName db "home_cake2.bmp", 0
+hButton5BitmapName db "home_minesweeper.bmp", 0
+hButton6BitmapName db "home_tofu.bmp", 0
 hBackBitmapName db "home_background.bmp", 0
 
 winWidth EQU 400        ; µøµ¡¼e«×
