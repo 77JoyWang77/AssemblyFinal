@@ -34,7 +34,7 @@ ButtonText5 db "Minesweeper", 0
 ButtonText6 db "Tofu", 0
 
 hButton1BitmapName db "home_1A2B.bmp", 0
-hBackBitmapName db "bitmap4.bmp", 0
+hBackBitmapName db "home_background.bmp", 0
 
 winWidth EQU 400        ; 視窗寬度
 winHeight EQU 600       ; 視窗高度
