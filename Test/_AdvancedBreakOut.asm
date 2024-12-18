@@ -14,16 +14,18 @@ platformHeight EQU 20       ; 平台高度
 stepSize DWORD 10              ; 每次移動的像素數量
 winWidth EQU 800              ; 視窗寬度
 winHeight EQU 600             ; 視窗高度
-initialBrickRow EQU 20
+initialBrickRow EQU 5
 brickNumX EQU 10
 brickNumY EQU 28
 brickTypeNum EQU 4
 brickWidth EQU 80
 brickHeight EQU 20
-velocity EQU 10
-fallTime EQU 30
+fallTime EQU 100
+specialTime EQU 5
 ballRadius EQU 10             ; 小球半徑
 OFFSET_BASE EQU 150
+speed DWORD 10
+divisor DWORD 180
 
 .DATA 
 ClassName db "SimpleWinClass2",0 
@@ -31,7 +33,7 @@ AppName  db "BreakOut",0
 Text db "Window", 0
 EndGame db "Game Over!", 0
 offset_center DWORD 0
-divisor DWORD 180
+
 controlsCreated DWORD 0
 
 platformX DWORD 350           ; 初始 X 座標
@@ -41,7 +43,8 @@ ballY DWORD 500                 ; 小球 Y 座標
 velocityX DWORD 0               ; 小球 X 方向速度
 velocityY DWORD 10               ; 小球 Y 方向速度
 brick DWORD brickNumY DUP(brickNumX DUP(0))
-fallTimeCount DWORD 30
+fallTimeCount DWORD 100
+specialTimeCount DWORD 5
 gameOver DWORD 0
 
 randomNum DWORD 0
@@ -182,6 +185,17 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         CALL newBrick
         mov eax, fallTime
         mov fallTimeCount, eax
+
+        mov eax, specialTimeCount
+        dec eax
+        mov specialTimeCount, eax
+        cmp eax, 0
+        jne no_brick_fall
+
+        CALL specialBrick
+        mov eax, specialTime
+        mov specialTimeCount, eax
+
     no_brick_fall:
         ; 更新小球位置
         call update_ball
@@ -243,22 +257,15 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 WndProc2 endp 
 
 initializeBreakOut PROC
-    mov eax, 350
-    mov platformX, eax
-    mov eax, 550
-    mov platformY, eax
-    mov eax, 410
-    mov ballX, eax
-    mov eax, 500
-    mov ballY, eax
-    mov eax, 0
-    mov velocityX, eax
-    mov eax, 10
-    mov velocityY, eax
-    mov eax, 30
-    mov fallTimeCount, eax
-    mov eax, 0
-    mov gameOver, eax
+    mov platformX, 350
+    mov platformY, 550
+    mov ballX, 410
+    mov ballY, 500
+    mov velocityX, 0
+    mov velocityY, 10
+    mov fallTimeCount, 50
+    mov specialTimeCount, 5
+    mov gameOver, 0
     
     mov eax, brickNumX
     mov ebx, brickNumY
@@ -344,18 +351,15 @@ reverse_y_bottom:
     mov eax, winHeight
     sub eax, ballRadius
     mov ballY, eax
-    mov eax, 0
-    mov velocityX, eax
-    mov velocityY, eax
-    mov eax, 1
-    mov gameOver, eax
+    mov velocityX, 0
+    mov velocityY, 0
+    mov gameOver, 1
 
 end_update:
     ret
 update_ball ENDP
 
 check_platform_collision PROC
-    LOCAL speed:DWORD
     LOCAL angle:DWORD
 
     mov eax, ballY
@@ -404,8 +408,6 @@ above_collision:
     add eax, platformX
     sub eax, ballX
     mov offset_center, eax
-    mov eax, velocity
-    mov speed, eax
 
     ; 計算弧度
     fstp st(0)
@@ -915,13 +917,14 @@ initializeBrick proc
     mov ecx, initialBrickRow
     mul ecx
     mov ecx, eax
-    mov ebx, brickTypeNum
+    mov ebx, 2
 
     invoke GetTickCount
     mov eax, edx
     cdq
 initializenewRandomBrick:
     div ebx
+    cmp edx, 0
     mov [esi], edx
     add esi, 4
     loop initializenewRandomBrick
@@ -933,7 +936,7 @@ newBrick proc
     mov eax, randomSeed
     mov esi, OFFSET brick           ; 初始化磚塊陣列指標
     mov ecx, brickNumX              ; 磚塊數量
-    mov ebx, brickTypeNum           ; 磚塊類型數
+    mov ebx, 2           ; 磚塊類型數
 
 newRandomBrick:
     ; 線性同餘生成器: (a * seed + c) % m
@@ -946,9 +949,37 @@ newRandomBrick:
     mov [esi], edx                  ; 將類型存入陣列
     add esi, 4                      ; 移動到下一個位置
     loop newRandomBrick             ; 重複
+
     ret
 
 newBrick ENDP
+
+specialBrick proc
+    call GetRandomSeed              ; 取得隨機種子
+    mov eax, randomSeed
+    mov esi, OFFSET brick           ; 初始化磚塊陣列指標
+
+    mov ebx, brickNumX           ; 磚塊類型數
+    
+    mov ebx, brickTypeNum
+    imul eax, eax, 1664525          ; 乘以係數 a（1664525 是常用值）
+    add eax, 1013904223             ; 加上增量 c
+    and eax, 7FFFFFFFh             ; 保證結果為正數
+    mov randomSeed, eax             ; 更新隨機種子
+    xor edx, edx                    ; 清除 edx
+    div ebx                         ; 獲得隨機類型
+    shl edx, 2
+    add esi, edx
+    
+    xor edx, edx
+    mov ebx, brickTypeNum 
+    dec ebx
+    div ebx
+    inc edx
+    mov [esi], edx
+
+    ret
+specialBrick ENDP
 
 GetRandomSeed proc
     invoke QueryPerformanceCounter, OFFSET randomSeed
