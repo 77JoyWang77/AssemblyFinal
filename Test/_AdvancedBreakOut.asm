@@ -32,10 +32,11 @@ ClassName db "SimpleWinClass2",0
 AppName  db "BreakOut",0 
 Text db "Window", 0
 EndGame db "Game Over!", 0
+
+hBackBitmapName db "bitmap5.bmp",0
+
 offset_center DWORD 0
-
 controlsCreated DWORD 0
-
 platformX DWORD 350           ; 初始 X 座標
 platformY DWORD 550           ; 初始 Y 座標
 ballX DWORD 410                 ; 小球 X 座標
@@ -46,21 +47,19 @@ brick DWORD brickNumY DUP(brickNumX DUP(0))
 fallTimeCount DWORD 100
 specialTimeCount DWORD 5
 gameOver DWORD 0
-
 randomNum DWORD 0
 randomSeed DWORD 0                 ; 隨機數種子
 
-
 .DATA? 
-hInstance1 HINSTANCE ? 
-CommandLine LPSTR ? 
+hInstance HINSTANCE ? 
+hBitmap HBITMAP ?
+hBackBitmap HBITMAP ?
+hBackBitmap2 HBITMAP ?
+hdcMem HDC ?
+hdcBack HDC ?
+
 tempWidth DWORD ?
 tempHeight DWORD ?
-tempWidth1 DWORD ?
-tempHeight1 DWORD ?
-whiteBrush DWORD ?
-hBitmap HBITMAP ?
-hdcMem HDC ?
 redBrush DWORD ?
 yellowBrush DWORD ?
 blueBrush DWORD ?
@@ -74,11 +73,9 @@ WinMain2 proc
     LOCAL hwnd:HWND 
     LOCAL wr:RECT                   ; 定義 RECT 結構
     LOCAL msg:MSG
-    LOCAL tempWinWidth:DWORD
-    LOCAL tempWinHeight:DWORD
     
     invoke GetModuleHandle, NULL 
-    mov    hInstance1,eax 
+    mov    hInstance,eax 
 
     ; 定義窗口類別
     mov   wc.cbSize,SIZEOF WNDCLASSEX 
@@ -86,7 +83,7 @@ WinMain2 proc
     mov   wc.lpfnWndProc, OFFSET WndProc2
     mov   wc.cbClsExtra,NULL 
     mov   wc.cbWndExtra,NULL 
-    push  hInstance1
+    push  hInstance
     pop   wc.hInstance
     mov   wc.hbrBackground,COLOR_WINDOW+1 
     mov   wc.lpszMenuName,NULL 
@@ -98,7 +95,7 @@ WinMain2 proc
     mov   wc.hCursor,eax 
     invoke RegisterClassEx, addr wc 
 
-    ; 設置目標客戶區大小
+    ; 設置客戶區大小
     mov wr.left, 0
     mov wr.top, 0
     mov eax, winWidth
@@ -108,23 +105,19 @@ WinMain2 proc
 
     ; 調整窗口大小
     invoke AdjustWindowRect, ADDR wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
-
-    ; 計算窗口寬度和高度
     mov eax, wr.right
     sub eax, wr.left
-    mov tempWinWidth, eax
+    mov tempWidth, eax
     mov eax, wr.bottom
     sub eax, wr.top
-    mov tempWinHeight, eax
+    mov tempHeight, eax
 
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            0, 0, tempWinWidth, tempWinHeight, NULL, NULL, hInstance1, NULL
+            0, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
-    invoke SetTimer, hwnd, 1, 50, NULL  ; 更新間隔從 50ms 改為 10ms
-
-    ; 顯示和更新窗口
+    invoke SetTimer, hwnd, 1, 50, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
 
@@ -143,11 +136,9 @@ WinMain2 endp
 WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
-    LOCAL rect:RECT
 
     .IF uMsg==WM_DESTROY 
         invoke KillTimer, hWnd, 1
-        invoke DeleteObject, whiteBrush
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
         invoke ReleaseDC, hWnd, hdc
@@ -159,18 +150,18 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         CALL initializeBrick
         CALL initializeBrush
 
-        ; 創建內存設備上下文 (hdcMem) 和位圖
-        INVOKE  GetDC,hWnd              
-        mov     hdc,eax
-        invoke CreateCompatibleDC, hdc
+        invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hBackBitmap, eax
+        invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hBackBitmap2, eax
+        invoke GetDC,hWnd              
+        mov hdc, eax
+        invoke CreateCompatibleDC,hdc  
         mov hdcMem, eax
-        invoke CreateCompatibleBitmap, hdc, winWidth, winHeight
-        mov hBitmap, eax
-        invoke SelectObject, hdcMem, hBitmap
-
-        ; 填充背景顏色
-        invoke GetClientRect, hWnd, addr rect
-        invoke FillRect, hdcMem, addr rect, whiteBrush
+        invoke CreateCompatibleDC,hdc 
+        mov hdcBack, eax
+        invoke SelectObject, hdcMem, hBackBitmap
+        invoke SelectObject, hdcBack, hBackBitmap2
         invoke ReleaseDC, hWnd, hdc
     .ELSEIF uMsg == WM_TIMER
         cmp gameOver, 1
@@ -227,10 +218,6 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     skip_right:
         call brick_collision
 
-        invoke GetClientRect, hWnd, addr rect
-        invoke FillRect, hdcMem, addr rect, whiteBrush  ;刪它可得路徑圖
-        call DrawScreen
-
         ; 重繪視窗
         invoke InvalidateRect, hWnd, NULL, FALSE
         ret
@@ -245,6 +232,8 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
+        invoke BitBlt, hdcMem, 0, 0, winWidth, winHeight, hdcBack, 0, 0, SRCCOPY
+        call DrawScreen
         invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
 
@@ -280,9 +269,6 @@ LoopBrick:
 initializeBreakOut ENDP
 
 initializeBrush PROC
-    invoke CreateSolidBrush, 00FFFFFFh
-    mov whiteBrush, eax
-
     invoke CreateSolidBrush, 00ff901eh
     mov blueBrush, eax
 
