@@ -25,7 +25,8 @@ ButtonText7 db "6", 0
 ButtonText8 db "7", 0
 ButtonText9 db "8", 0
 RemainingFlagsText db "Remaining:   ", 0
-EndGame db "Game Over!", 0
+WinGame  db "Win!", 0
+LoseGame db "Game Over!", 0
 ShowText db " ", 0
 
 hMineBitmapName db "mine.bmp",0
@@ -76,7 +77,7 @@ hdcBack HDC ?
 hMineBitmap HBITMAP ?
 hMineRedBitmap HBITMAP ?
 hFlagBitmap HBITMAP ?
-hFlagRedBitmap HBITMAP ?\
+hFlagRedBitmap HBITMAP ?
 
 .CODE 
 ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
@@ -136,7 +137,7 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke open_mine, edx, eax
         pop eax
 
-clicked:
+    clicked:
         mov DWORD PTR mineClicked[eax*4], 1
         mov eax, DWORD PTR [mineMap + eax*4]
         cmp eax, 0
@@ -149,13 +150,13 @@ clicked:
         jmp skip
   
     clickMine:
-        cmp eax, 0
-        je skip
-        mov endGamebool, 1
-        invoke GetWindowLong, hWnd, GWL_STYLE
-        or eax, BS_BITMAP
-        invoke SetWindowLong, hWnd, GWL_STYLE, eax
-        invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hMineRedBitmap
+            cmp eax, 0
+            je skip
+            mov endGamebool, 1
+            invoke GetWindowLong, hWnd, GWL_STYLE
+            or eax, BS_BITMAP
+            invoke SetWindowLong, hWnd, GWL_STYLE, eax
+            invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hMineRedBitmap
         
     skip:
         mov eax, WS_EX_CLIENTEDGE   ; 清除 WS_EX_CLIENTEDGE 樣式
@@ -167,18 +168,25 @@ clicked:
         xor eax, eax ; 阻止訊息傳遞
 
         cmp endGamebool, 1
-        je gameover
+        je lose
         call check
         cmp endGamebool, 1
-        je gameover
+        je win
         ret
-     isflag:
+    isflag:
             ret
+    win:
+        call show_result
+        invoke MessageBox, mainh, addr WinGame, addr AppName, MB_OK
+        jmp gameover
+    lose:
+        call show_result
+        invoke MessageBox, mainh, addr LoseGame, addr AppName, MB_OK
+        jmp gameover
+
      gameover:
-            call show_result
-            invoke MessageBox, mainh, addr EndGame, addr AppName, MB_OK
-            invoke DestroyWindow, mainh
-            invoke PostQuitMessage, 0
+        invoke DestroyWindow, mainh
+        invoke PostQuitMessage, 0
             ret
         ret
     .ENDIF
@@ -692,4 +700,3 @@ update_Text proc
 update_Text endp
 
 end
-;
