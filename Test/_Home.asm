@@ -34,6 +34,7 @@ ButtonText5 db "Minesweeper", 0
 ButtonText6 db "Tofu", 0
 
 hButton1BitmapName db "home_1A2B.bmp", 0
+hButton2BitmapName db "home_BREAKOUT.bmp", 0
 hBackBitmapName db "bitmap4.bmp", 0
 
 winWidth EQU 400        ; 視窗寬度
@@ -44,30 +45,59 @@ hInstance HINSTANCE ?
 hBitmap HBITMAP ?
 hBackBitmap HBITMAP ?
 hButton1Bitmap HBITMAP ?
-hBrush HBRUSH ?
+hButton2Bitmap HBITMAP ?
 hdcMem HDC ?
 tempWidth DWORD ?
 tempHeight DWORD ?
 OriginalProc DWORD ?
 
 .CODE 
-ButtonSubclassProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
+ButtonProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
-    invoke GetWindowLong, hWnd, GWL_USERDATA
-    mov OriginalProc, eax
+    LOCAL current:DWORD
     .IF uMsg == WM_PAINT
+        invoke GetWindowLong, hWnd, GWL_ID
+        mov current, eax
+        cmp current, 1
+        jne Next1
+        invoke SelectObject, hdcMem, hButton1Bitmap
+        jmp startDraw
+    Next1:
+        cmp current, 2
+        jne Next2
+        invoke SelectObject, hdcMem, hButton2Bitmap
+        jmp startDraw
+    Next2:
+        cmp current, 3
+        jne Next3
+        invoke SelectObject, hdcMem, hButton2Bitmap
+        jmp startDraw
+    Next3:
+        cmp current, 4
+        jne Next4
+        invoke SelectObject, hdcMem, hButton2Bitmap
+        jmp startDraw
+    Next4:
+        cmp current, 5
+        jne Next5
+        invoke SelectObject, hdcMem, hButton2Bitmap
+        jmp startDraw
+    Next5:
+        cmp current, 6
+        jne startDraw
+        invoke SelectObject, hdcMem, hButton2Bitmap
+
+    startDraw:
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
-        invoke SelectObject, hdcMem, hButton1Bitmap ; 預設狀態
-        invoke BitBlt, hdc, 0, 0, 200, 50, hdcMem, 0, 0, SRCCOPY
+        invoke BitBlt, hdc, 0, 0, 200, 40, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
         ret
     .ENDIF
-
     invoke CallWindowProc, OriginalProc, hWnd, uMsg, wParam, lParam
     ret
-ButtonSubclassProc2 endp
+ButtonProc endp
 
 Home PROC 
     invoke GetModuleHandle, NULL 
@@ -149,7 +179,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .IF uMsg==WM_DESTROY 
         invoke KillTimer, hWnd, 1
         ; 清理資源
-        invoke DeleteObject, hBrush
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
         ; 發送退出訊息
@@ -167,37 +196,73 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke SelectObject, hdcMem, hBackBitmap
         invoke GetClientRect, hWnd, addr rect
 
-        ; 填充背景色
-        invoke CreateSolidBrush,  00FFFFFFh
-        mov hBrush, eax
-
         invoke LoadImage, hInstance, addr hButton1BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hButton1Bitmap, eax
 
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, NULL, \
-               WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON  or BS_OWNERDRAW, \
+               WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_OWNERDRAW, \
                100, 100, 200, 40, hWnd, 1, hInstance, NULL
         mov hTarget, eax
-        invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonSubclassProc2
+        invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
         mov OriginalProc, eax
         invoke SetWindowLong, hTarget, GWL_USERDATA, eax
 
-        invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText2, \
-               WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
-               100, 170, 200, 50, hWnd, 2, hInstance, NULL
+        invoke LoadImage, hInstance, addr hButton2BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hButton2Bitmap, eax
+
+        invoke CreateWindowEx, NULL,  ADDR ButtonClassName, NULL, \
+               WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_OWNERDRAW, \
+               100, 170, 200, 40, hWnd, 2, hInstance, NULL
+        mov hTarget, eax
+        invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
+        mov OriginalProc, eax
+        invoke SetWindowLong, hTarget, GWL_USERDATA, eax
+
+        invoke LoadImage, hInstance, addr hButton1BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hButton1Bitmap, eax
+
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText3, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
-               100, 240, 200, 50, hWnd, 3, hInstance, NULL
+               100, 240, 200, 40, hWnd, 3, hInstance, NULL
+        mov hTarget, eax
+        invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
+        mov OriginalProc, eax
+        invoke SetWindowLong, hTarget, GWL_USERDATA, eax
+
+        invoke LoadImage, hInstance, addr hButton1BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hButton1Bitmap, eax
+
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText4, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
-               100, 310, 200, 50, hWnd, 4, hInstance, NULL
+               100, 310, 200, 40, hWnd, 4, hInstance, NULL
+        mov hTarget, eax
+        invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
+        mov OriginalProc, eax
+        invoke SetWindowLong, hTarget, GWL_USERDATA, eax
+
+        invoke LoadImage, hInstance, addr hButton1BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hButton1Bitmap, eax
+
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText5, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
-               100, 380, 200, 50, hWnd, 5, hInstance, NULL
+               100, 380, 200, 40, hWnd, 5, hInstance, NULL
+        mov hTarget, eax
+        invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
+        mov OriginalProc, eax
+        invoke SetWindowLong, hTarget, GWL_USERDATA, eax
+
+        invoke LoadImage, hInstance, addr hButton1BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hButton1Bitmap, eax
+
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, ADDR ButtonText6, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER, \
-               100, 450, 200, 50, hWnd, 6, hInstance, NULL
-        INVOKE  ReleaseDC,hWnd,hdc
+               100, 450, 200, 40, hWnd, 6, hInstance, NULL
+        mov hTarget, eax
+        invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
+        mov OriginalProc, eax
+        invoke SetWindowLong, hTarget, GWL_USERDATA, eax
+
+        invoke ReleaseDC, hWnd, hdc
     .ELSEIF uMsg == WM_COMMAND
         mov eax, wParam
         cmp eax, 1
