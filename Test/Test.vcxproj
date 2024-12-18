@@ -167,6 +167,10 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <Image Include="home_1A2B.bmp" />
     <Image Include="home_background.bmp" />
     <Image Include="home_BREAKOUT.bmp" />
+    <Image Include="home_cake1.bmp" />
+    <Image Include="home_cake2.bmp" />
+    <Image Include="home_minesweeper.bmp" />
+    <Image Include="home_tofu.bmp" />
     <Image Include="mine.bmp" />
     <Image Include="flag.bmp" />
     <Image Include="mine_red.bmp" />
