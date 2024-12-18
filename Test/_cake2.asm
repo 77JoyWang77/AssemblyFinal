@@ -130,7 +130,6 @@ WinMain4 endp
 WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
-    LOCAL rect:RECT 
 
     .IF uMsg==WM_DESTROY 
         invoke KillTimer, hWnd, 1
@@ -154,7 +153,6 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov hdcBack, eax
         invoke SelectObject, hdcMem, hBackBitmap
         invoke SelectObject, hdcBack, hBackBitmap2
-        invoke GetClientRect, hWnd, addr rect
         invoke ReleaseDC, hWnd, hdc
     .ELSEIF uMsg == WM_TIMER
         invoke GetAsyncKeyState, VK_SPACE

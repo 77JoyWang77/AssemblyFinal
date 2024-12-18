@@ -3,8 +3,8 @@
 option casemap:none 
 
 open_mine proto :DWORD,:DWORD
-can_go_next proto :DWORD, :DWORD
-update_Text proto :DWORD
+can_go_next proto :DWORD, :DWORD 
+
 include windows.inc 
 include user32.inc 
 include kernel32.inc 
@@ -24,18 +24,15 @@ ButtonText6 db "5", 0
 ButtonText7 db "6", 0
 ButtonText8 db "7", 0
 ButtonText9 db "8", 0
-LabelText db "Minesweeper ", 0
 RemainingFlagsText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
-LeftButton db "Left", 0
-RightButton db "Right", 0
 ShowText db " ", 0
+
 hMineBitmapName db "mine.bmp",0
 hMineRedBitmapName db "mine_red.bmp",0
 hFlagBitmapName db "flag.bmp",0
 hFlagRedBitmapName db "flag_red.bmp",0
-
-
+hBackBitmapName db "bitmap4.bmp",0
 
 borderX DWORD 80           ; 初始 X 座標
 borderY DWORD 160           ; 初始 Y 座標
@@ -68,16 +65,18 @@ flagRemaining db mineNum
 
 .DATA? 
 hInstance HINSTANCE ? 
-hBrush DWORD ?
 tempWidth DWORD ?
 tempHeight DWORD ?
 OriginalProc DWORD ?
 hBitmap HBITMAP ?
+hBackBitmap HBITMAP ?
+hBackBitmap2 HBITMAP ?
+hdcMem HDC ?
+hdcBack HDC ?
 hMineBitmap HBITMAP ?
 hMineRedBitmap HBITMAP ?
 hFlagBitmap HBITMAP ?
-hFlagRedBitmap HBITMAP ?
-hdcMem HDC ?
+hFlagRedBitmap HBITMAP ?\
 
 .CODE 
 ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
@@ -113,7 +112,6 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke SetWindowLong, hWnd, GWL_STYLE, eax
         invoke SetWindowPos, hWnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE
         inc flagRemaining
-        ;invoke MessageBox, hWnd, ADDR RightButton, ADDR LabelText, MB_OK
 
     EndRight:
         invoke InvalidateRect, hWnd, NULL, TRUE
@@ -163,7 +161,6 @@ clicked:
         mov eax, WS_EX_CLIENTEDGE   ; 清除 WS_EX_CLIENTEDGE 樣式
         invoke SetWindowLong, hWnd, GWL_EXSTYLE, eax
         invoke SetWindowPos, hWnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE
-        ;invoke MessageBox, hWnd, ADDR LeftButton, ADDR LabelText, MB_OK
 
         invoke InvalidateRect, hWnd, NULL, TRUE
         invoke UpdateWindow, hWnd
@@ -235,10 +232,6 @@ WinMain5 proc
     sub eax, wr.top
     mov tempHeight, eax
 
-    
-    invoke CreateSolidBrush, 00FFFFFFh
-    mov hBrush, eax
-
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
@@ -264,7 +257,6 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL hTarget:HWND
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
-    LOCAL rect:RECT 
 
     .IF uMsg==WM_DESTROY 
         invoke PostQuitMessage,0
@@ -289,21 +281,19 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov hMineRedBitmap, eax
 
 
-        INVOKE  GetDC,hWnd              
-        mov     hdc,eax
-        invoke CreateCompatibleDC, hdc
+        invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hBackBitmap, eax
+        invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hBackBitmap2, eax
+        invoke GetDC,hWnd              
+        mov hdc, eax
+        invoke CreateCompatibleDC,hdc  
         mov hdcMem, eax
-        invoke CreateCompatibleBitmap, hdc, winWidth, winHeight
-        mov hBitmap, eax
-        invoke SelectObject, hdcMem, hBitmap
-
-        ; 填充背景顏色
-        invoke GetClientRect, hWnd, addr rect
-        invoke CreateSolidBrush, 00FFFFFFh
-        mov hBrush, eax
-        invoke FillRect, hdcMem, addr rect, hBrush
+        invoke CreateCompatibleDC,hdc 
+        mov hdcBack, eax
+        invoke SelectObject, hdcMem, hBackBitmap
+        invoke SelectObject, hdcBack, hBackBitmap2
         invoke ReleaseDC, hWnd, hdc
-
 
         mov ecx, mineHeight
         mov edx, borderY
@@ -346,7 +336,8 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
-        invoke update_Text, hdc
+        invoke BitBlt, hdcMem, 0, 0, winWidth, winHeight, hdcBack, 0, 0, SRCCOPY  ; 覆蓋位圖
+        call update_Text
         invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
 
@@ -682,8 +673,8 @@ draw_falseflag proc uses ebx ecx
      ret
 draw_falseflag endp
 
-update_Text proc,
-    hdc: DWORD
+update_Text proc
+    invoke SetBkMode, hdcMem, TRANSPARENT
     mov bl, 10
     xor ah, ah
     mov al, [flagRemaining]       ; 將 TriesRemaining 的值載入 eax
@@ -696,7 +687,6 @@ update_Text proc,
     nextdigit:
     add ah, '0'                     ; 將數字轉換為 ASCII (單位數)
     mov byte ptr [RemainingFlagsText + 12], ah ; 將字元寫入字串
-    invoke FillRect, hdcMem, addr line1Rect, hBrush
     invoke DrawText, hdcMem, addr RemainingFlagsText, -1, addr line1Rect,DT_CENTER
     ret
 update_Text endp

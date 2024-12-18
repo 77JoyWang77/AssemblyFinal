@@ -61,7 +61,6 @@ hInstance HINSTANCE ?
 hBitmap HBITMAP ?
 hBackBitmap HBITMAP ?
 hBackBitmap2 HBITMAP ?
-hBrush HBRUSH ?
 hdc HDC ?
 hdcMem HDC ?
 hdcBack HDC ?
@@ -118,9 +117,6 @@ WinMain1 proc
     sub eax, wr.top
     mov tempHeight, eax
 
-    invoke CreateSolidBrush, 00FFFFFFh
-    mov hBrush, eax
-
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
@@ -149,7 +145,6 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
     .IF uMsg==WM_DESTROY 
         invoke DeleteDC, hdcMem
-        invoke DeleteObject, hBrush
         invoke DestroyWindow, hWnd
         invoke PostQuitMessage,0
         ret
@@ -170,10 +165,6 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke SelectObject, hdcMem, hBackBitmap
         invoke SelectObject, hdcBack, hBackBitmap2
         invoke GetClientRect, hWnd, addr rect
-
-        ; 填充背景色
-        invoke CreateSolidBrush,  00FFFFFFh
-        mov hBrush, eax
         
         invoke CreateButton, addr ButtonText1, 20, 310, 11, hWnd
         invoke CreateButton, addr ButtonText2, 60, 310, 12, hWnd
@@ -290,7 +281,6 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             call Output
             invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
             invoke DeleteDC, hdcMem
-            invoke DeleteObject, hBrush
             invoke DestroyWindow, hWnd
             invoke PostQuitMessage, 0
             ret
