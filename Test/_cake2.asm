@@ -44,7 +44,6 @@ hBackBitmap HBITMAP ?
 hBackBitmap2 HBITMAP ?
 hdcMem HDC ?
 hdcBack HDC ?
-hBrush HBRUSH ?
 brushes HBRUSH maxCakes DUP(?)
 
 tempWidth DWORD ?
@@ -135,7 +134,6 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
     .IF uMsg==WM_DESTROY 
         invoke KillTimer, hWnd, 1
-        invoke DeleteObject, hBrush
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
         invoke ReleaseDC, hWnd, hdc
@@ -458,9 +456,6 @@ Update2 PROC
 Update2 ENDP
 
 SetBrushes2 PROC
-    invoke CreateSolidBrush, 00FFFFFFh
-    mov hBrush, eax
-
     mov esi, 0
     mov edi, 0
 brushesloop:

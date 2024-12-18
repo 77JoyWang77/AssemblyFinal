@@ -94,9 +94,9 @@ ButtonProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke SelectObject, hdcMem, hButton5Bitmap
         jmp startDraw
     Next5:
-        cmp current, 6
-        jne startDraw
-        invoke SelectObject, hdcMem, hButton6Bitmap
+        ;cmp current, 6
+        ;jne startDraw
+        ;invoke SelectObject, hdcMem, hButton6Bitmap
 
     startDraw:
         invoke BeginPaint, hWnd, addr ps
@@ -259,16 +259,16 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov OriginalProc, eax
         invoke SetWindowLong, hTarget, GWL_USERDATA, eax
 
-        invoke LoadImage, hInstance, addr hButton6BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
-        mov hButton6Bitmap, eax
+        ;invoke LoadImage, hInstance, addr hButton6BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        ;mov hButton6Bitmap, eax
 
-        invoke CreateWindowEx, NULL,  ADDR ButtonClassName, NULL, \
-               WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_OWNERDRAW, \
-               100, 450, ButtonWidth, ButtonHeight, hWnd, 6, hInstance, NULL
-        mov hTarget, eax
-        invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
-        mov OriginalProc, eax
-        invoke SetWindowLong, hTarget, GWL_USERDATA, eax
+        ;invoke CreateWindowEx, NULL,  ADDR ButtonClassName, NULL, \
+        ;       WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_OWNERDRAW, \
+        ;       100, 450, ButtonWidth, ButtonHeight, hWnd, 6, hInstance, NULL
+        ;mov hTarget, eax
+        ;invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
+        ;mov OriginalProc, eax
+        ;invoke SetWindowLong, hTarget, GWL_USERDATA, eax
 
         invoke ReleaseDC, hWnd, hdc
     .ELSEIF uMsg == WM_COMMAND
@@ -283,8 +283,8 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je StartGame4
         cmp eax, 5
         je StartGame5
-        cmp eax, 6
-        je StartGame6
+        ;cmp eax, 6
+        ;je StartGame6
 
     .ELSEIF uMsg == WM_PAINT
         ; 先開始繪製
@@ -320,10 +320,10 @@ StartGame5:
     ; 呼叫遊戲啟動
     call Minesweeper
     ret
-StartGame6:
+;StartGame6:
     ; 呼叫遊戲啟動
-    call Tofu
-    ret
+    ;call Tofu
+    ;ret
 WndProc endp 
 
 end
