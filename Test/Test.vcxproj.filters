@@ -78,5 +78,8 @@
     <Image Include="..\..\..\..\Downloads\home_1A2B.bmp">
       <Filter>資源檔</Filter>
     </Image>
+    <Image Include="home_BREAKOUT.bmp">
+      <Filter>資源檔</Filter>
+    </Image>
   </ItemGroup>
 </Project>
