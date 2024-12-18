@@ -34,6 +34,8 @@ hBackBitmapName db "bitmap4.bmp",0
 
 line1Rect RECT <20, 20, 280, 40>
 cakes RECT maxCakes DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
+colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
+colors_count EQU ($ - colors) / 4
 
 .DATA?
 hInstance HINSTANCE ? 
@@ -43,7 +45,7 @@ hBackBitmap2 HBITMAP ?
 hdcMem HDC ?
 hdcBack HDC ?
 hBrush HBRUSH ?
-blueBrush HBRUSH ?
+brushes HBRUSH maxCakes DUP(?)
 
 tempWidth DWORD ?
 tempHeight DWORD ?
@@ -138,6 +140,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke ReleaseDC, hWnd, hdc
         invoke PostQuitMessage,NULL
     .ELSEIF uMsg==WM_CREATE 
+        call SetBrushes2
         call initializeCake1
         invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hBackBitmap, eax
@@ -387,10 +390,6 @@ check_collision ENDP
 ; 更新畫面
 Update PROC
     invoke SetBkMode, hdcMem, TRANSPARENT
-    ; 蛋糕顏色
-    invoke CreateSolidBrush, 00c8c832h
-    mov blueBrush, eax
-    invoke SelectObject, hdcMem, blueBrush
 
     mov bl, 10
     xor ah, ah
@@ -408,6 +407,11 @@ Update PROC
 
     mov eax, currentCakeIndex
     draw_cakes:
+    push eax
+    push ecx
+    invoke SelectObject, hdcMem, brushes[eax * 4]
+    pop ecx
+    pop eax
     mov ebx, SIZEOF RECT
     imul ebx
     push eax
@@ -420,5 +424,25 @@ Update PROC
     ret
 Update ENDP
 
+SetBrushes2 PROC
+    invoke CreateSolidBrush, 00FFFFFFh
+    mov hBrush, eax
 
+    mov esi, 0
+    mov edi, 0
+brushesloop:
+    mov eax, colors[esi * 4]
+    invoke CreateSolidBrush, eax
+    mov brushes[edi * 4], eax
+    inc esi
+    inc edi
+    cmp edi, maxCakes
+    je end_brushesloop
+    cmp esi, colors_count
+    jne brushesloop
+    mov esi, 0
+    jmp brushesloop
+end_brushesloop:
+    ret
+SetBrushes2 ENDP
 end WinMain3
