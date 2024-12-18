@@ -40,6 +40,7 @@ hButton4BitmapName db "home_cake2.bmp", 0
 hButton5BitmapName db "home_minesweeper.bmp", 0
 hButton6BitmapName db "home_tofu.bmp", 0
 hBackBitmapName db "home_background.bmp", 0
+hBackBitmapName db "home_background.bmp", 0
 
 winWidth EQU 400        ; 視窗寬度
 winHeight EQU 600       ; 視窗高度
