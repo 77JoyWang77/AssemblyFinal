@@ -38,6 +38,10 @@ Line5Text db "                    ", 0
 Line6Text db "                    ", 0
 Line7Text db "                    ", 0
 Line8Text db "                    ", 0
+
+hBackBitmapName db "bitmap3.bmp",0
+backgrounfBitmapName db "1A2B_background.bmp",0
+
 line1Rect RECT <20, 20, 250, 40>
 line2Rect RECT <20, 50, 250, 70> 
 line3Rect RECT <20, 80, 250, 100>
@@ -48,8 +52,6 @@ line7Rect RECT <20, 200, 250, 220>
 line8Rect RECT <20, 230, 250, 250>
 line9Rect RECT <20, 280, 250, 300>
 
-backgrounfBitmapName db "1A2B_background.bmp",0
-
 SelectedCount   dd 0
 TriesRemaining  db 8
 winWidth DWORD 270           ; 保存窗口寬度
@@ -58,9 +60,12 @@ winHeight DWORD 400          ; 保存窗口高度
 .DATA? 
 hInstance HINSTANCE ? 
 hBitmap HBITMAP ?
+hBackBitmap HBITMAP ?
+hBackBitmap2 HBITMAP ?
 hBrush HBRUSH ?
 hdcMem HDC ?
 hdc HDC ?
+hdcBack HDC ?
 
 SelectedNumbers db 4 dup(?)
 Answer db 4 DUP(?)
@@ -151,21 +156,25 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
     .ELSEIF uMsg==WM_CREATE 
         call Initialized
+        invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hBackBitmap, eax
+        invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hBackBitmap2, eax
 
-        INVOKE  GetDC,hWnd              
-        mov     hdc,eax
-        INVOKE  CreateCompatibleDC,eax  
-        mov     hdcMem,eax
-
+        invoke GetDC, hWnd              
+        mov hdc, eax
+        
+        invoke CreateCompatibleDC,hdc  
+        mov hdcMem, eax
+        invoke CreateCompatibleDC,hdc 
+        mov hdcBack, eax
+        invoke SelectObject, hdcMem, hBackBitmap
+        invoke SelectObject, hdcBack, hBackBitmap2
         invoke GetClientRect, hWnd, addr rect
-        invoke CreateCompatibleBitmap, hdc, rect.right, rect.bottom
-        mov hBitmap, eax
-        invoke SelectObject, hdcMem, hBitmap
 
         ; 填充背景色
         invoke CreateSolidBrush,  00FFFFFFh
         mov hBrush, eax
-        invoke FillRect, hdcMem, addr rect, hBrush
         
         invoke CreateButton, addr ButtonText1, 20, 310, 11, hWnd
         invoke CreateButton, addr ButtonText2, 60, 310, 12, hWnd
@@ -179,7 +188,7 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke CreateButton, addr ButtonText0, 180, 350, 10, hWnd
         invoke CreateButton, addr DeleteText, 220, 310, 21, hWnd
         invoke CreateButton, addr OKText, 220, 350, 22, hWnd
-        INVOKE  ReleaseDC,hWnd,hdc
+        invoke ReleaseDC, hWnd, hdc
 
     .ELSEIF uMsg == WM_COMMAND
         mov eax, wParam
@@ -290,6 +299,7 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
+        invoke BitBlt, hdcMem, 0, 0, rect.right, rect.right, hdcBack, 0, 0, SRCCOPY  ; 覆蓋位圖
         call UpdateText
         invoke BitBlt, hdc, 0, 0, rect.right, rect.bottom, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
@@ -303,7 +313,22 @@ skip_button:
     ret
 continue_game:
     ret
-WndProc1 endp 
+WndProc1 ENDP
+
+Initialized PROC
+    call RandomNumber2
+    ;call Output
+    mov SelectedCount, 0
+    mov TriesRemaining, 8
+    invoke UpdateLineText, OFFSET Line1Text, 0, 0
+    invoke UpdateLineText, OFFSET Line2Text, 0, 0
+    invoke UpdateLineText, OFFSET Line3Text, 0, 0
+    invoke UpdateLineText, OFFSET Line4Text, 0, 0
+    invoke UpdateLineText, OFFSET Line5Text, 0, 0
+    invoke UpdateLineText, OFFSET Line6Text, 0, 0
+    invoke UpdateLineText, OFFSET Line7Text, 0, 0
+    ret
+Initialized ENDP
 
 CalculateResult PROC uses esi edi ecx
     ; 初始化變數
@@ -433,21 +458,6 @@ move:
     ret
 Output ENDP
 
-Initialized PROC
-    call RandomNumber2
-    ;call Output
-    mov SelectedCount, 0
-    mov TriesRemaining, 8
-    invoke UpdateLineText, OFFSET Line1Text, 0, 0
-    invoke UpdateLineText, OFFSET Line2Text, 0, 0
-    invoke UpdateLineText, OFFSET Line3Text, 0, 0
-    invoke UpdateLineText, OFFSET Line4Text, 0, 0
-    invoke UpdateLineText, OFFSET Line5Text, 0, 0
-    invoke UpdateLineText, OFFSET Line6Text, 0, 0
-    invoke UpdateLineText, OFFSET Line7Text, 0, 0
-    ret
-Initialized ENDP
-
 CreateButton PROC Text:PTR DWORD, x:DWORD, y:DWORD, ID:DWORD, hWnd:HWND
     invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName, Text,\
                         WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
@@ -456,11 +466,11 @@ CreateButton PROC Text:PTR DWORD, x:DWORD, y:DWORD, ID:DWORD, hWnd:HWND
 CreateButton ENDP
 
 UpdateText PROC
+    invoke SetBkMode, hdcMem, TRANSPARENT
     mov al, [TriesRemaining]       ; 將 TriesRemaining 的值載入 eax
     add al, '0'                     ; 將數字轉換為 ASCII (單位數)
     mov byte ptr [RemainingTriesText + 11], al ; 將字元寫入字串
     invoke DrawText, hdcMem, addr RemainingTriesText, -1, addr line1Rect,DT_CENTER
-    invoke FillRect, hdcMem, addr line9Rect, hBrush
     invoke DrawText, hdcMem, addr GuessLineText, -1, addr line9Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line1Text, -1, addr line2Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line2Text, -1, addr line3Rect,DT_CENTER
