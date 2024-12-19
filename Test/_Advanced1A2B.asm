@@ -41,6 +41,9 @@ Line7Text db "                    ", 0
 Line8Text db "                    ", 0
 
 hBackBitmapName db "bitmap3.bmp",0
+clickOpenCmd db "open click.wav type mpegvideo alias clickMusic", 0
+clickVolumeCmd db "setaudio clickMusic volume to 300", 0
+clickPlayCmd db "play clickMusic from 0", 0
 
 line1Rect RECT <20, 20, 250, 40>
 line2Rect RECT <20, 50, 250, 70> 
@@ -186,6 +189,9 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke ReleaseDC, hWnd, hdc
 
     .ELSEIF uMsg == WM_COMMAND
+        invoke mciSendString, addr clickOpenCmd, NULL, 0, NULL
+        invoke mciSendString, addr clickVolumeCmd, NULL, 0, NULL
+        invoke mciSendString, addr clickPlayCmd, NULL, 0, NULL
         mov eax, wParam
 
         ; 按下數字按鈕
@@ -228,7 +234,6 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             ; 啟用該按鈕
             invoke GetDlgItem, hWnd, ecx
             invoke EnableWindow, eax, TRUE
-            ;invoke MessageBox, NULL, addr GuessLineText, NULL, MB_OK
 
             ; 更新顯示
             invoke InvalidateRect, hWnd,  NULL, FALSE
