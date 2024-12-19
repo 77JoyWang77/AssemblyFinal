@@ -357,12 +357,13 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         notskiptime:
             inc Time
-            invoke InvalidateRect, hWnd, NULL, TRUE
+            invoke InvalidateRect, hWnd, addr line2Rect, TRUE
             invoke UpdateWindow, hWnd
 
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
+        ;invoke ExcludeClipRect, hdc, 80, 160, 320, 400
         invoke BitBlt, hdcMem, 0, 0, winWidth, winHeight, hdcBack, 0, 0, SRCCOPY  ; ÂÐ»\¦ì¹Ï
         call update_Text
         call update_Time
