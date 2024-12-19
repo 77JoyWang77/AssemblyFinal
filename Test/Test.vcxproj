@@ -175,6 +175,9 @@
     <Image Include="flag.bmp" />
     <Image Include="mine_red.bmp" />
   </ItemGroup>
+  <ItemGroup>
+    <Media Include="background.wav" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
