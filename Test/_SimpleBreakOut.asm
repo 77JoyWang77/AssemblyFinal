@@ -2,6 +2,7 @@
 .model flat,stdcall 
 option casemap:none 
 
+goSpecialBrick1 proto :DWORD
 corner_collision1 proto :DWORD,:DWORD
 include windows.inc 
 include user32.inc 
@@ -16,7 +17,7 @@ winWidth EQU 600              ; 視窗寬度
 winHeight EQU 600             ; 視窗高度
 initialBrickRow EQU 5
 brickNumX EQU 10
-brickNumY EQU 28
+brickNumY EQU 27
 brickTypeNum EQU 6
 brickWidth EQU 60
 brickHeight EQU 20
@@ -26,18 +27,20 @@ ballRadius EQU 10             ; 小球半徑
 OFFSET_BASE EQU 150
 speed DWORD 10
 divisor DWORD 180
+line1Rect RECT <20, 560, 120, 600>
 
 .DATA 
 ClassName db "SimpleWinClass7",0 
 AppName  db "BreakOut",0 
 Text db "Window", 0
 EndGame db "Game Over!", 0
+ScoreText db "Score:         ", 0
 offset_center DWORD 0
 
 hBackBitmapName db "bitmap5.bmp",0
 
-platformX DWORD 270           ; 初始 X 座標
-platformY DWORD 550           ; 初始 Y 座標
+platformX DWORD 240           ; 初始 X 座標
+platformY DWORD 530           ; 初始 Y 座標
 ballX DWORD 300                 ; 小球 X 座標
 ballY DWORD 400                 ; 小球 Y 座標
 velocityX DWORD 0               ; 小球 X 方向速度
@@ -46,6 +49,7 @@ brick DWORD brickNumY DUP(brickNumX DUP(0))
 fallTimeCount DWORD 5
 specialTimeCount DWORD 5
 gameOver DWORD 1
+score DWORD 0
 
 randomNum DWORD 0
 randomSeed DWORD 0                 ; 隨機數種子
@@ -123,7 +127,7 @@ WinMain7 proc
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
             400, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
-    invoke SetTimer, hwnd, 1, 20, NULL  ; 更新間隔從 50ms 改為 10ms
+    invoke SetTimer, hwnd, 1, 1, NULL  ; 更新間隔從 50ms 改為 10ms
 
     ; 顯示和更新窗口
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
@@ -242,6 +246,7 @@ WndProc7 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov hdc, eax
         invoke BitBlt, hdcMem, 0, 0, winWidth, winHeight, hdcBack, 0, 0, SRCCOPY
         call DrawScreen1
+        call updateScore1
         invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
 
@@ -254,15 +259,15 @@ WndProc7 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 WndProc7 endp 
 
 initializeBreakOut1 PROC
-    mov platformX, 350
-    mov platformY, 550
-    mov ballX, 410
+    mov platformX, 240
+    mov ballX, 300
     mov ballY, 500
     mov velocityX, 0
     mov velocityY, 10
-    mov fallTimeCount, 100
+    mov fallTimeCount, 1
     mov specialTimeCount, 5
     mov gameOver, 0
+    mov score, 0
     
     mov eax, brickNumX
     mov ebx, brickNumY
@@ -642,9 +647,9 @@ bottom_brick_collision:       ; brick + brickIndexX * 4 + (brickIndexY + 1) * br
 
 brick_collisionY:
     ; 碰撞處理
-    mov DWORD PTR [esi], 0         ; 移除磚塊
     neg velocityY                  ; 反轉 Y 方向速度
-
+    invoke goSpecialBrick1, [esi]
+    mov DWORD PTR [esi], 0         ; 移除磚塊
 
 left_brick_collision:         ; brick + (brickIndexX - 1) * 4 + brickIndexY * brickNumX * 4
     cmp brickIndexX, 0
@@ -699,8 +704,9 @@ right_brick_collision:        ; brick + (brickIndexX + 1) * 4 + brickIndexY * br
 
 brick_collisionX:
     ; 碰撞處理
-    mov DWORD PTR [esi], 0         ; 移除磚塊
     neg velocityX                  ; 反轉 X 方向速度
+    invoke goSpecialBrick1, [esi]
+    mov DWORD PTR [esi], 0         ; 移除磚塊
     jmp corner_brick
 
 corner_brick:
@@ -739,6 +745,7 @@ leftup:
     Invoke corner_collision1, tempX, tempY
     cmp eax, 0
     je leftbottom
+    invoke goSpecialBrick1, [esi]
     mov DWORD PTR [esi], 0
     cmp velocityX, 0
     jge skipLeftupX
@@ -782,6 +789,7 @@ leftbottom:
     Invoke corner_collision1, tempX, tempY
     cmp eax, 0
     je rightup
+    invoke goSpecialBrick1, [esi]
     mov DWORD PTR [esi], 0
     cmp velocityX, 0
     jge skipLeftbottomX
@@ -826,6 +834,7 @@ rightup:
     Invoke corner_collision1, tempX, tempY
     cmp eax, 0
     je rightbottom
+    invoke goSpecialBrick1, [esi]
     mov DWORD PTR [esi], 0
     cmp velocityX, 0
     jle skipRightupX
@@ -869,6 +878,7 @@ rightbottom:
     Invoke corner_collision1, tempX, tempY
     cmp eax, 0
     je no_brick_collision
+    invoke goSpecialBrick1, [esi]
     mov DWORD PTR [esi], 0
     mov eax, velocityX
     cmp eax, 0
@@ -916,6 +926,48 @@ end_corner_collision:
     ret
 corner_collision1 ENDP
 
+updateScore1 proc
+    invoke SetBkMode, hdcMem, TRANSPARENT
+
+    ; 初始化指標與變數
+    lea edi, ScoreText + 14        ; 定位到數字起始位址
+    mov ecx, 4                     ; 預期最大數字位數
+    mov eax, score                 ; 載入 score 的值
+    mov ebx, 10                    ; 設置除數，確認非零
+
+    ; 確保分母非零
+    cmp ebx, 0
+    je div_error                   ; 如果除數為 0，跳到錯誤處理
+
+    ; 從右到左處理數字
+convert_loop:
+    xor edx, edx
+    div ebx                        ; EDX:EAX / EBX，餘數存入 EDX
+    add dl, '0'                    ; 將餘數轉為 ASCII
+    dec edi                        ; 移到前一個位置
+    mov [edi], dl                  ; 存入字元
+    dec ecx                        ; 處理下一位數
+    test eax, eax                  ; 如果 EAX 為 0，停止
+    jnz convert_loop
+
+    ; 填充前置空格
+    mov al, ' '                    ; ASCII 空格
+fill_spaces:
+    dec edi                        ; 移到前一個位置
+    mov [edi], al                  ; 填充空格
+    dec ecx                        ; 減少剩餘空間
+    jnz fill_spaces                ; 直到填滿
+
+    ; 繪製文字
+    invoke DrawText, hdcMem, addr ScoreText, -1, addr line1Rect, DT_CENTER
+    ret
+
+div_error:
+    ; 處理除以零錯誤（可以記錄日誌或調試）
+    ret
+
+updateScore1 ENDP
+
 
 initializeBrick1 proc
     mov esi, OFFSET brick
@@ -958,7 +1010,6 @@ newRandomBrick:
     loop newRandomBrick             ; 重複
 
     ret
-
 newBrick1 ENDP
 
 specialBrick1 proc
@@ -976,11 +1027,13 @@ specialBrick1 proc
     shl edx, 2
     add esi, edx
     
-    xor edx, edx
-    mov ebx, brickTypeNum 
-    dec ebx
-    div ebx
-    inc edx
+    mov ebx, brickTypeNum           ; 磚塊類型數
+    imul eax, eax, 1664525          ; 乘以係數 a（1664525 是常用值）
+    add eax, 1013904223             ; 加上增量 c
+    and eax, 7FFFFFFFh             ; 保證結果為正數
+    mov randomSeed, eax             ; 更新隨機種子
+    xor edx, edx                    ; 清除 edx
+    div ebx                         ; 獲得隨機類型
     mov [esi], edx
 
     ret
@@ -1154,6 +1207,38 @@ Continue:
     jne DrawBrickRow
     ret
 DrawScreen1 ENDP
+
+goSpecialBrick1 PROC, brickType:DWORD
+    cmp brickType, 1
+    je brick1
+    cmp brickType, 2
+    je brick2
+    cmp brickType, 3
+    je brick3
+    cmp brickType, 4
+    je brick4
+    cmp brickType, 5
+    je brick5
+    jmp noBrick
+
+brick1:
+    add score, 1
+    ret
+brick2:
+    add score, 6
+    ret
+brick3:
+    add score, 10
+    ret
+brick4:
+    add score, 18
+    ret
+brick5:
+    add score, 30
+    ret
+noBrick:
+    ret
+goSpecialBrick1 ENDP
 
 getBreakOutGame PROC
     mov eax, gameOver
