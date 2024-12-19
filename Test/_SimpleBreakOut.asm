@@ -45,7 +45,7 @@ velocityY DWORD 10               ; 小球 Y 方向速度
 brick DWORD brickNumY DUP(brickNumX DUP(0))
 fallTimeCount DWORD 5
 specialTimeCount DWORD 5
-gameOver DWORD 0
+gameOver DWORD 1
 
 randomNum DWORD 0
 randomSeed DWORD 0                 ; 隨機數種子
@@ -146,6 +146,7 @@ WndProc7 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL ps:PAINTSTRUCT 
 
     .IF uMsg==WM_DESTROY 
+        mov gameOver, 1
         invoke KillTimer, hWnd, 1
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
@@ -1153,5 +1154,10 @@ Continue:
     jne DrawBrickRow
     ret
 DrawScreen1 ENDP
+
+getBreakOutGame PROC
+    mov eax, gameOver
+    ret
+getBreakOutGame ENDP
 
 end

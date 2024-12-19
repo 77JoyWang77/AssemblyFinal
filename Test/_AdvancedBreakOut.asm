@@ -14,6 +14,10 @@ EXTERN getCake1Game@0: PROC
 EXTERN getCake2Game@0: PROC
 EXTERN getMinesweeperGame@0: PROC
 
+EXTERN Advanced1A2BfromBreakOut@0: PROC
+EXTERN Cake1fromBreakOut@0: PROC
+EXTERN Cake2fromBreakOut@0: PROC
+
 Advanced1A2B EQU WinMain1@0
 GameBrick EQU WinMain2@0
 Cake1 EQU WinMain3@0
@@ -21,10 +25,14 @@ Cake2 EQU WinMain4@0
 Minesweeper EQU WinMain5@0
 Tofu EQU WinMain6@0
 
-Advanced1A2BGame EQU getAdvanced1A2BGame@0
-Cake1Game EQU getCake1Game@0
-Cake2Game EQU getCake2Game@0
-MinesweeperGame EQU getMinesweeperGame@0
+checkAdvanced1A2B EQU getAdvanced1A2BGame@0
+checkCake1 EQU getCake1Game@0
+checkCake2 EQU getCake2Game@0
+checkMinesweeper EQU getMinesweeperGame@0
+
+goAdvanced1A2B EQU Advanced1A2BfromBreakOut@0
+goCake1 EQU Cake1fromBreakOut@0
+goCake2 EQU Cake2fromBreakOut@0
 
 goSpecialBrick proto :DWORD
 corner_collision proto :DWORD,:DWORD
@@ -72,7 +80,7 @@ velocityY DWORD 10            ; 小球 Y 方向速度
 brick DWORD brickNumY DUP(brickNumX DUP(0))
 fallTimeCount DWORD 5
 specialTimeCount DWORD 5
-gameOver DWORD 0
+gameOver DWORD 1
 gameTypeCount DWORD 2
 randomNum DWORD 0
 randomSeed DWORD 0                 ; 隨機數種子
@@ -147,7 +155,7 @@ WinMain2 proc
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
             400, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
-    invoke SetTimer, hwnd, 1, 30, NULL
+    invoke SetTimer, hwnd, 1, 10, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
 
@@ -168,6 +176,7 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL ps:PAINTSTRUCT 
 
     .IF uMsg==WM_DESTROY 
+        mov gameOver, 1
         invoke KillTimer, hWnd, 1
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
@@ -1199,38 +1208,41 @@ goSpecialBrick PROC, brickType:DWORD
     jmp noGame
 
 StartGame1:
-    call Advanced1A2BGame
-    cmp eax, 0
+    call checkAdvanced1A2B
+    cmp eax, 1
     je goGame1
     mov gameOver, 1
     ret
 goGame1:
     mov DWORD PTR [esi], 0
+    ;call goAdvanced1A2B
     call Advanced1A2B
     ret
 StartGame2:
-    call Cake1Game
-    cmp eax, 0
+    call checkCake1
+    cmp eax, 1
     je goGame2
     mov gameOver, 1
     ret
 goGame2:
     mov DWORD PTR [esi], 0
+    ;call goCake1
     call Cake1
     ret
 StartGame3:
-    call Cake2Game
-    cmp eax, 0
+    call checkCake2
+    cmp eax, 1
     je goGame3
     mov gameOver, 1
     ret
 goGame3:
     mov DWORD PTR [esi], 0
+    ;call goCake2
     call Cake2
     ret
 StartGame4:
-    call MinesweeperGame
-    cmp eax, 0
+    call checkMinesweeper
+    cmp eax, 1
     je goGame4
     mov gameOver, 1
     ret
@@ -1239,8 +1251,14 @@ goGame4:
     call Minesweeper
 
 noGame:
+    mov DWORD PTR [esi], 0
     ret
 
 goSpecialBrick ENDP
+
+getAdvancedBreakOutGame PROC
+    mov eax, gameOver
+    ret
+getAdvancedBreakOutGame ENDP
 
 end

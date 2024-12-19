@@ -147,6 +147,7 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL rect:RECT 
 
     .IF uMsg==WM_DESTROY 
+        mov gameover, 1
         invoke DeleteDC, hdcMem
         invoke DestroyWindow, hWnd
         invoke PostQuitMessage,0
@@ -281,7 +282,7 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         game_over:
         ; 顯示遊戲結束訊息
-            mov gameover, 0
+            mov gameover, 1
             call Output
             invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
             invoke DeleteDC, hdcMem
@@ -477,8 +478,12 @@ UpdateText PROC
 UpdateText ENDP
 
 getAdvanced1A2BGame PROC
-    mov fromBreakout, 1
     mov eax, gameover
     ret
 getAdvanced1A2BGame ENDP
+
+Advanced1A2BfromBreakOut PROC
+    mov fromBreakout, 1
+Advanced1A2BfromBreakOut ENDP
+
 end

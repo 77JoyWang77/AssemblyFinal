@@ -274,6 +274,7 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL ps:PAINTSTRUCT 
 
     .IF uMsg==WM_DESTROY 
+        mov endGamebool, 1
         invoke KillTimer, hWnd, 1
         invoke PostQuitMessage,0
 

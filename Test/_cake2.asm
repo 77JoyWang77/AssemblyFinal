@@ -36,7 +36,7 @@ cakes RECT 99 DUP(<0, 0, 0, 0>) ; ¿x¶s≥Jø|√‰¨…
 line1Rect RECT <20, 20, 280, 40>
 colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
 colors_count EQU ($ - colors) / 4
-gameover BOOL FALSE
+gameover BOOL TRUE
 fromBreakout DWORD 0
 
 
@@ -134,6 +134,7 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL ps:PAINTSTRUCT 
 
     .IF uMsg==WM_DESTROY 
+        mov gameover, 1
         invoke KillTimer, hWnd, 1
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
@@ -246,6 +247,8 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke InvalidateRect, hWnd, NULL, FALSE
         ret
     game_over:
+        mov gameover, TRUE
+        mov fromBreakout, 0
         invoke KillTimer, hWnd, 1
         invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
         invoke DestroyWindow, hWnd
@@ -480,10 +483,13 @@ end_brushesloop:
 SetBrushes2 ENDP
 
 getCake2Game PROC
-    mov maxCakes, 10
-    mov fromBreakout, 1
     mov eax, gameover
     ret
 getCake2Game ENDP
+
+Cake2fromBreakOut PROC
+    mov maxCakes, 10
+    mov fromBreakout, 1
+Cake2fromBreakOut ENDP
 
 end
