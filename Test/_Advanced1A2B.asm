@@ -6,6 +6,7 @@ include windows.inc
 include user32.inc 
 include kernel32.inc 
 include gdi32.inc 
+include winmm.inc
 
 UpdateLineText PROTO, LineText:PTR DWORD, mode: Byte, do:byte
 CreateButton PROTO Text:PTR DWORD, x:DWORD, y:DWORD, ID:DWORD, hWnd:HWND

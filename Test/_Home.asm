@@ -60,7 +60,13 @@ hButton5BitmapName db "home_minesweeper.bmp", 0
 hButton6BitmapName db "bitmap6.bmp", 0
 
 hBackBitmapName db "home_background.bmp", 0
-BackgroundMusic db "background.wav", 0
+BackgroundMusic db "background.mp3", 0
+bgOpenCmd db "open background.wav type mpegvideo alias bgMusic", 0
+bgVolumeCmd db "setaudio bgMusic volume to 300", 0
+bgPlayCmd db "play bgMusic repeat", 0
+clickOpenCmd db "open click.wav type mpegvideo alias clickMusic", 0
+clickVolumeCmd db "setaudio clickMusic volume to 300", 0
+clickPlayCmd db "play clickMusic from 0", 0
 
 winWidth EQU 400        ; 視窗寬度
 winHeight EQU 600       ; 視窗高度
@@ -215,7 +221,10 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke PostQuitMessage, NULL
         ret
     .ELSEIF uMsg == WM_CREATE
-        invoke PlaySound, ADDR BackgroundMusic, NULL, SND_FILENAME or SND_ASYNC or SND_LOOP
+        invoke mciSendString, addr bgOpenCmd, NULL, 0, NULL    ; 開啟背景音樂
+        invoke mciSendString, addr bgVolumeCmd, NULL, 0, NULL  ; 設定音量 (可調整為適合的範圍)
+        invoke mciSendString, addr bgPlayCmd, NULL, 0, NULL    ; 播放背景音樂，並設置為循環播放
+
         invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hBackBitmap, eax
 
@@ -306,6 +315,10 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         invoke ReleaseDC, hWnd, hdc
     .ELSEIF uMsg == WM_COMMAND
+        invoke mciSendString, addr clickOpenCmd, NULL, 0, NULL
+        invoke mciSendString, addr clickVolumeCmd, NULL, 0, NULL
+        invoke mciSendString, addr clickPlayCmd, NULL, 0, NULL
+
         mov eax, wParam
         cmp eax, 1
         je StartGame1

@@ -180,6 +180,8 @@
   </ItemGroup>
   <ItemGroup>
     <Media Include="background.wav" />
+    <Media Include="click.wav" />
+    <Media Include="hit.wav" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
