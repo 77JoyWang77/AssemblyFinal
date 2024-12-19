@@ -190,6 +190,7 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         jmp gameover
 
      gameover:
+        mov endGamebool, 1
         invoke DestroyWindow, mainh
         invoke KillTimer, mainh, 1
         invoke PostQuitMessage, 0
@@ -750,7 +751,6 @@ update_Time proc uses eax ebx edx
     ret
 update_Time endp
 
-end
 getMinesweeperGame PROC
     mov fromBreakout, 1
     mov eax, endGamebool
