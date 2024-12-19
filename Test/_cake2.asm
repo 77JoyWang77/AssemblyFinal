@@ -8,18 +8,19 @@ include kernel32.inc
 include gdi32.inc 
 
 .CONST
-cakeHeight EQU 20       ; 蛋糕高度
-winWidth EQU 300        ; 視窗寬度
-winHeight EQU 350       ; 視窗高度
+cakeHeight EQU 20         ; 蛋糕高度
+winWidth EQU 300          ; 視窗寬度
+winHeight EQU 350         ; 視窗高度
 border_left EQU 30
 border_right EQU 270
-initialcakeX EQU 50    ; 初始 X 座標
-initialcakeY EQU 80     ; 初始 Y 座標
-initialvelocityX EQU 5  ; X 方向速度
+initialcakeX EQU 50       ; 初始 X 座標
+initialcakeY EQU 80       ; 初始 Y 座標
+initialvelocityX EQU 5    ; X 方向速度
+initialvelocityX1 EQU -5  ; X 方向速度
 initialcakeWidth EQU 100
 initialground EQU 300
 dropSpeed EQU 10
-time EQU 50             ; 更新速度，影響磚塊速度
+time EQU 50               ; 更新速度，影響磚塊速度
 cakeMoveSize EQU 5
 heighest EQU 280
 
@@ -49,6 +50,7 @@ hdcMem HDC ?
 hdcBack HDC ?
 brushes HBRUSH 99 DUP(?)
 
+initialcakeX1 DWORD 50              ; 初始 X 座標
 tempWidth DWORD ?
 tempHeight DWORD ?
 cakeWidth DWORD ?                   ; 蛋糕寬度
@@ -200,10 +202,26 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov cakeWidth, ecx
         mov falling, FALSE
         dec TriesRemaining
-        mov cakeX, initialcakeX
         mov cakeY, initialcakeY
-        mov velocityX, initialvelocityX
         mov velocityY, 0
+        invoke GetTickCount                ; 生成隨機數
+        mov ebx, 2       ; 計算範圍大小
+        cdq                        ; 擴展 EAX 為 64 位
+        idiv ebx                   ; 除以範圍大小，餘數在 EAX
+        cmp edx, 0
+        jne Next
+        mov cakeX, initialcakeX
+        mov velocityX, initialvelocityX
+        jmp Next1
+    Next:
+        mov initialcakeX1, border_right
+        sub initialcakeX1, 20
+        mov eax, cakeWidth
+        sub initialcakeX1, eax
+        mov eax, initialcakeX1
+        mov cakeX, eax
+        mov velocityX, initialvelocityX1
+    Next1:
 
         cmp currentCakeIndex, 0
         je skip_move_ground
