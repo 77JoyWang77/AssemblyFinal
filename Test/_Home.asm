@@ -385,7 +385,6 @@ StartGame6:
     call checkBreakOut
     cmp eax, 0
     je skipGame6
-    call checkAdvancedBreakOut
     cmp eax, 0
     je skipGame6
     call AdvancedBreakOut
