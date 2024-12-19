@@ -8,12 +8,14 @@ EXTERN WinMain3@0: PROC
 EXTERN WinMain4@0: PROC
 EXTERN WinMain5@0: PROC
 EXTERN WinMain6@0: PROC
+EXTERN WinMain7@0: PROC
 Advanced1A2B EQU WinMain1@0
-GameBrick EQU WinMain2@0
+AdvancedBreakOut EQU WinMain2@0
 Cake1 EQU WinMain3@0
 Cake2 EQU WinMain4@0
 Minesweeper EQU WinMain5@0
 Tofu EQU WinMain6@0
+BreakOut EQU WinMain7@0
 
 WinMain proto :DWORD
 
@@ -32,14 +34,16 @@ ButtonText2 db "Breakout", 0
 ButtonText3 db "Cake1", 0
 ButtonText4 db "Cake2", 0
 ButtonText5 db "Minesweeper", 0
-ButtonText6 db "Tofu", 0
+ButtonText6 db "AdvancedBreakout", 0
+
 
 hButton1BitmapName db "home_1A2B.bmp", 0
 hButton2BitmapName db "home_BREAKOUT.bmp", 0
 hButton3BitmapName db "home_cake1.bmp", 0
 hButton4BitmapName db "home_cake2.bmp", 0
 hButton5BitmapName db "home_minesweeper.bmp", 0
-hButton6BitmapName db "home_tofu.bmp", 0
+hButton6BitmapName db "bitmap6.bmp", 0
+
 hBackBitmapName db "home_background.bmp", 0
 BackgroundMusic db "background.wav", 0
 
@@ -96,9 +100,9 @@ ButtonProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke SelectObject, hdcMem, hButton5Bitmap
         jmp startDraw
     Next5:
-        ;cmp current, 6
-        ;jne startDraw
-        ;invoke SelectObject, hdcMem, hButton6Bitmap
+        cmp current, 6
+        jne startDraw
+        invoke SelectObject, hdcMem, hButton6Bitmap
 
     startDraw:
         invoke BeginPaint, hWnd, addr ps
@@ -263,6 +267,17 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov OriginalProc, eax
         invoke SetWindowLong, hTarget, GWL_USERDATA, eax
 
+
+        invoke LoadImage, hInstance, addr hButton6BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hButton6Bitmap, eax
+        invoke CreateWindowEx, NULL,  ADDR ButtonClassName, NULL, \
+               WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_OWNERDRAW, \
+               300, 500, 40, ButtonHeight, hWnd, 6, hInstance, NULL
+        mov hTarget, eax
+        invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
+        mov OriginalProc, eax
+        invoke SetWindowLong, hTarget, GWL_USERDATA, eax
+
         ;invoke LoadImage, hInstance, addr hButton6BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         ;mov hButton6Bitmap, eax
 
@@ -287,8 +302,9 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je StartGame4
         cmp eax, 5
         je StartGame5
-        ;cmp eax, 6
-        ;je StartGame6
+        cmp eax, 6
+        je StartGame6
+
 
     .ELSEIF uMsg == WM_PAINT
         ; 先開始繪製
@@ -310,7 +326,7 @@ StartGame1:
     ret
 StartGame2:
     ; 呼叫遊戲啟動
-    call GameBrick
+    call BreakOut
     ret
 StartGame3:
     ; 呼叫遊戲啟動
@@ -328,6 +344,11 @@ StartGame5:
     ; 呼叫遊戲啟動
     ;call Tofu
     ;ret
+    
+StartGame6:
+    ; 呼叫遊戲啟動
+    call AdvancedBreakOut
+    ret
 WndProc endp 
 
 end

@@ -151,6 +151,7 @@
     <MASM Include="_Breakout.asm" />
     <MASM Include="main.asm" />
     <MASM Include="_Home.asm" />
+    <MASM Include="_SimpleBreakOut.asm" />
     <MASM Include="_tofu.asm" />
   </ItemGroup>
   <ItemGroup>
@@ -162,6 +163,8 @@
   <ItemGroup>
     <Image Include="bitmap3.bmp" />
     <Image Include="bitmap4.bmp" />
+    <Image Include="bitmap5.bmp" />
+    <Image Include="bitmap6.bmp" />
     <Image Include="cake1_background.bmp" />
     <Image Include="flag_red.bmp" />
     <Image Include="home_1A2B.bmp" />

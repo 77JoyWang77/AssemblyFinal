@@ -56,6 +56,7 @@ TriesRemaining  db 8
 winWidth DWORD 270           ; 保存窗口寬度
 winHeight DWORD 400          ; 保存窗口高度
 fromBreakout DWORD 0
+gameover DWORD 1
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -72,7 +73,7 @@ Acount byte ?
 Bcount byte ? 
 tempWidth DWORD ?
 tempHeight DWORD ?
-gameover DWORD 1
+
 
 .CODE 
 WinMain1 proc
