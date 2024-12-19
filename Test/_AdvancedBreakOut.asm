@@ -51,7 +51,7 @@ winWidth EQU 600              ; 視窗寬度
 winHeight EQU 600             ; 視窗高度
 initialBrickRow EQU 5
 brickNumX EQU 10
-brickNumY EQU 28
+brickNumY EQU 27
 brickTypeNum EQU 6
 brickWidth EQU 60
 brickHeight EQU 20
@@ -59,21 +59,24 @@ fallTime EQU 3
 specialTime EQU 1
 ballRadius EQU 10             ; 小球半徑
 OFFSET_BASE EQU 150
+timer EQU 20
 speed DWORD 10
 divisor DWORD 180
+line1Rect RECT <20, 560, 120, 600>
 
 .DATA 
 ClassName db "SimpleWinClass2",0 
 AppName  db "BreakOut",0
 Text db "Window", 0
 EndGame db "Game Over!", 0
+TimeText db "Time:         ", 0
 
 hBackBitmapName db "bitmap5.bmp",0
 
 offset_center DWORD 0
 controlsCreated DWORD 0
 platformX DWORD 270           ; 初始 X 座標
-platformY DWORD 550           ; 初始 Y 座標
+platformY DWORD 530           ; 初始 Y 座標
 ballX DWORD 300               ; 小球 X 座標
 ballY DWORD 400               ; 小球 Y 座標
 velocityX DWORD 0             ; 小球 X 方向速度
@@ -83,6 +86,8 @@ fallTimeCount DWORD 5
 specialTimeCount DWORD 5
 gameOver DWORD 1
 gameTypeCount DWORD 2
+time DWORD 0
+timeCounter DWORD 0
 randomNum DWORD 0
 randomSeed DWORD 0                 ; 隨機數種子
 
@@ -156,7 +161,7 @@ WinMain2 proc
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
             400, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
-    invoke SetTimer, hwnd, 1, 10, NULL
+    invoke SetTimer, hwnd, 1, timer, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
 
@@ -204,6 +209,15 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke SelectObject, hdcBack, hBackBitmap2
         invoke ReleaseDC, hWnd, hdc
     .ELSEIF uMsg == WM_TIMER
+        mov eax, timeCounter
+        mov ebx, timer
+        add eax, ebx
+        mov timeCounter, eax
+        cmp eax, 1000
+        jne skipAddTime
+        mov timeCounter, 0
+        inc time
+    skipAddTime:
         cmp gameOver, 1
         je game_over
      
@@ -272,6 +286,7 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov hdc, eax
         invoke BitBlt, hdcMem, 0, 0, winWidth, winHeight, hdcBack, 0, 0, SRCCOPY
         call DrawScreen
+        call updateTime
         invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
 
@@ -292,6 +307,8 @@ initializeBreakOut PROC
     mov fallTimeCount, 1
     mov specialTimeCount, 1
     mov gameOver, 0
+    mov time, 0
+    mov timeCounter, 0
     
     mov eax, brickNumX
     mov ebx, brickNumY
@@ -331,6 +348,48 @@ initializeBrush PROC
     
     ret
 initializeBrush ENDP
+
+updateTime proc
+    invoke SetBkMode, hdcMem, TRANSPARENT
+
+    ; 初始化指標與變數
+    lea edi, TimeText + 14        ; 定位到數字起始位址
+    mov ecx, 4                     ; 預期最大數字位數
+    mov eax, time                 ; 載入 score 的值
+    mov ebx, 10                    ; 設置除數，確認非零
+
+    ; 確保分母非零
+    cmp ebx, 0
+    je div_error                   ; 如果除數為 0，跳到錯誤處理
+
+    ; 從右到左處理數字
+convert_loop:
+    xor edx, edx
+    div ebx                        ; EDX:EAX / EBX，餘數存入 EDX
+    add dl, '0'                    ; 將餘數轉為 ASCII
+    dec edi                        ; 移到前一個位置
+    mov [edi], dl                  ; 存入字元
+    dec ecx                        ; 處理下一位數
+    test eax, eax                  ; 如果 EAX 為 0，停止
+    jnz convert_loop
+
+    ; 填充前置空格
+    mov al, ' '                    ; ASCII 空格
+fill_spaces:
+    dec edi                        ; 移到前一個位置
+    mov [edi], al                  ; 填充空格
+    dec ecx                        ; 減少剩餘空間
+    jnz fill_spaces                ; 直到填滿
+
+    ; 繪製文字
+    invoke DrawText, hdcMem, addr TimeText, -1, addr line1Rect, DT_CENTER
+    ret
+
+div_error:
+    ; 處理除以零錯誤（可以記錄日誌或調試）
+    ret
+
+updateTime ENDP
 
 update_ball PROC
     ; 更新小球位置
