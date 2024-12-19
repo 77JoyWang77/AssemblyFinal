@@ -82,8 +82,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Irvine;C:\masm32\include</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Irvine32.lib;user32.lib;
-kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Irvine32.lib;user32.lib;kernel32.lib;gdi32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateMapFile>true</GenerateMapFile>
     </Link>
     <MASM>

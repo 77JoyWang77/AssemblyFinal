@@ -21,6 +21,7 @@ include windows.inc
 include user32.inc 
 include kernel32.inc 
 include gdi32.inc 
+include winmm.inc
 
 .DATA 
 ClassName db "SimpleWinClass",0 
@@ -40,6 +41,7 @@ hButton4BitmapName db "home_cake2.bmp", 0
 hButton5BitmapName db "home_minesweeper.bmp", 0
 hButton6BitmapName db "home_tofu.bmp", 0
 hBackBitmapName db "home_background.bmp", 0
+BackgroundMusic db "background.wav", 0
 
 winWidth EQU 400        ; 視窗寬度
 winHeight EQU 600       ; 視窗高度
@@ -189,10 +191,12 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ; 清理資源
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
+        invoke PlaySound, NULL, NULL, 0
         ; 發送退出訊息
         invoke PostQuitMessage, NULL
         ret
     .ELSEIF uMsg == WM_CREATE
+        invoke PlaySound, ADDR BackgroundMusic, NULL, SND_FILENAME or SND_ASYNC or SND_LOOP
         invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hBackBitmap, eax
 

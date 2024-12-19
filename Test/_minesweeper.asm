@@ -24,8 +24,10 @@ ButtonText6 db "5", 0
 ButtonText7 db "6", 0
 ButtonText8 db "7", 0
 ButtonText9 db "8", 0
-RemainingFlagsText db "Remaining:   ", 0
-EndGame db "Game Over!", 0
+RemainingFlagsText db "Flag:   ", 0
+TimeText db "Time:     ", 0
+WinGame  db "Win!", 0
+LoseGame db "Game Over!", 0
 ShowText db " ", 0
 
 hMineBitmapName db "mine.bmp",0
@@ -40,7 +42,8 @@ borderWidth DWORD 240       ; 平台寬度
 borderHeight DWORD 240       ; 平台高度
 winWidth DWORD 400              ; 視窗寬度
 winHeight DWORD 480             ; 視窗高度
-line1Rect RECT <20, 20, 380, 140>
+line1Rect RECT <20, 60, 120, 140>
+line2Rect RECT <280, 60, 380, 140>
 currentID DWORD 10
 mainh HWND ?
 
@@ -63,6 +66,8 @@ visited DWORD mineHeight DUP (mineWidth DUP(0))
 mineDir SBYTE -1,-1, 0,-1, 1,-1, -1,0, 1,0, -1,1, 0,1, 1,1 
 flagRemaining db mineNum
 fromBreakout DWORD 0
+Time db 0           ; 累計秒數
+
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -77,7 +82,7 @@ hdcBack HDC ?
 hMineBitmap HBITMAP ?
 hMineRedBitmap HBITMAP ?
 hFlagBitmap HBITMAP ?
-hFlagRedBitmap HBITMAP ?\
+hFlagRedBitmap HBITMAP ?
 
 .CODE 
 ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
@@ -137,7 +142,7 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke open_mine, edx, eax
         pop eax
 
-clicked:
+    clicked:
         mov DWORD PTR mineClicked[eax*4], 1
         mov eax, DWORD PTR [mineMap + eax*4]
         cmp eax, 0
@@ -150,13 +155,13 @@ clicked:
         jmp skip
   
     clickMine:
-        cmp eax, 0
-        je skip
-        mov endGamebool, 1
-        invoke GetWindowLong, hWnd, GWL_STYLE
-        or eax, BS_BITMAP
-        invoke SetWindowLong, hWnd, GWL_STYLE, eax
-        invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hMineRedBitmap
+            cmp eax, 0
+            je skip
+            mov endGamebool, 1
+            invoke GetWindowLong, hWnd, GWL_STYLE
+            or eax, BS_BITMAP
+            invoke SetWindowLong, hWnd, GWL_STYLE, eax
+            invoke SendMessage, hWnd, BM_SETIMAGE, IMAGE_BITMAP, hMineRedBitmap
         
     skip:
         mov eax, WS_EX_CLIENTEDGE   ; 清除 WS_EX_CLIENTEDGE 樣式
@@ -168,18 +173,26 @@ clicked:
         xor eax, eax ; 阻止訊息傳遞
 
         cmp endGamebool, 1
-        je gameover
+        je lose
         call check
         cmp endGamebool, 1
-        je gameover
+        je win
         ret
-     isflag:
+    isflag:
             ret
+    win:
+        call show_result
+        invoke MessageBox, mainh, addr WinGame, addr AppName, MB_OK
+        jmp gameover
+    lose:
+        call show_result
+        invoke MessageBox, mainh, addr LoseGame, addr AppName, MB_OK
+        jmp gameover
+
      gameover:
-            call show_result
-            invoke MessageBox, mainh, addr EndGame, addr AppName, MB_OK
-            invoke DestroyWindow, mainh
-            invoke PostQuitMessage, 0
+        invoke DestroyWindow, mainh
+        invoke KillTimer, mainh, 1
+        invoke PostQuitMessage, 0
             ret
         ret
     .ENDIF
@@ -238,7 +251,7 @@ WinMain5 proc
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
             1000, 430, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
-    invoke SetTimer, hwnd, 1, 50, NULL  ; 更新間隔從 50ms 改為 10ms
+    invoke SetTimer, hwnd, 1, 1000, NULL  ;
     ; 顯示和更新窗口
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
@@ -260,6 +273,7 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL ps:PAINTSTRUCT 
 
     .IF uMsg==WM_DESTROY 
+        invoke KillTimer, hWnd, 1
         invoke PostQuitMessage,0
 
     .ELSEIF uMsg==WM_CREATE 
@@ -269,6 +283,7 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov eax, hWnd
         mov mainh, eax
         mov currentID, 10
+        mov Time, 0
         invoke LoadImage, hInstance, addr hFlagBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hFlagBitmap, eax
 
@@ -298,6 +313,7 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         mov ecx, mineHeight
         mov edx, borderY
+ 
     Row:
         push ecx
         mov ecx, mineWidth
@@ -333,12 +349,22 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         
         cmp ecx, 0
         jne Row
+    .ELSEIF uMsg == WM_TIMER
+        cmp endGamebool, 1
+        jne notskiptime
+        ret
+
+        notskiptime:
+            inc Time
+            invoke InvalidateRect, hWnd, NULL, TRUE
+            invoke UpdateWindow, hWnd
 
     .ELSEIF uMsg == WM_PAINT
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
         invoke BitBlt, hdcMem, 0, 0, winWidth, winHeight, hdcBack, 0, 0, SRCCOPY  ; 覆蓋位圖
         call update_Text
+        call update_Time
         invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
 
@@ -680,18 +706,51 @@ update_Text proc
     xor ah, ah
     mov al, [flagRemaining]       ; 將 TriesRemaining 的值載入 eax
     div bl
-    mov byte ptr [RemainingFlagsText + 11], ' '
+    mov byte ptr [RemainingFlagsText + 6], ' '
     cmp al, 0
     je nextdigit
     add al, '0'                     ; 將數字轉換為 ASCII (單位數)
-    mov byte ptr [RemainingFlagsText + 11], al ; 將字元寫入字串
+    mov byte ptr [RemainingFlagsText + 6], al ; 將字元寫入字串
     nextdigit:
-    add ah, '0'                     ; 將數字轉換為 ASCII (單位數)
-    mov byte ptr [RemainingFlagsText + 12], ah ; 將字元寫入字串
+        add ah, '0'                     ; 將數字轉換為 ASCII (單位數)
+        mov byte ptr [RemainingFlagsText + 7], ah ; 將字元寫入字串
     invoke DrawText, hdcMem, addr RemainingFlagsText, -1, addr line1Rect,DT_CENTER
     ret
 update_Text endp
 
+update_Time proc uses eax ebx edx
+    invoke SetBkMode, hdcMem, TRANSPARENT
+    mov bl, 100
+    xor ah, ah
+    mov al, Time      ; 將 TriesRemaining 的值載入 eax
+    div bl
+    mov byte ptr [TimeText + 6], ' '
+    mov byte ptr [TimeText + 7], ' '
+
+    cmp al, 0
+    je lessthanhundred
+    add al, '0'                     ; 將數字轉換為 ASCII (單位數)
+    mov byte ptr [TimeText + 6], al ; 將字元寫入字串
+    mov byte ptr [TimeText + 7], '0'
+
+    lessthanhundred:
+        mov bl, 10
+        mov al, ah
+        xor ah, ah
+        div bl
+        cmp al, 0
+        je nextdigit
+        add al, '0'                     ; 將數字轉換為 ASCII (單位數)
+        mov byte ptr [TimeText + 7], al ; 將字元寫入字串
+
+     nextdigit:
+        add ah, '0'                     ; 將數字轉換為 ASCII (單位數)
+        mov byte ptr [TimeText + 8], ah ; 將字元寫入字串
+    invoke DrawText, hdcMem, addr TimeText, -1, addr line2Rect,DT_CENTER
+    ret
+update_Time endp
+
+end
 getMinesweeperGame PROC
     mov fromBreakout, 1
     mov eax, endGamebool
