@@ -54,7 +54,7 @@ MineX DWORD ?
 MineY DWORD ?
 DirX SDWORD ?
 DirY SDWORD ?
-endGamebool DWORD 0
+endGamebool DWORD 1
 hButton DWORD mineHeight DUP (mineWidth DUP(?))
 mineMap SDWORD mineHeight DUP (mineWidth DUP (0))
 mineState SDWORD mineHeight DUP (mineWidth DUP (0))
@@ -62,6 +62,7 @@ mineClicked SDWORD mineHeight DUP (mineWidth DUP(0))
 visited DWORD mineHeight DUP (mineWidth DUP(0))
 mineDir SBYTE -1,-1, 0,-1, 1,-1, -1,0, 1,0, -1,1, 0,1, 1,1 
 flagRemaining db mineNum
+fromBreakout DWORD 0
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -235,7 +236,7 @@ WinMain5 proc
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            0, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
+            1000, 430, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
     invoke SetTimer, hwnd, 1, 50, NULL  ; 更新間隔從 50ms 改為 10ms
     ; 顯示和更新窗口
@@ -690,5 +691,11 @@ update_Text proc
     invoke DrawText, hdcMem, addr RemainingFlagsText, -1, addr line1Rect,DT_CENTER
     ret
 update_Text endp
+
+getMinesweeperGame PROC
+    mov fromBreakout, 1
+    mov eax, endGamebool
+    ret
+getMinesweeperGame ENDP
 
 end

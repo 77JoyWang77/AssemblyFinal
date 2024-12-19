@@ -13,14 +13,13 @@ winWidth EQU 300        ; 視窗寬度
 winHeight EQU 350       ; 視窗高度
 border_left EQU 30
 border_right EQU 270
-maxCakes EQU 99         ; 最大蛋糕數量
 initialcakeX EQU 50    ; 初始 X 座標
 initialcakeY EQU 80     ; 初始 Y 座標
 initialvelocityX EQU 5  ; X 方向速度
 initialcakeWidth EQU 100
 initialground EQU 300
 dropSpeed EQU 10
-time EQU 20             ; 更新速度，影響磚塊速度
+time EQU 50             ; 更新速度，影響磚塊速度
 cakeMoveSize EQU 5
 heighest EQU 280
 
@@ -32,10 +31,14 @@ EndGame db "Game Over!", 0
 
 hBackBitmapName db "bitmap4.bmp",0
 
-cakes RECT maxCakes DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
+maxCakes DWORD 99         ; 最大蛋糕數量
+cakes RECT 99 DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
 line1Rect RECT <20, 20, 280, 40>
 colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
 colors_count EQU ($ - colors) / 4
+gameover BOOL FALSE
+fromBreakout DWORD 0
+
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -44,7 +47,7 @@ hBackBitmap HBITMAP ?
 hBackBitmap2 HBITMAP ?
 hdcMem HDC ?
 hdcBack HDC ?
-brushes HBRUSH maxCakes DUP(?)
+brushes HBRUSH 99 DUP(?)
 
 tempWidth DWORD ?
 tempHeight DWORD ?
@@ -58,7 +61,6 @@ currentCakeIndex DWORD ?            ; 當前蛋糕索引
 TriesRemaining BYTE ?               ; 剩餘次數
 groundMoveCount DWORD ? 
 needMove DWORD ?
-gameover BOOL ?
 falling BOOL ?                  ; 是否有蛋糕正在掉落
 moveDown BOOL ?
 
@@ -110,7 +112,7 @@ WinMain4 proc
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            0, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
+            1570, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
     invoke SetTimer, hwnd, 1, time, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
@@ -269,6 +271,10 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 WndProc4 endp 
 
 initializeCake2 PROC
+    cmp fromBreakout, 1
+    je skipMaxcakes
+    mov maxCakes, 99
+skipMaxcakes:
     mov cakeX, initialcakeX
     mov cakeY, initialcakeY
     mov velocityX, initialvelocityX
@@ -276,7 +282,8 @@ initializeCake2 PROC
     mov ground, initialground
     mov cakeWidth, initialcakeWidth
     mov currentCakeIndex, 0
-    mov TriesRemaining, maxCakes
+    mov eax, maxCakes
+    mov TriesRemaining, al
     mov groundMoveCount, 0
     mov needMove, 0
     mov gameover, FALSE
@@ -471,4 +478,12 @@ brushesloop:
 end_brushesloop:
     ret
 SetBrushes2 ENDP
+
+getCake2Game PROC
+    mov maxCakes, 10
+    mov fromBreakout, 1
+    mov eax, gameover
+    ret
+getCake2Game ENDP
+
 end

@@ -14,13 +14,12 @@ winWidth EQU 300         ; 視窗寬度
 winHeight EQU 350        ; 視窗高度
 border_left EQU 30
 border_right EQU 270
-maxCakes EQU 99          ; 最大蛋糕數量
 initialcakeX EQU 50      ; 初始 X 座標
 initialcakeY EQU 80      ; 初始 Y 座標
 initialground EQU 300
 initialvelocityX EQU 10  ; X 方向速度
 dropSpeed EQU 10
-time EQU 40              ; 更新速度，影響磚塊速度
+time EQU 50              ; 更新速度，影響磚塊速度
 cakeMoveSize EQU 5
 heighest EQU 280
 
@@ -32,10 +31,14 @@ EndGame db "Game Over!", 0
 
 hBackBitmapName db "cake1_background.bmp",0
 
+maxCakes DWORD 99
 line1Rect RECT <30, 30, 280, 50>
-cakes RECT maxCakes DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
+cakes RECT 99 DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
 colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
 colors_count EQU ($ - colors) / 4
+gameover BOOL FALSE
+fromBreakout DWORD 0
+
 
 .DATA?
 hInstance HINSTANCE ? 
@@ -44,7 +47,7 @@ hBackBitmap HBITMAP ?
 hBackBitmap2 HBITMAP ?
 hdcMem HDC ?
 hdcBack HDC ?
-brushes HBRUSH maxCakes DUP(?)
+brushes HBRUSH 99 DUP(?)
 
 tempWidth DWORD ?
 tempHeight DWORD ?
@@ -53,7 +56,6 @@ cakeY DWORD ?                         ; Y 座標
 velocityX DWORD ?                     ; X 方向速度
 velocityY DWORD ?                     ; Y 方向速度
 currentCakeIndex DWORD ?              ; 當前蛋糕索引
-gameover BOOL ?
 TriesRemaining BYTE ?                ; 剩餘次數
 groundMoveCount DWORD ?              ; 記錄地面已移動的像素總數
 needMove DWORD ?
@@ -109,7 +111,7 @@ WinMain3 proc
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            0, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
+            1270, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
     invoke SetTimer, hwnd, 1, time, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
@@ -153,7 +155,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke SelectObject, hdcBack, hBackBitmap2
         invoke ReleaseDC, hWnd, hdc
     .ELSEIF uMsg == WM_TIMER
-        invoke GetAsyncKeyState, VK_SPACE
+        invoke GetAsyncKeyState, VK_DOWN
         test eax, 8000h ; 測試最高位
         jz skip_space_key
 
@@ -264,12 +266,17 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 WndProc3 endp 
 
 initializeCake1 PROC
+    cmp fromBreakout, 1
+    je skipMaxcakes
+    mov maxCakes, 99
+skipMaxcakes:
     mov cakeX, initialcakeX
     mov cakeY, initialcakeY
     mov ground, initialground
     mov velocityX, initialvelocityX
     mov velocityY, 0
-    mov TriesRemaining, maxCakes
+    mov eax, maxCakes
+    mov TriesRemaining, al
     mov groundMoveCount, 0
     mov needMove, 0
     mov currentCakeIndex, 0
@@ -438,4 +445,12 @@ brushesloop:
 end_brushesloop:
     ret
 SetBrushes ENDP
+
+getCake1Game PROC
+    mov maxCakes, 10
+    mov fromBreakout, 1
+    mov eax, gameover
+    ret
+getCake1Game ENDP
+
 end WinMain3

@@ -55,6 +55,7 @@ SelectedCount   dd 0
 TriesRemaining  db 8
 winWidth DWORD 270           ; 保存窗口寬度
 winHeight DWORD 400          ; 保存窗口高度
+fromBreakout DWORD 0
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -71,6 +72,7 @@ Acount byte ?
 Bcount byte ? 
 tempWidth DWORD ?
 tempHeight DWORD ?
+gameover DWORD 1
 
 .CODE 
 WinMain1 proc
@@ -120,7 +122,7 @@ WinMain1 proc
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            0, 0, tempWidth, tempHeight, \
+            1000, 0, tempWidth, tempHeight, \
             NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
 
@@ -278,6 +280,7 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         game_over:
         ; 顯示遊戲結束訊息
+            mov gameover, 0
             call Output
             invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
             invoke DeleteDC, hdcMem
@@ -307,6 +310,7 @@ WndProc1 ENDP
 Initialized PROC
     call RandomNumber2
     ;call Output
+    mov gameover, 0
     mov SelectedCount, 0
     mov TriesRemaining, 8
     invoke UpdateLineText, OFFSET Line1Text, 0, 0
@@ -470,4 +474,10 @@ UpdateText PROC
     invoke DrawText, hdcMem, addr Line7Text, -1, addr line8Rect,DT_CENTER
     ret
 UpdateText ENDP
+
+getAdvanced1A2BGame PROC
+    mov fromBreakout, 1
+    mov eax, gameover
+    ret
+getAdvanced1A2BGame ENDP
 end
