@@ -9,6 +9,14 @@ EXTERN WinMain4@0: PROC
 EXTERN WinMain5@0: PROC
 EXTERN WinMain6@0: PROC
 EXTERN WinMain7@0: PROC
+
+EXTERN getAdvanced1A2BGame@0: PROC
+EXTERN getBreakOutGame@0: PROC
+EXTERN getCake1Game@0: PROC
+EXTERN getCake2Game@0: PROC
+EXTERN getMinesweeperGame@0: PROC
+EXTERN getAdvancedBreakOutGame@0: PROC
+
 Advanced1A2B EQU WinMain1@0
 AdvancedBreakOut EQU WinMain2@0
 Cake1 EQU WinMain3@0
@@ -16,6 +24,13 @@ Cake2 EQU WinMain4@0
 Minesweeper EQU WinMain5@0
 Tofu EQU WinMain6@0
 BreakOut EQU WinMain7@0
+
+checkAdvanced1A2B EQU getAdvanced1A2BGame@0
+checkBreakOut EQU getBreakOutGame@0
+checkCake1 EQU getCake1Game@0
+checkCake2 EQU getCake2Game@0
+checkMinesweeper EQU getMinesweeperGame@0
+checkAdvancedBreakOut EQU getAdvancedBreakOutGame@0
 
 WinMain proto :DWORD
 
@@ -321,33 +336,61 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     xor   eax, eax 
     ret 
 StartGame1:
-    ; ©I¥s¹CÀ¸±Ò°Ê
+    call checkAdvanced1A2B
+    cmp eax, 1
+    je goGame1
+    ret
+goGame1:
     call Advanced1A2B
     ret
 StartGame2:
-    ; ©I¥s¹CÀ¸±Ò°Ê
+    call checkBreakOut
+    cmp eax, 0
+    je skipGame2
+    cmp eax, 0
+    je skipGame2
     call BreakOut
     ret
+skipGame2:
+    ret
 StartGame3:
-    ; ©I¥s¹CÀ¸±Ò°Ê
+    call checkCake1
+    cmp eax, 1
+    je goGame3
+    ret
+goGame3:
     call Cake1
     ret
 StartGame4:
-    ; ©I¥s¹CÀ¸±Ò°Ê
+    call checkCake2
+    cmp eax, 1
+    je goGame4
+    ret
+goGame4:
     call Cake2
     ret
 StartGame5:
-    ; ©I¥s¹CÀ¸±Ò°Ê
-    call Minesweeper
+    call checkMinesweeper
+    cmp eax, 1
+    je goGame5
     ret
+goGame5:
+    call Minesweeper
 ;StartGame6:
     ; ©I¥s¹CÀ¸±Ò°Ê
     ;call Tofu
     ;ret
     
 StartGame6:
-    ; ©I¥s¹CÀ¸±Ò°Ê
+    call checkBreakOut
+    cmp eax, 0
+    je skipGame6
+    call checkAdvancedBreakOut
+    cmp eax, 0
+    je skipGame6
     call AdvancedBreakOut
+    ret
+skipGame6:
     ret
 WndProc endp 
 
