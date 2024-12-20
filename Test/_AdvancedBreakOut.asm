@@ -19,6 +19,11 @@ EXTERN Cake1fromBreakOut@0: PROC
 EXTERN Cake2fromBreakOut@0: PROC
 EXTERN MinesweeperfromBreakOut@0: PROC
 
+EXTERN Advanced1A2BcloseWindow@0: PROC
+EXTERN Cake1closeWindow@0: PROC
+EXTERN Cake2closeWindow@0: PROC
+EXTERN MinesweepercloseWindow@0: PROC
+
 Advanced1A2B EQU WinMain1@0
 GameBrick EQU WinMain2@0
 Cake1 EQU WinMain3@0
@@ -35,6 +40,11 @@ goAdvanced1A2B EQU Advanced1A2BfromBreakOut@0
 goCake1 EQU Cake1fromBreakOut@0
 goCake2 EQU Cake2fromBreakOut@0
 goMinesweeper EQU MinesweeperfromBreakOut@0
+
+closeAdvanced1A2B EQU Advanced1A2BcloseWindow@0
+closeCake1 EQU Cake1closeWindow@0
+closeCake2 EQU Cake2closeWindow@0
+closeMinesweeper EQU MinesweepercloseWindow@0
 
 goSpecialBrick proto :DWORD
 corner_collision proto :DWORD,:DWORD
@@ -101,9 +111,13 @@ gameOver DWORD 1
 gameTypeCount DWORD 2
 time DWORD 0
 timeCounter DWORD 0
+countOtherGameText DWORD 0
+winPosX DWORD 400
+winPosY DWORD 0
+
 randomNum DWORD 0
 randomSeed DWORD 0                 ; 隨機數種子
-countOtherGameText DWORD 0
+
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -173,9 +187,9 @@ WinMain2 proc
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            400, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
+            winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
-    invoke SetTimer, hwnd, 10, timer, NULL
+    invoke SetTimer, hwnd, 1, timer, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
 
@@ -196,6 +210,10 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL ps:PAINTSTRUCT 
 
     .IF uMsg == WM_DESTROY 
+        call closeAdvanced1A2B
+        call closeCake1
+        call closeCake2
+        call closeMinesweeper
         ; 設定遊戲結束旗標並釋放資源
         mov gameOver, 1
         invoke KillTimer, hWnd, 1
@@ -302,11 +320,10 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
 
     game_over:
-        ; 顯示遊戲結束訊息並關閉窗口
         invoke KillTimer, hWnd, 1
         invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
         invoke DestroyWindow, hWnd
-        xor eax, eax
+        invoke PostQuitMessage, 0
         ret
 
     .ELSEIF uMsg == WM_PAINT
@@ -1064,7 +1081,7 @@ initializeBrick proc
     mov ecx, initialBrickRow
     mul ecx
     mov ecx, eax
-    mov ebx, 2
+    mov ebx, 6
 
     invoke GetTickCount
     mov eax, edx

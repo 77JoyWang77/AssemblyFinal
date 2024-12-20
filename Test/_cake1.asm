@@ -48,6 +48,9 @@ colors_count EQU ($ - colors) / 4
 gameover BOOL TRUE
 fromBreakout DWORD 0
 
+winPosX DWORD 400
+winPosY DWORD 0
+
 .DATA?
 hInstance HINSTANCE ? 
 hBitmap HBITMAP ?
@@ -119,7 +122,7 @@ WinMain3 proc
     ; ³Ð«Øµ¡¤f
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            1270, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
+            winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
     invoke SetTimer, hwnd, 1, time, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
@@ -153,6 +156,8 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         call backBreakOut
 
     getDestory:
+        mov winPosX, 400
+        mov winPosY, 0
         mov fromBreakout, 0
         mov gameover, 1
         invoke KillTimer, hWnd, 1
@@ -492,7 +497,13 @@ getCake1Game ENDP
 Cake1fromBreakOut PROC
     mov maxCakes, 10
     mov fromBreakout, 1
+    mov winPosX, 1270
+    mov winPosY, 0
     ret
 Cake1fromBreakOut ENDP
+
+Cake1closeWindow PROC
+    mov gameover, 1
+Cake1closeWindow ENDP
 
 end WinMain3
