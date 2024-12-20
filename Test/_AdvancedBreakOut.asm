@@ -90,6 +90,26 @@ GoingTextCake1 db "Cake1 is still going !", 0
 GoingTextCake2 db "Cake2 is still going !", 0
 GoingTextMinesweeper db "Minesweeper is still going !", 0
 
+fallBrickOpenCmd db "open fallBrick.wav type mpegvideo alias fallBrickMusic", 0
+fallBrickVolumeCmd db "setaudio fallBrickMusic volume to 300", 0
+fallBrickPlayCmd db "play fallBrickMusic from 0", 0
+
+brickOpenCmd db "open brick.wav type mpegvideo alias brickMusic", 0
+brickVolumeCmd db "setaudio brickMusic volume to 300", 0
+brickPlayCmd db "play brickMusic from 0", 0
+
+specialBrickOpenCmd db "open specialBrick.wav type mpegvideo alias specialBrickMusic", 0
+specialBrickVolumeCmd db "setaudio specialBrickMusic volume to 300", 0
+specialBrickPlayCmd db "play specialBrickMusic from 0", 0
+
+platformOpenCmd db "open platform.wav type mpegvideo alias platformMusic", 0
+platformVolumeCmd db "setaudio platformMusic volume to 300", 0
+platformPlayCmd db "play platformMusic from 0", 0
+
+breakOutLoseOpenCmd db "open breakOutLose.wav type mpegvideo alias breakOutLoseMusic", 0
+breakOutLoseVolumeCmd db "setaudio breakOutLoseMusic volume to 300", 0
+breakOutLosePlayCmd db "play breakOutLoseMusic from 0", 0
+
 offset_center DWORD 0
 controlsCreated DWORD 0
 platformX DWORD 270           ; 初始 X 座標
@@ -259,6 +279,11 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ; 更新磚塊和特殊磚邏輯
         cmp fallTimeCount, 0
         jne no_brick_fall
+
+        invoke mciSendString, addr fallBrickOpenCmd, NULL, 0, NULL
+        invoke mciSendString, addr fallBrickVolumeCmd, NULL, 0, NULL
+        invoke mciSendString, addr fallBrickPlayCmd, NULL, 0, NULL
+
         call Fall
         call newBrick
         mov eax, fallTime
@@ -311,6 +336,10 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
 
     game_over:
+        invoke mciSendString, addr breakOutLoseOpenCmd, NULL, 0, NULL
+        invoke mciSendString, addr breakOutLoseVolumeCmd, NULL, 0, NULL
+        invoke mciSendString, addr breakOutLosePlayCmd, NULL, 0, NULL
+
         invoke InvalidateRect, hWnd, NULL, FALSE
         invoke KillTimer, hWnd, 1
         invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
@@ -699,6 +728,9 @@ do_corner_collision:
     fistp velocityY
 
 has_collision:
+    invoke mciSendString, addr platformOpenCmd, NULL, 0, NULL
+    invoke mciSendString, addr platformVolumeCmd, NULL, 0, NULL
+    invoke mciSendString, addr platformPlayCmd, NULL, 0, NULL
     dec fallTimeCount
 no_collision:
     ret
@@ -1309,6 +1341,11 @@ Continue:
 DrawScreen ENDP
 
 goSpecialBrick PROC, brickType:DWORD
+    cmp brickType, 1
+    je noGame
+    invoke mciSendString, addr specialBrickOpenCmd, NULL, 0, NULL
+    invoke mciSendString, addr specialBrickVolumeCmd, NULL, 0, NULL
+    invoke mciSendString, addr specialBrickPlayCmd, NULL, 0, NULL
     cmp brickType, 2
     je StartGame1
     cmp brickType, 3
@@ -1317,7 +1354,6 @@ goSpecialBrick PROC, brickType:DWORD
     je StartGame3
     cmp brickType, 5
     je StartGame4
-    jmp noGame
 
 StartGame1:
     call checkAdvanced1A2B
@@ -1372,6 +1408,9 @@ goGame4:
     call Minesweeper
 
 noGame:
+    invoke mciSendString, addr brickOpenCmd, NULL, 0, NULL
+    invoke mciSendString, addr brickVolumeCmd, NULL, 0, NULL
+    invoke mciSendString, addr brickPlayCmd, NULL, 0, NULL
     mov DWORD PTR [esi], 0
     ret
 

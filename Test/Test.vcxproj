@@ -180,6 +180,11 @@
     <Image Include="mine_red.bmp" />
   </ItemGroup>
   <ItemGroup>
+    <Media Include="..\..\音樂\breakOutLose.wav" />
+    <Media Include="..\..\音樂\brick.wav" />
+    <Media Include="..\..\音樂\fallBrick.wav" />
+    <Media Include="..\..\音樂\platform.wav" />
+    <Media Include="..\..\音樂\specialBrick.wav" />
     <Media Include="background.wav" />
     <Media Include="click.wav" />
     <Media Include="hit.wav" />
