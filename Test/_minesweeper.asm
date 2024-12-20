@@ -39,6 +39,9 @@ hMineRedBitmapName db "mine_red.bmp",0
 hFlagBitmapName db "flag.bmp",0
 hFlagRedBitmapName db "flag_red.bmp",0
 hBackBitmapName db "bitmap4.bmp",0
+boomOpenCmd db "open boom.wav type mpegvideo alias boomMusic", 0
+boomVolumeCmd db "setaudio boomMusic volume to 300", 0
+boomPlayCmd db "play boomMusic from 0", 0
 
 winPosX DWORD 400
 winPosY DWORD 0
@@ -165,6 +168,9 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     clickMine:
             cmp eax, 0
             je skip
+            invoke mciSendString, addr boomOpenCmd, NULL, 0, NULL
+            invoke mciSendString, addr boomVolumeCmd, NULL, 0, NULL
+            invoke mciSendString, addr boomPlayCmd, NULL, 0, NULL
             mov endGamebool, 1
             invoke GetWindowLong, hWnd, GWL_STYLE
             or eax, BS_BITMAP
