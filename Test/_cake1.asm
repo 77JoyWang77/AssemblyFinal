@@ -25,7 +25,7 @@ initialcakeX1 EQU 200     ; 初始 X 座標
 initialvelocityX1 EQU -10 ; X 方向速度
 initialground EQU 300
 dropSpeed EQU 10
-time EQU 50              ; 更新速度，影響磚塊速度
+time EQU 30              ; 更新速度，影響磚塊速度
 cakeMoveSize EQU 5
 heighest EQU 280
 
@@ -47,7 +47,6 @@ colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8
 colors_count EQU ($ - colors) / 4
 gameover BOOL TRUE
 fromBreakout DWORD 0
-
 
 .DATA?
 hInstance HINSTANCE ? 
@@ -187,7 +186,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je skip_space_key
         mov falling, TRUE
 
-        ; 初始化新蛋糕位置
+        ; 初始化新蛋糕速度
         mov velocityX, 0
         mov velocityY, dropSpeed
 

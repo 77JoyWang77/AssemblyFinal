@@ -24,7 +24,7 @@ initialvelocityX1 EQU -5  ; X 方向速度
 initialcakeWidth EQU 100
 initialground EQU 300
 dropSpeed EQU 10
-time EQU 50               ; 更新速度，影響磚塊速度
+time EQU 30               ; 更新速度，影響磚塊速度
 cakeMoveSize EQU 5
 heighest EQU 280
 
@@ -35,7 +35,6 @@ RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
 
 hBackBitmapName db "cake2_background.bmp",0
-hBackBitmapName db "bitmap4.bmp",0
 hitOpenCmd db "open hit.wav type mpegvideo alias hitMusic", 0
 hitVolumeCmd db "setaudio hitMusic volume to 300", 0
 hitPlayCmd db "play hitMusic from 0", 0
