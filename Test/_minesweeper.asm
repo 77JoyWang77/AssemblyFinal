@@ -2,6 +2,9 @@
 .model flat,stdcall 
 option casemap:none 
 
+EXTERN getOtherGame@0: PROC
+backBreakOut EQU getOtherGame@0
+
 open_mine proto :DWORD,:DWORD
 can_go_next proto :DWORD, :DWORD 
 
@@ -67,6 +70,7 @@ mineDir SBYTE -1,-1, 0,-1, 1,-1, -1,0, 1,0, -1,1, 0,1, 1,1
 flagRemaining db mineNum
 fromBreakout DWORD 0
 Time db 0           ; ²Ö­p¬í¼Æ
+winbool DWORD 0
 
 
 .DATA? 
@@ -181,12 +185,19 @@ ButtonSubclassProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     isflag:
             ret
     win:
+        mov winbool, 1
         call show_result
+        cmp fromBreakout, 1
+        je skipMsgWin
         invoke MessageBox, mainh, addr WinGame, addr AppName, MB_OK
+    skipMsgWin:
         jmp gameover
     lose:
         call show_result
+        cmp fromBreakout, 1
+        je skipMsgLose
         invoke MessageBox, mainh, addr LoseGame, addr AppName, MB_OK
+    skipMsgLose:
         jmp gameover
 
      gameover:
@@ -274,6 +285,19 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL ps:PAINTSTRUCT 
 
     .IF uMsg==WM_DESTROY 
+        cmp fromBreakout, 0
+        je getDestory
+        cmp winbool, 1
+        jne notWin
+        mov eax, 4
+        call backBreakOut
+        jmp getDestory
+    notWin:
+        mov eax, -4
+        call backBreakOut
+
+    getDestory:
+        mov fromBreakout, 0
         mov endGamebool, 1
         invoke KillTimer, hWnd, 1
         invoke PostQuitMessage,0
@@ -396,6 +420,7 @@ InitialCol:
     loop InitialCol
     pop ecx
     loop InitialRow
+    mov winbool, 0
     mov endGamebool, 0
     mov flagRemaining, mineNum
     ret
@@ -754,9 +779,13 @@ update_Time proc uses eax ebx edx
 update_Time endp
 
 getMinesweeperGame PROC
-    mov fromBreakout, 1
     mov eax, endGamebool
     ret
 getMinesweeperGame ENDP
+
+MinesweeperfromBreakOut PROC
+    mov fromBreakout, 1
+    ret
+MinesweeperfromBreakOut ENDP
 
 end

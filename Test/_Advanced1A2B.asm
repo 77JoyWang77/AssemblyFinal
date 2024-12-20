@@ -7,6 +7,9 @@ include user32.inc
 include kernel32.inc 
 include gdi32.inc 
 
+EXTERN getOtherGame@0: PROC
+backBreakOut EQU getOtherGame@0
+
 UpdateLineText PROTO, LineText:PTR DWORD, mode: Byte, do:byte
 CreateButton PROTO Text:PTR DWORD, x:DWORD, y:DWORD, ID:DWORD, hWnd:HWND
 
@@ -147,6 +150,19 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL rect:RECT 
 
     .IF uMsg==WM_DESTROY 
+        cmp fromBreakout, 0
+        je getDestory
+        cmp Acount, 4
+        jne notWin
+        mov eax, 1
+        call backBreakOut
+        jmp getDestory
+    notWin:
+        mov eax, -1
+        call backBreakOut
+
+    getDestory:
+        mov fromBreakout, 0
         mov gameover, 1
         invoke DeleteDC, hdcMem
         invoke DestroyWindow, hWnd
@@ -282,9 +298,11 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         game_over:
         ; 顯示遊戲結束訊息
-            mov gameover, 1
             call Output
+            cmp fromBreakout, 1
+            je skipMsg
             invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
+        skipMsg:
             invoke DeleteDC, hdcMem
             invoke DestroyWindow, hWnd
             invoke PostQuitMessage, 0
@@ -484,6 +502,7 @@ getAdvanced1A2BGame ENDP
 
 Advanced1A2BfromBreakOut PROC
     mov fromBreakout, 1
+    ret
 Advanced1A2BfromBreakOut ENDP
 
 end

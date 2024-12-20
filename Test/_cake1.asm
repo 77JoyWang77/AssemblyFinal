@@ -7,6 +7,9 @@ include user32.inc
 include kernel32.inc 
 include gdi32.inc 
 
+EXTERN getOtherGame@0: PROC
+backBreakOut EQU getOtherGame@0
+
 .CONST
 cakeWidth EQU 50          ; 蛋糕寬度
 cakeHeight EQU 20         ; 蛋糕高度
@@ -135,6 +138,19 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL ps:PAINTSTRUCT 
 
     .IF uMsg==WM_DESTROY 
+        cmp fromBreakout, 0
+        je getDestory
+        cmp maxCakes, 0
+        jne notWin
+        mov eax, 2
+        call backBreakOut
+        jmp getDestory
+    notWin:
+        mov eax, -2
+        call backBreakOut
+
+    getDestory:
+        mov fromBreakout, 0
         mov gameover, 1
         invoke KillTimer, hWnd, 1
         invoke DeleteObject, hBitmap
@@ -252,10 +268,11 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
     game_over:
         ; 顯示遊戲結束訊息
-        mov gameover, TRUE
-        mov fromBreakout, 0
         invoke KillTimer, hWnd, 1
+        cmp fromBreakout, 1
+        je skipMsg
         invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
+    skipMsg:
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
         invoke DestroyWindow, hWnd
@@ -469,6 +486,7 @@ getCake1Game ENDP
 Cake1fromBreakOut PROC
     mov maxCakes, 10
     mov fromBreakout, 1
+    ret
 Cake1fromBreakOut ENDP
 
 end WinMain3
