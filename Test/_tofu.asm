@@ -57,7 +57,6 @@ hBallBrush HBRUSH ?
 brushes HBRUSH maxCakes DUP(?)
 
 velocityY DWORD ?              ; 球的垂直速度
-move BYTE ?
 tempWidth DWORD ?
 tempHeight DWORD ?
 cakeX DWORD ?                        ; X 座標
@@ -69,10 +68,11 @@ TriesRemaining BYTE ?                ; 剩餘次數
 groundMoveCount DWORD ?              ; 記錄地面已移動的像素總數
 needMove DWORD ?
 ground DWORD ?
-moveDown BOOL ?
 gameover BOOL ?
 canDrop BOOL ?
 valid BOOL ?
+way BOOL ?
+move BOOL ?
 
 .CODE
 WinMain6 proc
@@ -176,7 +176,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         test eax, 8000h ; 測試最高位
         jz skip_space_key
 
-        cmp ball.bottom, 250
+        cmp ball.bottom, initialground
         jl skip_space_key
 
         cmp move, TRUE
@@ -203,7 +203,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         call Update_move
 
     skip_move:
-        cmp ball.bottom, 230
+        cmp ball.bottom, initialcakeY
         jl move_ground
 
         call check_ball
@@ -220,6 +220,9 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je move_ground
 
     next:
+        invoke mciSendString, addr hitOpenCmd, NULL, 0, NULL
+        invoke mciSendString, addr hitVolumeCmd, NULL, 0, NULL
+        invoke mciSendString, addr hitPlayCmd, NULL, 0, NULL
         mov move, FALSE
         mov valid,FALSE
         mov eax, cakeHeight
@@ -312,7 +315,7 @@ Update_move PROC
 
     ; 檢查碰撞地板
     mov eax, ball.bottom
-    cmp eax, 230
+    cmp eax, initialcakeY
     jl no_collision
 
     ; 停止運動並固定球位置
@@ -431,7 +434,7 @@ check_ball PROC
     jmp ball_not_collision
 
 invalid_collision:
-    cmp eax, 230
+    cmp eax, initialcakeY
     je valid_collision
     mov gameover, TRUE;
     jmp ball_not_collision
