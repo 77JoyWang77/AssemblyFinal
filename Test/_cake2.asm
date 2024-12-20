@@ -35,7 +35,7 @@ RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
 
 hBackBitmapName db "cake2_background.bmp",0
-hBackBitmapName db "bitmap4.bmp",0
+
 hitOpenCmd db "open hit.wav type mpegvideo alias hitMusic", 0
 hitVolumeCmd db "setaudio hitMusic volume to 300", 0
 hitPlayCmd db "play hitMusic from 0", 0
@@ -47,6 +47,9 @@ colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8
 colors_count EQU ($ - colors) / 4
 gameover BOOL TRUE
 fromBreakout DWORD 0
+
+winPosX DWORD 400
+winPosY DWORD 0
 
 
 .DATA? 
@@ -121,7 +124,7 @@ WinMain4 proc
     ; ³Ð«Øµ¡¤f
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            1570, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
+            winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
     invoke SetTimer, hwnd, 1, time, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
@@ -155,6 +158,8 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         call backBreakOut
 
     getDestory:
+        mov winPosX, 400
+        mov winPosY, 0
         mov fromBreakout, 0
         mov gameover, 1
         invoke KillTimer, hWnd, 1
@@ -528,9 +533,15 @@ getCake2Game PROC
 getCake2Game ENDP
 
 Cake2fromBreakOut PROC
+    mov winPosX, 1570
+    mov winPosY, 0
     mov maxCakes, 10
     mov fromBreakout, 1
     ret
 Cake2fromBreakOut ENDP
+
+Cake2closeWindow PROC
+    mov gameover, 1
+Cake2closeWindow ENDP
 
 end

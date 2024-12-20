@@ -50,7 +50,8 @@ fallTimeCount DWORD 5
 specialTimeCount DWORD 5
 gameOver DWORD 1
 score DWORD 0
-
+winPosX DWORD 400
+winPosY DWORD 0
 randomNum DWORD 0
 randomSeed DWORD 0                 ; 隨機數種子
 
@@ -125,7 +126,7 @@ WinMain7 proc
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            400, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
+            winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
     invoke SetTimer, hwnd, 1, 1, NULL  ; 更新間隔從 50ms 改為 10ms
 
