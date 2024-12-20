@@ -58,7 +58,7 @@ brickTypeNum EQU 6
 brickWidth EQU 60
 brickHeight EQU 20
 fallTime EQU 3
-specialTime EQU 1
+specialTime EQU 3
 ballRadius EQU 10             ; ¤p²y¥b®|
 OFFSET_BASE EQU 150
 timer EQU 20

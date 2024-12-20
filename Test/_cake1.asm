@@ -51,7 +51,6 @@ fromBreakout DWORD 0
 winPosX DWORD 400
 winPosY DWORD 0
 
-
 .DATA?
 hInstance HINSTANCE ? 
 hBitmap HBITMAP ?
@@ -192,7 +191,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je skip_space_key
         mov falling, TRUE
 
-        ; 初始化新蛋糕位置
+        ; 初始化新蛋糕速度
         mov velocityX, 0
         mov velocityY, dropSpeed
 
