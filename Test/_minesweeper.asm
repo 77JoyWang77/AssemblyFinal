@@ -40,6 +40,9 @@ hFlagBitmapName db "flag.bmp",0
 hFlagRedBitmapName db "flag_red.bmp",0
 hBackBitmapName db "bitmap4.bmp",0
 
+winPosX DWORD 400
+winPosY DWORD 0
+
 borderX DWORD 80           ; 初始 X 座標
 borderY DWORD 160           ; 初始 Y 座標
 borderWidth DWORD 240       ; 平台寬度
@@ -262,7 +265,7 @@ WinMain5 proc
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            1000, 430, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
+            winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
     invoke SetTimer, hwnd, 1, 1000, NULL  ;
     ; 顯示和更新窗口
@@ -298,6 +301,8 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         call backBreakOut
 
     getDestory:
+        mov winPosX, 400
+        mov winPosY, 0
         mov fromBreakout, 0
         mov endGamebool, 1
         invoke KillTimer, hWnd, 1
@@ -785,8 +790,15 @@ getMinesweeperGame PROC
 getMinesweeperGame ENDP
 
 MinesweeperfromBreakOut PROC
+    mov winPosX, 1000
+    mov winPosY, 430
     mov fromBreakout, 1
     ret
 MinesweeperfromBreakOut ENDP
+
+MinesweepercloseWindow PROC
+    mov endGamebool, 1
+MinesweepercloseWindow ENDP
+
 
 end

@@ -319,6 +319,10 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke mciSendString, addr clickVolumeCmd, NULL, 0, NULL
         invoke mciSendString, addr clickPlayCmd, NULL, 0, NULL
 
+        call checkGame
+        cmp eax, 1
+        je hasGame
+
         mov eax, wParam
         cmp eax, 1
         je StartGame1
@@ -332,6 +336,8 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je StartGame5
         cmp eax, 6
         je StartGame6
+
+    hasGame:
 
 
     .ELSEIF uMsg == WM_PAINT
@@ -349,61 +355,64 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     xor   eax, eax 
     ret 
 StartGame1:
-    call checkAdvanced1A2B
-    cmp eax, 1
-    je goGame1
-    ret
-goGame1:
+    ; ©I¥s¹CÀ¸±Ò°Ê
     call Advanced1A2B
     ret
 StartGame2:
-    call checkBreakOut
-    cmp eax, 0
-    je skipGame2
-    cmp eax, 0
-    je skipGame2
+    ; ©I¥s¹CÀ¸±Ò°Ê
     call BreakOut
     ret
-skipGame2:
-    ret
 StartGame3:
-    call checkCake1
-    cmp eax, 1
-    je goGame3
-    ret
-goGame3:
+    ; ©I¥s¹CÀ¸±Ò°Ê
     call Cake1
     ret
 StartGame4:
-    call checkCake2
-    cmp eax, 1
-    je goGame4
-    ret
-goGame4:
+    ; ©I¥s¹CÀ¸±Ò°Ê
     call Cake2
     ret
 StartGame5:
-    call checkMinesweeper
-    cmp eax, 1
-    je goGame5
-    ret
-goGame5:
+    ; ©I¥s¹CÀ¸±Ò°Ê
     call Minesweeper
+    ret
 ;StartGame6:
     ; ©I¥s¹CÀ¸±Ò°Ê
     ;call Tofu
     ;ret
     
 StartGame6:
-    call checkBreakOut
-    cmp eax, 0
-    je skipGame6
-    cmp eax, 0
-    je skipGame6
+    ; ©I¥s¹CÀ¸±Ò°Ê
     call AdvancedBreakOut
     ret
-skipGame6:
-    ret
+
 WndProc endp 
+
+checkGame PROC
+    call checkAdvanced1A2B
+    cmp eax, 0
+    je hasGame
+    call checkBreakOut
+    cmp eax, 0
+    je hasGame
+    call checkCake1
+    cmp eax, 0
+    je hasGame
+    call checkCake2
+    cmp eax, 0
+    je hasGame
+    call checkMinesweeper
+    cmp eax, 0
+    je hasGame
+    call checkAdvancedBreakOut
+    cmp eax, 0
+    je hasGame
+
+    mov eax, 0
+    ret
+
+hasGame:
+    mov eax, 1
+    ret
+
+checkGame ENDP
 
 end
