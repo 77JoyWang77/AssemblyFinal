@@ -796,9 +796,4 @@ MinesweeperfromBreakOut PROC
     ret
 MinesweeperfromBreakOut ENDP
 
-MinesweepercloseWindow PROC
-    mov endGamebool, 1
-MinesweepercloseWindow ENDP
-
-
 end

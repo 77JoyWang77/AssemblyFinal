@@ -517,8 +517,5 @@ Advanced1A2BfromBreakOut PROC
     ret
 Advanced1A2BfromBreakOut ENDP
 
-Advanced1A2BcloseWindow PROC
-    mov gameover, 1
-Advanced1A2BcloseWindow ENDP
 
 end

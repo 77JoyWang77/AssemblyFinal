@@ -540,8 +540,4 @@ Cake2fromBreakOut PROC
     ret
 Cake2fromBreakOut ENDP
 
-Cake2closeWindow PROC
-    mov gameover, 1
-Cake2closeWindow ENDP
-
 end
