@@ -6,6 +6,7 @@ include windows.inc
 include user32.inc 
 include kernel32.inc 
 include gdi32.inc 
+include winmm.inc
 
 UpdateLineText PROTO, LineText:PTR DWORD, mode: Byte, do:byte
 CreateButton PROTO Text:PTR DWORD, x:DWORD, y:DWORD, ID:DWORD, hWnd:HWND
@@ -40,6 +41,9 @@ Line7Text db "                    ", 0
 Line8Text db "                    ", 0
 
 hBackBitmapName db "bitmap3.bmp",0
+clickOpenCmd db "open click.wav type mpegvideo alias clickMusic", 0
+clickVolumeCmd db "setaudio clickMusic volume to 300", 0
+clickPlayCmd db "play clickMusic from 0", 0
 
 line1Rect RECT <20, 20, 250, 40>
 line2Rect RECT <20, 50, 250, 70> 
@@ -55,13 +59,14 @@ SelectedCount   dd 0
 TriesRemaining  db 8
 winWidth DWORD 270           ; 保存窗口寬度
 winHeight DWORD 400          ; 保存窗口高度
+fromBreakout DWORD 0
+gameover DWORD 1
 
 .DATA? 
 hInstance HINSTANCE ? 
 hBitmap HBITMAP ?
 hBackBitmap HBITMAP ?
 hBackBitmap2 HBITMAP ?
-hBrush HBRUSH ?
 hdc HDC ?
 hdcMem HDC ?
 hdcBack HDC ?
@@ -72,6 +77,7 @@ Acount byte ?
 Bcount byte ? 
 tempWidth DWORD ?
 tempHeight DWORD ?
+
 
 .CODE 
 WinMain1 proc
@@ -118,13 +124,10 @@ WinMain1 proc
     sub eax, wr.top
     mov tempHeight, eax
 
-    invoke CreateSolidBrush, 00FFFFFFh
-    mov hBrush, eax
-
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            0, 0, tempWidth, tempHeight, \
+            1000, 0, tempWidth, tempHeight, \
             NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
 
@@ -148,8 +151,8 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL rect:RECT 
 
     .IF uMsg==WM_DESTROY 
+        mov gameover, 1
         invoke DeleteDC, hdcMem
-        invoke DeleteObject, hBrush
         invoke DestroyWindow, hWnd
         invoke PostQuitMessage,0
         ret
@@ -170,10 +173,6 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke SelectObject, hdcMem, hBackBitmap
         invoke SelectObject, hdcBack, hBackBitmap2
         invoke GetClientRect, hWnd, addr rect
-
-        ; 填充背景色
-        invoke CreateSolidBrush,  00FFFFFFh
-        mov hBrush, eax
         
         invoke CreateButton, addr ButtonText1, 20, 310, 11, hWnd
         invoke CreateButton, addr ButtonText2, 60, 310, 12, hWnd
@@ -190,6 +189,9 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke ReleaseDC, hWnd, hdc
 
     .ELSEIF uMsg == WM_COMMAND
+        invoke mciSendString, addr clickOpenCmd, NULL, 0, NULL
+        invoke mciSendString, addr clickVolumeCmd, NULL, 0, NULL
+        invoke mciSendString, addr clickPlayCmd, NULL, 0, NULL
         mov eax, wParam
 
         ; 按下數字按鈕
@@ -232,7 +234,6 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             ; 啟用該按鈕
             invoke GetDlgItem, hWnd, ecx
             invoke EnableWindow, eax, TRUE
-            ;invoke MessageBox, NULL, addr GuessLineText, NULL, MB_OK
 
             ; 更新顯示
             invoke InvalidateRect, hWnd,  NULL, FALSE
@@ -287,10 +288,10 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         game_over:
         ; 顯示遊戲結束訊息
+            mov gameover, 1
             call Output
             invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
             invoke DeleteDC, hdcMem
-            invoke DeleteObject, hBrush
             invoke DestroyWindow, hWnd
             invoke PostQuitMessage, 0
             ret
@@ -317,6 +318,7 @@ WndProc1 ENDP
 Initialized PROC
     call RandomNumber2
     ;call Output
+    mov gameover, 0
     mov SelectedCount, 0
     mov TriesRemaining, 8
     invoke UpdateLineText, OFFSET Line1Text, 0, 0
@@ -480,4 +482,14 @@ UpdateText PROC
     invoke DrawText, hdcMem, addr Line7Text, -1, addr line8Rect,DT_CENTER
     ret
 UpdateText ENDP
+
+getAdvanced1A2BGame PROC
+    mov eax, gameover
+    ret
+getAdvanced1A2BGame ENDP
+
+Advanced1A2BfromBreakOut PROC
+    mov fromBreakout, 1
+Advanced1A2BfromBreakOut ENDP
+
 end

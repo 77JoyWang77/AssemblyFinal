@@ -8,12 +8,29 @@ EXTERN WinMain3@0: PROC
 EXTERN WinMain4@0: PROC
 EXTERN WinMain5@0: PROC
 EXTERN WinMain6@0: PROC
+EXTERN WinMain7@0: PROC
+
+EXTERN getAdvanced1A2BGame@0: PROC
+EXTERN getBreakOutGame@0: PROC
+EXTERN getCake1Game@0: PROC
+EXTERN getCake2Game@0: PROC
+EXTERN getMinesweeperGame@0: PROC
+EXTERN getAdvancedBreakOutGame@0: PROC
+
 Advanced1A2B EQU WinMain1@0
-GameBrick EQU WinMain2@0
+AdvancedBreakOut EQU WinMain2@0
 Cake1 EQU WinMain3@0
 Cake2 EQU WinMain4@0
 Minesweeper EQU WinMain5@0
 Tofu EQU WinMain6@0
+BreakOut EQU WinMain7@0
+
+checkAdvanced1A2B EQU getAdvanced1A2BGame@0
+checkBreakOut EQU getBreakOutGame@0
+checkCake1 EQU getCake1Game@0
+checkCake2 EQU getCake2Game@0
+checkMinesweeper EQU getMinesweeperGame@0
+checkAdvancedBreakOut EQU getAdvancedBreakOutGame@0
 
 WinMain proto :DWORD
 
@@ -21,6 +38,7 @@ include windows.inc
 include user32.inc 
 include kernel32.inc 
 include gdi32.inc 
+include winmm.inc
 
 .DATA 
 ClassName db "SimpleWinClass",0 
@@ -31,15 +49,24 @@ ButtonText2 db "Breakout", 0
 ButtonText3 db "Cake1", 0
 ButtonText4 db "Cake2", 0
 ButtonText5 db "Minesweeper", 0
-ButtonText6 db "Tofu", 0
+ButtonText6 db "AdvancedBreakout", 0
+
 
 hButton1BitmapName db "home_1A2B.bmp", 0
 hButton2BitmapName db "home_BREAKOUT.bmp", 0
 hButton3BitmapName db "home_cake1.bmp", 0
 hButton4BitmapName db "home_cake2.bmp", 0
 hButton5BitmapName db "home_minesweeper.bmp", 0
-hButton6BitmapName db "home_tofu.bmp", 0
+hButton6BitmapName db "bitmap6.bmp", 0
+
 hBackBitmapName db "home_background.bmp", 0
+BackgroundMusic db "background.mp3", 0
+bgOpenCmd db "open background.wav type mpegvideo alias bgMusic", 0
+bgVolumeCmd db "setaudio bgMusic volume to 300", 0
+bgPlayCmd db "play bgMusic repeat", 0
+clickOpenCmd db "open click.wav type mpegvideo alias clickMusic", 0
+clickVolumeCmd db "setaudio clickMusic volume to 300", 0
+clickPlayCmd db "play clickMusic from 0", 0
 
 winWidth EQU 400        ; 視窗寬度
 winHeight EQU 600       ; 視窗高度
@@ -189,10 +216,15 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ; 清理資源
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
+        invoke PlaySound, NULL, NULL, 0
         ; 發送退出訊息
         invoke PostQuitMessage, NULL
         ret
     .ELSEIF uMsg == WM_CREATE
+        invoke mciSendString, addr bgOpenCmd, NULL, 0, NULL    ; 開啟背景音樂
+        invoke mciSendString, addr bgVolumeCmd, NULL, 0, NULL  ; 設定音量 (可調整為適合的範圍)
+        invoke mciSendString, addr bgPlayCmd, NULL, 0, NULL    ; 播放背景音樂，並設置為循環播放
+
         invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hBackBitmap, eax
 
@@ -259,19 +291,34 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov OriginalProc, eax
         invoke SetWindowLong, hTarget, GWL_USERDATA, eax
 
+
         invoke LoadImage, hInstance, addr hButton6BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hButton6Bitmap, eax
-
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, NULL, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_OWNERDRAW, \
-               100, 450, ButtonWidth, ButtonHeight, hWnd, 6, hInstance, NULL
+               300, 500, 40, ButtonHeight, hWnd, 6, hInstance, NULL
         mov hTarget, eax
         invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
         mov OriginalProc, eax
         invoke SetWindowLong, hTarget, GWL_USERDATA, eax
 
+        ;invoke LoadImage, hInstance, addr hButton6BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        ;mov hButton6Bitmap, eax
+
+        ;invoke CreateWindowEx, NULL,  ADDR ButtonClassName, NULL, \
+        ;       WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_OWNERDRAW, \
+        ;       100, 450, ButtonWidth, ButtonHeight, hWnd, 6, hInstance, NULL
+        ;mov hTarget, eax
+        ;invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
+        ;mov OriginalProc, eax
+        ;invoke SetWindowLong, hTarget, GWL_USERDATA, eax
+
         invoke ReleaseDC, hWnd, hdc
     .ELSEIF uMsg == WM_COMMAND
+        invoke mciSendString, addr clickOpenCmd, NULL, 0, NULL
+        invoke mciSendString, addr clickVolumeCmd, NULL, 0, NULL
+        invoke mciSendString, addr clickPlayCmd, NULL, 0, NULL
+
         mov eax, wParam
         cmp eax, 1
         je StartGame1
@@ -285,6 +332,7 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je StartGame5
         cmp eax, 6
         je StartGame6
+
 
     .ELSEIF uMsg == WM_PAINT
         ; 先開始繪製
@@ -301,28 +349,60 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     xor   eax, eax 
     ret 
 StartGame1:
-    ; 呼叫遊戲啟動
+    call checkAdvanced1A2B
+    cmp eax, 1
+    je goGame1
+    ret
+goGame1:
     call Advanced1A2B
     ret
 StartGame2:
-    ; 呼叫遊戲啟動
-    call GameBrick
+    call checkBreakOut
+    cmp eax, 0
+    je skipGame2
+    cmp eax, 0
+    je skipGame2
+    call BreakOut
+    ret
+skipGame2:
     ret
 StartGame3:
-    ; 呼叫遊戲啟動
+    call checkCake1
+    cmp eax, 1
+    je goGame3
+    ret
+goGame3:
     call Cake1
     ret
 StartGame4:
-    ; 呼叫遊戲啟動
+    call checkCake2
+    cmp eax, 1
+    je goGame4
+    ret
+goGame4:
     call Cake2
     ret
 StartGame5:
-    ; 呼叫遊戲啟動
-    call Minesweeper
+    call checkMinesweeper
+    cmp eax, 1
+    je goGame5
     ret
-StartGame6:
+goGame5:
+    call Minesweeper
+;StartGame6:
     ; 呼叫遊戲啟動
-    call Tofu
+    ;call Tofu
+    ;ret
+    
+StartGame6:
+    call checkBreakOut
+    cmp eax, 0
+    je skipGame6
+    cmp eax, 0
+    je skipGame6
+    call AdvancedBreakOut
+    ret
+skipGame6:
     ret
 WndProc endp 
 

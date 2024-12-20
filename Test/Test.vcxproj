@@ -82,8 +82,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Irvine;C:\masm32\include</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Irvine32.lib;user32.lib;
-kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Irvine32.lib;user32.lib;kernel32.lib;gdi32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateMapFile>true</GenerateMapFile>
     </Link>
     <MASM>
@@ -152,6 +151,7 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <MASM Include="_Breakout.asm" />
     <MASM Include="main.asm" />
     <MASM Include="_Home.asm" />
+    <MASM Include="_SimpleBreakOut.asm" />
     <MASM Include="_tofu.asm" />
   </ItemGroup>
   <ItemGroup>
@@ -163,6 +163,8 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
   <ItemGroup>
     <Image Include="bitmap3.bmp" />
     <Image Include="bitmap4.bmp" />
+    <Image Include="bitmap5.bmp" />
+    <Image Include="bitmap6.bmp" />
     <Image Include="cake1_background.bmp" />
     <Image Include="cake2_background.bmp" />
     <Image Include="flag_red.bmp" />
@@ -176,6 +178,11 @@ kernel32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <Image Include="mine.bmp" />
     <Image Include="flag.bmp" />
     <Image Include="mine_red.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="background.wav" />
+    <Media Include="click.wav" />
+    <Media Include="hit.wav" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -6,6 +6,7 @@ include windows.inc
 include user32.inc
 include kernel32.inc
 include gdi32.inc
+include winmm.inc
 
 .CONST
 winWidth EQU 300        ; µøµ¡¼e«×
