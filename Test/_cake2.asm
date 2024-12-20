@@ -6,6 +6,7 @@ include windows.inc
 include user32.inc 
 include kernel32.inc 
 include gdi32.inc 
+include winmm.inc
 
 EXTERN getOtherGame@0: PROC
 backBreakOut EQU getOtherGame@0
@@ -33,7 +34,11 @@ AppName  db "Cake", 0
 RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
 
+hBackBitmapName db "cake2_background.bmp",0
 hBackBitmapName db "bitmap4.bmp",0
+hitOpenCmd db "open hit.wav type mpegvideo alias hitMusic", 0
+hitVolumeCmd db "setaudio hitMusic volume to 300", 0
+hitPlayCmd db "play hitMusic from 0", 0
 
 maxCakes DWORD 99         ; 最大蛋糕數量
 cakes RECT 99 DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
@@ -53,7 +58,6 @@ hdcMem HDC ?
 hdcBack HDC ?
 brushes HBRUSH 99 DUP(?)
 
-initialcakeX1 DWORD 50              ; 初始 X 座標
 tempWidth DWORD ?
 tempHeight DWORD ?
 cakeWidth DWORD ?                   ; 蛋糕寬度
@@ -210,6 +214,9 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je move_ground
 
     handle_collision:
+        invoke mciSendString, addr hitOpenCmd, NULL, 0, NULL
+        invoke mciSendString, addr hitVolumeCmd, NULL, 0, NULL
+        invoke mciSendString, addr hitPlayCmd, NULL, 0, NULL
         mov ebx, SIZEOF RECT
         imul ebx, currentCakeIndex
         mov eax, cakes[ebx].left
@@ -230,11 +237,9 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov velocityX, initialvelocityX
         jmp Next1
     Next:
-        mov initialcakeX1, border_right
-        sub initialcakeX1, 20
-        mov eax, cakeWidth
-        sub initialcakeX1, eax
-        mov eax, initialcakeX1
+        mov eax, border_right
+        sub eax, 20
+        sub eax, cakeWidth
         mov cakeX, eax
         mov velocityX, initialvelocityX1
     Next1:

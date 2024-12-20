@@ -166,6 +166,7 @@
     <Image Include="bitmap5.bmp" />
     <Image Include="bitmap6.bmp" />
     <Image Include="cake1_background.bmp" />
+    <Image Include="cake2_background.bmp" />
     <Image Include="flag_red.bmp" />
     <Image Include="home_1A2B.bmp" />
     <Image Include="home_background.bmp" />
@@ -180,6 +181,8 @@
   </ItemGroup>
   <ItemGroup>
     <Media Include="background.wav" />
+    <Media Include="click.wav" />
+    <Media Include="hit.wav" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

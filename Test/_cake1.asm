@@ -6,6 +6,7 @@ include windows.inc
 include user32.inc 
 include kernel32.inc 
 include gdi32.inc 
+include winmm.inc
 
 EXTERN getOtherGame@0: PROC
 backBreakOut EQU getOtherGame@0
@@ -35,6 +36,9 @@ RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
 
 hBackBitmapName db "cake1_background.bmp",0
+hitOpenCmd db "open hit.wav type mpegvideo alias hitMusic", 0
+hitVolumeCmd db "setaudio hitMusic volume to 300", 0
+hitPlayCmd db "play hitMusic from 0", 0
 
 maxCakes DWORD 99
 line1Rect RECT <30, 30, 280, 50>
@@ -208,6 +212,9 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je move_ground
 
     handle_collision:
+        invoke mciSendString, addr hitOpenCmd, NULL, 0, NULL
+        invoke mciSendString, addr hitVolumeCmd, NULL, 0, NULL
+        invoke mciSendString, addr hitPlayCmd, NULL, 0, NULL
         mov falling, FALSE
         dec TriesRemaining
         mov cakeY, initialcakeY
