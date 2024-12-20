@@ -30,7 +30,7 @@ AppName  db "Cake", 0
 RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
 
-hBackBitmapName db "bitmap4.bmp",0
+hBackBitmapName db "cake2_background.bmp",0
 
 cakes RECT maxCakes DUP(<0, 0, 0, 0>) ; ¿x¶s≥Jø|√‰¨…
 line1Rect RECT <20, 20, 280, 40>
