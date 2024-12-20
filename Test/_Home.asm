@@ -319,10 +319,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke mciSendString, addr clickVolumeCmd, NULL, 0, NULL
         invoke mciSendString, addr clickPlayCmd, NULL, 0, NULL
 
-        call checkGame
-        cmp eax, 1
-        je hasGame
-
         mov eax, wParam
         cmp eax, 1
         je StartGame1
@@ -336,8 +332,6 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je StartGame5
         cmp eax, 6
         je StartGame6
-
-    hasGame:
 
 
     .ELSEIF uMsg == WM_PAINT
@@ -355,64 +349,61 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     xor   eax, eax 
     ret 
 StartGame1:
-    ; ©I¥s¹CÀ¸±Ò°Ê
+    call checkAdvanced1A2B
+    cmp eax, 1
+    je goGame1
+    ret
+goGame1:
     call Advanced1A2B
     ret
 StartGame2:
-    ; ©I¥s¹CÀ¸±Ò°Ê
+    call checkBreakOut
+    cmp eax, 0
+    je skipGame2
+    cmp eax, 0
+    je skipGame2
     call BreakOut
     ret
+skipGame2:
+    ret
 StartGame3:
-    ; ©I¥s¹CÀ¸±Ò°Ê
+    call checkCake1
+    cmp eax, 1
+    je goGame3
+    ret
+goGame3:
     call Cake1
     ret
 StartGame4:
-    ; ©I¥s¹CÀ¸±Ò°Ê
+    call checkCake2
+    cmp eax, 1
+    je goGame4
+    ret
+goGame4:
     call Cake2
     ret
 StartGame5:
-    ; ©I¥s¹CÀ¸±Ò°Ê
-    call Minesweeper
+    call checkMinesweeper
+    cmp eax, 1
+    je goGame5
     ret
+goGame5:
+    call Minesweeper
 ;StartGame6:
     ; ©I¥s¹CÀ¸±Ò°Ê
     ;call Tofu
     ;ret
     
 StartGame6:
-    ; ©I¥s¹CÀ¸±Ò°Ê
-    call AdvancedBreakOut
-    ret
-
-WndProc endp 
-
-checkGame PROC
-    call checkAdvanced1A2B
-    cmp eax, 0
-    je hasGame
     call checkBreakOut
     cmp eax, 0
-    je hasGame
-    call checkCake1
+    je skipGame6
     cmp eax, 0
-    je hasGame
-    call checkCake2
-    cmp eax, 0
-    je hasGame
-    call checkMinesweeper
-    cmp eax, 0
-    je hasGame
-    call checkAdvancedBreakOut
-    cmp eax, 0
-    je hasGame
-
-    mov eax, 0
+    je skipGame6
+    call AdvancedBreakOut
     ret
-
-hasGame:
-    mov eax, 1
+skipGame6:
     ret
-
-checkGame ENDP
+WndProc endp 
 
 end

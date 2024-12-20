@@ -64,8 +64,6 @@ winWidth DWORD 270           ; 保存窗口寬度
 winHeight DWORD 400          ; 保存窗口高度
 fromBreakout DWORD 0
 gameover DWORD 1
-winPosX DWORD 400
-winPosY DWORD 0
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -132,7 +130,7 @@ WinMain1 proc
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            winPosX, winPosY, tempWidth, tempHeight, \
+            1000, 0, tempWidth, tempHeight, \
             NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
 
@@ -168,8 +166,6 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         call backBreakOut
 
     getDestory:
-        mov winPosX, 400
-        mov winPosY, 0
         mov fromBreakout, 0
         mov gameover, 1
         invoke DeleteDC, hdcMem
@@ -511,14 +507,8 @@ getAdvanced1A2BGame PROC
 getAdvanced1A2BGame ENDP
 
 Advanced1A2BfromBreakOut PROC
-    mov winPosX, 1000
-    mov winPosY, 0
     mov fromBreakout, 1
     ret
 Advanced1A2BfromBreakOut ENDP
-
-Advanced1A2BcloseWindow PROC
-    mov gameover, 1
-Advanced1A2BcloseWindow ENDP
 
 end

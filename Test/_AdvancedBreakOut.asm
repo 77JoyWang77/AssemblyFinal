@@ -1,4 +1,4 @@
-ï»¿.386 
+.386 
 .model flat,stdcall 
 option casemap:none 
 
@@ -19,11 +19,6 @@ EXTERN Cake1fromBreakOut@0: PROC
 EXTERN Cake2fromBreakOut@0: PROC
 EXTERN MinesweeperfromBreakOut@0: PROC
 
-EXTERN Advanced1A2BcloseWindow@0: PROC
-EXTERN Cake1closeWindow@0: PROC
-EXTERN Cake2closeWindow@0: PROC
-EXTERN MinesweepercloseWindow@0: PROC
-
 Advanced1A2B EQU WinMain1@0
 GameBrick EQU WinMain2@0
 Cake1 EQU WinMain3@0
@@ -41,11 +36,6 @@ goCake1 EQU Cake1fromBreakOut@0
 goCake2 EQU Cake2fromBreakOut@0
 goMinesweeper EQU MinesweeperfromBreakOut@0
 
-closeAdvanced1A2B EQU Advanced1A2BcloseWindow@0
-closeCake1 EQU Cake1closeWindow@0
-closeCake2 EQU Cake2closeWindow@0
-closeMinesweeper EQU MinesweepercloseWindow@0
-
 goSpecialBrick proto :DWORD
 corner_collision proto :DWORD,:DWORD
 
@@ -56,11 +46,11 @@ include gdi32.inc
 include winmm.inc
 
 .CONST
-platformWidth EQU 120       ; å¹³å°å¯¬åº¦
-platformHeight EQU 15       ; å¹³å°é«˜åº¦
-stepSize DWORD 10             ; æ¯æ¬¡ç§»å‹•çš„åƒç´ æ•¸é‡
-winWidth EQU 600              ; è¦–çª—å¯¬åº¦
-winHeight EQU 600             ; è¦–çª—é«˜åº¦
+platformWidth EQU 120       ; ¥­¥x¼e«×
+platformHeight EQU 15       ; ¥­¥x°ª«×
+stepSize DWORD 10             ; ¨C¦¸²¾°Êªº¹³¯À¼Æ¶q
+winWidth EQU 600              ; µøµ¡¼e«×
+winHeight EQU 600             ; µøµ¡°ª«×
 initialBrickRow EQU 5
 brickNumX EQU 10
 brickNumY EQU 27
@@ -69,7 +59,7 @@ brickWidth EQU 60
 brickHeight EQU 20
 fallTime EQU 3
 specialTime EQU 1
-ballRadius EQU 10             ; å°çƒåŠå¾‘
+ballRadius EQU 10             ; ¤p²y¥b®|
 OFFSET_BASE EQU 150
 timer EQU 20
 speed DWORD 10
@@ -98,12 +88,12 @@ LoseTextMinesweeper db "You Lose Minesweeper", 0
 
 offset_center DWORD 0
 controlsCreated DWORD 0
-platformX DWORD 270           ; åˆå§‹ X åº§æ¨™
-platformY DWORD 530           ; åˆå§‹ Y åº§æ¨™
-ballX DWORD 300               ; å°çƒ X åº§æ¨™
-ballY DWORD 400               ; å°çƒ Y åº§æ¨™
-velocityX DWORD 0             ; å°çƒ X æ–¹å‘é€Ÿåº¦
-velocityY DWORD 10            ; å°çƒ Y æ–¹å‘é€Ÿåº¦
+platformX DWORD 270           ; ªì©l X ®y¼Ğ
+platformY DWORD 530           ; ªì©l Y ®y¼Ğ
+ballX DWORD 300               ; ¤p²y X ®y¼Ğ
+ballY DWORD 400               ; ¤p²y Y ®y¼Ğ
+velocityX DWORD 0             ; ¤p²y X ¤è¦V³t«×
+velocityY DWORD 10            ; ¤p²y Y ¤è¦V³t«×
 brick DWORD brickNumY DUP(brickNumX DUP(0))
 fallTimeCount DWORD 5
 specialTimeCount DWORD 5
@@ -111,13 +101,9 @@ gameOver DWORD 1
 gameTypeCount DWORD 2
 time DWORD 0
 timeCounter DWORD 0
-countOtherGameText DWORD 0
-winPosX DWORD 400
-winPosY DWORD 0
-
 randomNum DWORD 0
-randomSeed DWORD 0                 ; éš¨æ©Ÿæ•¸ç¨®å­
-
+randomSeed DWORD 0                 ; ÀH¾÷¼ÆºØ¤l
+countOtherGameText DWORD 0
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -143,13 +129,13 @@ brickY DWORD ?
 WinMain2 proc
     LOCAL wc:WNDCLASSEX 
     LOCAL hwnd:HWND 
-    LOCAL wr:RECT                   ; å®šç¾© RECT çµæ§‹
+    LOCAL wr:RECT                   ; ©w¸q RECT µ²ºc
     LOCAL msg:MSG
     
     invoke GetModuleHandle, NULL 
     mov    hInstance,eax 
 
-    ; å®šç¾©çª—å£é¡åˆ¥
+    ; ©w¸qµ¡¤fÃş§O
     mov   wc.cbSize,SIZEOF WNDCLASSEX 
     mov   wc.style, CS_HREDRAW or CS_VREDRAW 
     mov   wc.lpfnWndProc, OFFSET WndProc2
@@ -167,7 +153,7 @@ WinMain2 proc
     mov   wc.hCursor,eax 
     invoke RegisterClassEx, addr wc 
 
-    ; è¨­ç½®å®¢æˆ¶å€å¤§å°
+    ; ³]¸m«È¤á°Ï¤j¤p
     mov wr.left, 0
     mov wr.top, 0
     mov eax, winWidth
@@ -175,7 +161,7 @@ WinMain2 proc
     mov eax, winHeight
     mov wr.bottom, eax
 
-    ; èª¿æ•´çª—å£å¤§å°
+    ; ½Õ¾ãµ¡¤f¤j¤p
     invoke AdjustWindowRect, ADDR wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
     mov eax, wr.right
     sub eax, wr.left
@@ -184,16 +170,16 @@ WinMain2 proc
     sub eax, wr.top
     mov tempHeight, eax
 
-    ; å‰µå»ºçª—å£
+    ; ³Ğ«Øµ¡¤f
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
+            400, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
-    invoke SetTimer, hwnd, 1, timer, NULL
+    invoke SetTimer, hwnd, 10, timer, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
 
-    ; ä¸»æ¶ˆæ¯å¾ªç’°
+    ; ¥D®ø®§´`Àô
     .WHILE TRUE 
         invoke GetMessage, ADDR msg,NULL,0,0 
         .BREAK .IF (!eax) 
@@ -210,11 +196,7 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL ps:PAINTSTRUCT 
 
     .IF uMsg == WM_DESTROY 
-        call closeAdvanced1A2B
-        call closeCake1
-        call closeCake2
-        call closeMinesweeper
-        ; è¨­å®šéŠæˆ²çµæŸæ——æ¨™ä¸¦é‡‹æ”¾è³‡æº
+        ; ³]©w¹CÀ¸µ²§ôºX¼Ğ¨ÃÄÀ©ñ¸ê·½
         mov gameOver, 1
         invoke KillTimer, hWnd, 1
         invoke DeleteObject, hBitmap
@@ -226,18 +208,18 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
 
     .ELSEIF uMsg == WM_CREATE
-        ; åˆå§‹åŒ–éŠæˆ²è³‡æº
+        ; ªì©l¤Æ¹CÀ¸¸ê·½
         call initializeBreakOut
         call initializeBrick
         call initializeBrush
 
-        ; åŠ è¼‰ä½åœ–
+        ; ¥[¸ü¦ì¹Ï
         invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hBackBitmap, eax
         invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hBackBitmap2, eax
 
-        ; è¨­ç½®å…§å­˜ DC
+        ; ³]¸m¤º¦s DC
         invoke GetDC, hWnd
         mov hdc, eax
         invoke CreateCompatibleDC, hdc
@@ -251,11 +233,11 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
 
     .ELSEIF uMsg == WM_TIMER
-        ; è™•ç†å®šæ™‚å™¨äº‹ä»¶
+        ; ³B²z©w®É¾¹¨Æ¥ó
         cmp gameOver, 1
         je game_over
 
-        ; æ›´æ–°éŠæˆ²è¨ˆæ™‚å™¨
+        ; §ó·s¹CÀ¸­p®É¾¹
         mov eax, timeCounter
         add eax, timer
         mov timeCounter, eax
@@ -265,7 +247,7 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         inc time
     skipAddTime:
 
-        ; æ›´æ–°ç£šå¡Šå’Œç‰¹æ®Šç£šé‚è¼¯
+        ; §ó·s¿j¶ô©M¯S®í¿jÅŞ¿è
         cmp fallTimeCount, 0
         jne no_brick_fall
         call Fall
@@ -283,11 +265,11 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov specialTimeCount, eax
     no_brick_fall:
 
-        ; æ›´æ–°å°çƒå’Œå¹³å°é‚è¼¯
+        ; §ó·s¤p²y©M¥­¥xÅŞ¿è
         call update_ball
         call check_platform_collision
 
-        ; è™•ç†å·¦éµç§»å‹•
+        ; ³B²z¥ªÁä²¾°Ê
         invoke GetAsyncKeyState, VK_LEFT
         test eax, 8000h
         jz skip_left
@@ -298,7 +280,7 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov platformX, eax
     skip_left:
 
-        ; è™•ç†å³éµç§»å‹•
+        ; ³B²z¥kÁä²¾°Ê
         invoke GetAsyncKeyState, VK_RIGHT
         test eax, 8000h
         jz skip_right
@@ -314,20 +296,21 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         call brick_collision
 
-        ; é‡ç¹ªè¦–çª—
+        ; ­«Ã¸µøµ¡
         invoke InvalidateRect, hWnd, NULL, FALSE
         xor eax, eax
         ret
 
     game_over:
+        ; Åã¥Ü¹CÀ¸µ²§ô°T®§¨ÃÃö³¬µ¡¤f
         invoke KillTimer, hWnd, 1
         invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
         invoke DestroyWindow, hWnd
-        invoke PostQuitMessage, 0
+        xor eax, eax
         ret
 
     .ELSEIF uMsg == WM_PAINT
-        ; è™•ç†è¦–çª—ç¹ªåœ–
+        ; ³B²zµøµ¡Ã¸¹Ï
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
         invoke BitBlt, hdcMem, 0, 0, winWidth, winHeight, hdcBack, 0, 0, SRCCOPY
@@ -340,7 +323,7 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
 
     .ELSE
-        ; è™•ç†é è¨­æ¶ˆæ¯
+        ; ³B²z¹w³]®ø®§
         invoke DefWindowProc, hWnd, uMsg, wParam, lParam
         ret
     .ENDIF
@@ -403,41 +386,41 @@ initializeBrush ENDP
 updateTime proc
     invoke SetBkMode, hdcMem, TRANSPARENT
 
-    ; åˆå§‹åŒ–æŒ‡æ¨™èˆ‡è®Šæ•¸
-    lea edi, TimeText + 14        ; å®šä½åˆ°æ•¸å­—èµ·å§‹ä½å€
-    mov ecx, 4                     ; é æœŸæœ€å¤§æ•¸å­—ä½æ•¸
-    mov eax, time                 ; è¼‰å…¥ score çš„å€¼
-    mov ebx, 10                    ; è¨­ç½®é™¤æ•¸ï¼Œç¢ºèªéé›¶
+    ; ªì©l¤Æ«ü¼Ğ»PÅÜ¼Æ
+    lea edi, TimeText + 14        ; ©w¦ì¨ì¼Æ¦r°_©l¦ì§}
+    mov ecx, 4                     ; ¹w´Á³Ì¤j¼Æ¦r¦ì¼Æ
+    mov eax, time                 ; ¸ü¤J score ªº­È
+    mov ebx, 10                    ; ³]¸m°£¼Æ¡A½T»{«D¹s
 
-    ; ç¢ºä¿åˆ†æ¯éé›¶
+    ; ½T«O¤À¥À«D¹s
     cmp ebx, 0
-    je div_error                   ; å¦‚æœé™¤æ•¸ç‚º 0ï¼Œè·³åˆ°éŒ¯èª¤è™•ç†
+    je div_error                   ; ¦pªG°£¼Æ¬° 0¡A¸õ¨ì¿ù»~³B²z
 
-    ; å¾å³åˆ°å·¦è™•ç†æ•¸å­—
+    ; ±q¥k¨ì¥ª³B²z¼Æ¦r
 convert_loop:
     xor edx, edx
-    div ebx                        ; EDX:EAX / EBXï¼Œé¤˜æ•¸å­˜å…¥ EDX
-    add dl, '0'                    ; å°‡é¤˜æ•¸è½‰ç‚º ASCII
-    dec edi                        ; ç§»åˆ°å‰ä¸€å€‹ä½ç½®
-    mov [edi], dl                  ; å­˜å…¥å­—å…ƒ
-    dec ecx                        ; è™•ç†ä¸‹ä¸€ä½æ•¸
-    test eax, eax                  ; å¦‚æœ EAX ç‚º 0ï¼Œåœæ­¢
+    div ebx                        ; EDX:EAX / EBX¡A¾l¼Æ¦s¤J EDX
+    add dl, '0'                    ; ±N¾l¼ÆÂà¬° ASCII
+    dec edi                        ; ²¾¨ì«e¤@­Ó¦ì¸m
+    mov [edi], dl                  ; ¦s¤J¦r¤¸
+    dec ecx                        ; ³B²z¤U¤@¦ì¼Æ
+    test eax, eax                  ; ¦pªG EAX ¬° 0¡A°±¤î
     jnz convert_loop
 
-    ; å¡«å……å‰ç½®ç©ºæ ¼
-    mov al, ' '                    ; ASCII ç©ºæ ¼
+    ; ¶ñ¥R«e¸mªÅ®æ
+    mov al, ' '                    ; ASCII ªÅ®æ
 fill_spaces:
-    dec edi                        ; ç§»åˆ°å‰ä¸€å€‹ä½ç½®
-    mov [edi], al                  ; å¡«å……ç©ºæ ¼
-    dec ecx                        ; æ¸›å°‘å‰©é¤˜ç©ºé–“
-    jnz fill_spaces                ; ç›´åˆ°å¡«æ»¿
+    dec edi                        ; ²¾¨ì«e¤@­Ó¦ì¸m
+    mov [edi], al                  ; ¶ñ¥RªÅ®æ
+    dec ecx                        ; ´î¤Ö³Ñ¾lªÅ¶¡
+    jnz fill_spaces                ; ª½¨ì¶ñº¡
 
-    ; ç¹ªè£½æ–‡å­—
+    ; Ã¸»s¤å¦r
     invoke DrawText, hdcMem, addr TimeText, -1, addr line1Rect, DT_CENTER
     ret
 
 div_error:
-    ; è™•ç†é™¤ä»¥é›¶éŒ¯èª¤ï¼ˆå¯ä»¥è¨˜éŒ„æ—¥èªŒæˆ–èª¿è©¦ï¼‰
+    ; ³B²z°£¥H¹s¿ù»~¡]¥i¥H°O¿ı¤é»x©Î½Õ¸Õ¡^
     ret
 
 updateTime ENDP
@@ -453,7 +436,7 @@ skip:
 updateOtherGameText ENDP
 
 update_ball PROC
-    ; æ›´æ–°å°çƒä½ç½®
+    ; §ó·s¤p²y¦ì¸m
     mov eax, ballX
     add eax, velocityX
     mov ballX, eax
@@ -462,26 +445,26 @@ update_ball PROC
     add eax, velocityY
     mov ballY, eax
 
-    ; é‚Šç•Œç¢°æ’æª¢æ¸¬ï¼ˆé¡é¢åå°„ï¼‰
+    ; Ãä¬É¸I¼²ÀË´ú¡]Ãè­±¤Ï®g¡^
     mov eax, ballX
-    cmp eax, ballRadius           ; ç¢°åˆ°å·¦é‚Šç•Œ
+    cmp eax, ballRadius           ; ¸I¨ì¥ªÃä¬É
     jle reverse_x_left
 
     mov eax, winWidth
     sub eax, ballRadius
-    cmp ballX, eax                ; ç¢°åˆ°å³é‚Šç•Œ
+    cmp ballX, eax                ; ¸I¨ì¥kÃä¬É
     jge reverse_x_right
 
     mov eax, ballY
-    cmp eax, ballRadius           ; ç¢°åˆ°ä¸Šé‚Šç•Œ
+    cmp eax, ballRadius           ; ¸I¨ì¤WÃä¬É
     jle reverse_y_top
 
     mov eax, winHeight
     sub eax, ballRadius
-    cmp ballY, eax                ; ç¢°åˆ°ä¸‹é‚Šç•Œ
+    cmp ballY, eax                ; ¸I¨ì¤UÃä¬É
     jge reverse_y_bottom
 
-    jmp end_update                ; è‹¥ç„¡ç¢°æ’ï¼ŒçµæŸ
+    jmp end_update                ; ­YµL¸I¼²¡Aµ²§ô
 
 reverse_x_left:
     neg velocityX
@@ -529,7 +512,7 @@ check_platform_collision PROC
     cmp eax, ebx
     jg no_collision
 
-    ; æª¢æŸ¥æ˜¯å¦åœ¨å¹³å°çš„æ°´å¹³ç¯„åœå…§
+    ; ÀË¬d¬O§_¦b¥­¥xªº¤ô¥­½d³ò¤º
     mov eax, ballX
     add eax, ballRadius
     mov ebx, platformX
@@ -558,35 +541,35 @@ check_platform_collision PROC
 
 above_collision:
 
-    ; ç¢°æ’è™•ç†
+    ; ¸I¼²³B²z
     
     mov eax, platformX
     sub eax, ballX
     add eax, OFFSET_BASE
     mov offset_center, eax
 
-    ; è¨ˆç®—å¼§åº¦
+    ; ­pºâ©·«×
     fstp st(0)
-    fild offset_center           ; è¼‰å…¥è§’åº¦å€¼            
-    fldpi                        ; è¼‰å…¥ Ï€
-    fild divisor                 ; è¼‰å…¥ 180
-    fdiv                         ; è¨ˆç®— Ï€ / 180
-    fmul                         ; è¨ˆç®—å¼§åº¦
+    fild offset_center           ; ¸ü¤J¨¤«×­È            
+    fldpi                        ; ¸ü¤J £k
+    fild divisor                 ; ¸ü¤J 180
+    fdiv                         ; ­pºâ £k / 180
+    fmul                         ; ­pºâ©·«×
 
-    ; è¨ˆç®—é€Ÿåº¦åˆ†é‡
-    fld st(0)                    ; å¼§åº¦å€¼
-    fcos                         ; è¨ˆç®— cos(è§’åº¦)
-    fild speed                   ; è¼‰å…¥é€Ÿåº¦å¤§å° V
-    fmul                         ; è¨ˆç®— velocityX = cos(è§’åº¦) * V
-    fistp DWORD PTR [velocityX]               ; å­˜å…¥ velocityX
+    ; ­pºâ³t«×¤À¶q
+    fld st(0)                    ; ©·«×­È
+    fcos                         ; ­pºâ cos(¨¤«×)
+    fild speed                   ; ¸ü¤J³t«×¤j¤p V
+    fmul                         ; ­pºâ velocityX = cos(¨¤«×) * V
+    fistp DWORD PTR [velocityX]               ; ¦s¤J velocityX
 
-    fld st(0)                    ; å¼§åº¦å€¼
-    fsin                         ; è¨ˆç®— sin(è§’åº¦)
-    fild speed                   ; è¼‰å…¥é€Ÿåº¦å¤§å° V
-    fmul                         ; è¨ˆç®— velocityY = sin(è§’åº¦) * V
-    fistp DWORD PTR [velocityY]               ; å­˜å…¥ velocityY
+    fld st(0)                    ; ©·«×­È
+    fsin                         ; ­pºâ sin(¨¤«×)
+    fild speed                   ; ¸ü¤J³t«×¤j¤p V
+    fmul                         ; ­pºâ velocityY = sin(¨¤«×) * V
+    fistp DWORD PTR [velocityY]               ; ¦s¤J velocityY
     
-    ; åè½‰ Y é€Ÿåº¦ï¼ˆåå½ˆï¼‰
+    ; ¤ÏÂà Y ³t«×¡]¤Ï¼u¡^
     neg velocityY
     jmp has_collision
 
@@ -684,22 +667,22 @@ check_rightbottom_corner:
     jne no_collision
 
 do_corner_collision:
-    ; å°‡è§’åº¦è½‰æ›ç‚ºå¼§åº¦ï¼šangle * Ï€ / 180
-    fild angle              ; è¼‰å…¥è§’åº¦
-    fldpi                   ; è¼‰å…¥ Ï€
-    fmul                    ; angle * Ï€
-    fild divisor            ; è¼‰å…¥ 180
-    fdiv                    ; å®Œæˆå¼§åº¦è½‰æ›
+    ; ±N¨¤«×Âà´«¬°©·«×¡Gangle * £k / 180
+    fild angle              ; ¸ü¤J¨¤«×
+    fldpi                   ; ¸ü¤J £k
+    fmul                    ; angle * £k
+    fild divisor            ; ¸ü¤J 180
+    fdiv                    ; §¹¦¨©·«×Âà´«
 
-    ; è¨ˆç®— velocityX = speed * cos(angle)
-    fld st(0)               ; å°‡å¼§åº¦è¼‰å…¥å †ç–Š
+    ; ­pºâ velocityX = speed * cos(angle)
+    fld st(0)               ; ±N©·«×¸ü¤J°ïÅ|
     fcos
     fild speed
     fmul
     fistp velocityX
 
-    ; è¨ˆç®— velocityY = speed * sin(angle)
-    fld st(0)               ; å†æ¬¡è¼‰å…¥å¼§åº¦
+    ; ­pºâ velocityY = speed * sin(angle)
+    fld st(0)               ; ¦A¦¸¸ü¤J©·«×
     fsin
     fild speed
     fmul
@@ -734,7 +717,7 @@ brick_collision PROC
     mov brickIndexY, eax
     mov brickRemainderY, edx
 
-    ;é€™é‚Šæœƒçªç„¶æœ‰bug
+    ;³oÃä·|¬ğµM¦³bug
     mov eax, brickNumY
     cmp eax, brickIndexY
     jle no_brick_collision
@@ -757,8 +740,8 @@ up_brick_collision:           ; brick + brickIndexX * 4 + (brickIndexY - 1) * br
     shl ebx, 2
 
     mov esi, OFFSET brick
-    add esi, eax              ; esi += æ°´å¹³åç§»
-    add esi, ebx              ; esi += å‚ç›´åç§»
+    add esi, eax              ; esi += ¤ô¥­°¾²¾
+    add esi, ebx              ; esi += ««ª½°¾²¾
 
     cmp DWORD PTR [esi], 0
     jne brick_collisionY
@@ -783,18 +766,18 @@ bottom_brick_collision:       ; brick + brickIndexX * 4 + (brickIndexY + 1) * br
     shl ebx, 2
 
     mov esi, OFFSET brick
-    add esi, eax              ; esi += æ°´å¹³åç§»
-    add esi, ebx              ; esi += å‚ç›´åç§»
+    add esi, eax              ; esi += ¤ô¥­°¾²¾
+    add esi, ebx              ; esi += ««ª½°¾²¾
 
     cmp DWORD PTR [esi], 0
     jne brick_collisionY
     jmp left_brick_collision
 
 brick_collisionY:
-    ; ç¢°æ’è™•ç†
-    neg velocityY                  ; åè½‰ Y æ–¹å‘é€Ÿåº¦
+    ; ¸I¼²³B²z
+    neg velocityY                  ; ¤ÏÂà Y ¤è¦V³t«×
     invoke goSpecialBrick, [esi]
-    mov DWORD PTR [esi], 0         ; ç§»é™¤ç£šå¡Š
+    mov DWORD PTR [esi], 0         ; ²¾°£¿j¶ô
     
 
 
@@ -815,8 +798,8 @@ left_brick_collision:         ; brick + (brickIndexX - 1) * 4 + brickIndexY * br
     shl ebx, 2
 
     mov esi, OFFSET brick
-    add esi, eax              ; esi += æ°´å¹³åç§»
-    add esi, ebx              ; esi += å‚ç›´åç§»
+    add esi, eax              ; esi += ¤ô¥­°¾²¾
+    add esi, ebx              ; esi += ««ª½°¾²¾
 
     cmp DWORD PTR [esi], 0
     jne brick_collisionX
@@ -842,18 +825,18 @@ right_brick_collision:        ; brick + (brickIndexX + 1) * 4 + brickIndexY * br
     shl ebx, 2
 
     mov esi, OFFSET brick
-    add esi, eax              ; esi += æ°´å¹³åç§»
-    add esi, ebx              ; esi += å‚ç›´åç§»
+    add esi, eax              ; esi += ¤ô¥­°¾²¾
+    add esi, ebx              ; esi += ««ª½°¾²¾
 
     cmp DWORD PTR [esi], 0
     jne brick_collisionX
     jmp corner_brick
 
 brick_collisionX:
-    ; ç¢°æ’è™•ç†
-    neg velocityX                  ; åè½‰ X æ–¹å‘é€Ÿåº¦
+    ; ¸I¼²³B²z
+    neg velocityX                  ; ¤ÏÂà X ¤è¦V³t«×
     invoke goSpecialBrick, [esi]
-    mov DWORD PTR [esi], 0         ; ç§»é™¤ç£šå¡Š
+    mov DWORD PTR [esi], 0         ; ²¾°£¿j¶ô
     jmp corner_brick
 
 corner_brick:
@@ -1081,7 +1064,7 @@ initializeBrick proc
     mov ecx, initialBrickRow
     mul ecx
     mov ecx, eax
-    mov ebx, 6
+    mov ebx, 2
 
     invoke GetTickCount
     mov eax, edx
@@ -1096,42 +1079,42 @@ initializenewRandomBrick:
 initializeBrick ENDP
 
 newBrick proc
-    call GetRandomSeed              ; å–å¾—éš¨æ©Ÿç¨®å­
+    call GetRandomSeed              ; ¨ú±oÀH¾÷ºØ¤l
     mov eax, randomSeed
-    mov esi, OFFSET brick           ; åˆå§‹åŒ–ç£šå¡Šé™£åˆ—æŒ‡æ¨™
-    mov ecx, brickNumX              ; ç£šå¡Šæ•¸é‡
-    mov ebx, 2           ; ç£šå¡Šé¡å‹æ•¸
+    mov esi, OFFSET brick           ; ªì©l¤Æ¿j¶ô°}¦C«ü¼Ğ
+    mov ecx, brickNumX              ; ¿j¶ô¼Æ¶q
+    mov ebx, 2           ; ¿j¶ôÃş«¬¼Æ
 
 newRandomBrick:
-    ; ç·šæ€§åŒé¤˜ç”Ÿæˆå™¨: (a * seed + c) % m
-    imul eax, eax, 1664525          ; ä¹˜ä»¥ä¿‚æ•¸ aï¼ˆ1664525 æ˜¯å¸¸ç”¨å€¼ï¼‰
-    add eax, 1013904223             ; åŠ ä¸Šå¢é‡ c
-    and eax, 7FFFFFFFh             ; ä¿è­‰çµæœç‚ºæ­£æ•¸
-    mov randomSeed, eax             ; æ›´æ–°éš¨æ©Ÿç¨®å­
-    xor edx, edx                    ; æ¸…é™¤ edx
-    div ebx                         ; ç²å¾—éš¨æ©Ÿé¡å‹
-    mov [esi], edx                  ; å°‡é¡å‹å­˜å…¥é™£åˆ—
-    add esi, 4                      ; ç§»å‹•åˆ°ä¸‹ä¸€å€‹ä½ç½®
-    loop newRandomBrick             ; é‡è¤‡
+    ; ½u©Ê¦P¾l¥Í¦¨¾¹: (a * seed + c) % m
+    imul eax, eax, 1664525          ; ­¼¥H«Y¼Æ a¡]1664525 ¬O±`¥Î­È¡^
+    add eax, 1013904223             ; ¥[¤W¼W¶q c
+    and eax, 7FFFFFFFh             ; «OÃÒµ²ªG¬°¥¿¼Æ
+    mov randomSeed, eax             ; §ó·sÀH¾÷ºØ¤l
+    xor edx, edx                    ; ²M°£ edx
+    div ebx                         ; Àò±oÀH¾÷Ãş«¬
+    mov [esi], edx                  ; ±NÃş«¬¦s¤J°}¦C
+    add esi, 4                      ; ²¾°Ê¨ì¤U¤@­Ó¦ì¸m
+    loop newRandomBrick             ; ­«½Æ
 
     ret
 
 newBrick ENDP
 
 specialBrick proc
-    call GetRandomSeed              ; å–å¾—éš¨æ©Ÿç¨®å­
+    call GetRandomSeed              ; ¨ú±oÀH¾÷ºØ¤l
     mov eax, randomSeed
-    mov esi, OFFSET brick           ; åˆå§‹åŒ–ç£šå¡Šé™£åˆ—æŒ‡æ¨™
+    mov esi, OFFSET brick           ; ªì©l¤Æ¿j¶ô°}¦C«ü¼Ğ
 
-    mov ebx, brickNumX           ; ç£šå¡Šé¡å‹æ•¸
+    mov ebx, brickNumX           ; ¿j¶ôÃş«¬¼Æ
     
     mov ebx, brickTypeNum
-    imul eax, eax, 1664525          ; ä¹˜ä»¥ä¿‚æ•¸ aï¼ˆ1664525 æ˜¯å¸¸ç”¨å€¼ï¼‰
-    add eax, 1013904223             ; åŠ ä¸Šå¢é‡ c
-    and eax, 7FFFFFFFh             ; ä¿è­‰çµæœç‚ºæ­£æ•¸
-    mov randomSeed, eax             ; æ›´æ–°éš¨æ©Ÿç¨®å­
-    xor edx, edx                    ; æ¸…é™¤ edx
-    div ebx                         ; ç²å¾—éš¨æ©Ÿé¡å‹
+    imul eax, eax, 1664525          ; ­¼¥H«Y¼Æ a¡]1664525 ¬O±`¥Î­È¡^
+    add eax, 1013904223             ; ¥[¤W¼W¶q c
+    and eax, 7FFFFFFFh             ; «OÃÒµ²ªG¬°¥¿¼Æ
+    mov randomSeed, eax             ; §ó·sÀH¾÷ºØ¤l
+    xor edx, edx                    ; ²M°£ edx
+    div ebx                         ; Àò±oÀH¾÷Ãş«¬
     shl edx, 2
     add esi, edx
 
@@ -1187,7 +1170,7 @@ DrawScreen PROC
 
     invoke SelectObject, hdcMem, purpleBrush
 
-    ; ç¹ªè£½å°çƒ
+    ; Ã¸»s¤p²y
     mov eax, ballX
     sub eax, ballRadius
     mov ecx, ballY
@@ -1198,7 +1181,7 @@ DrawScreen PROC
     add esi, ballRadius
     invoke Ellipse, hdcMem, eax, ecx, edx, esi
 
-    ; ç¹ªè£½å¹³å°
+    ; Ã¸»s¥­¥x
     mov eax, platformX
     add eax, platformWidth
     mov edx, platformY
@@ -1207,7 +1190,7 @@ DrawScreen PROC
     mov [tempHeight], edx
     invoke Rectangle, hdcMem, platformX, platformY, tempWidth, tempHeight
 
-    ; ç¹ªè£½ç£šå¡Š
+    ; Ã¸»s¿j¶ô
     mov esi, OFFSET brick
     mov eax, 0
     mov ecx, brickNumY
@@ -1385,7 +1368,7 @@ getAdvancedBreakOutGame ENDP
 
 getOtherGame proc
     mov countOtherGameText, 100
-    lea edi, OtherGameText + 20      ; è¨­å®šå­—ä¸²çš„é–‹å§‹ä½ç½®
+    lea edi, OtherGameText + 20      ; ³]©w¦r¦êªº¶}©l¦ì¸m
 
     cmp eax, 1
     je Advanced1A2BWin
@@ -1406,65 +1389,65 @@ getOtherGame proc
     ret
 
 Advanced1A2BWin:
-    ; å¯«å…¥å­—ä¸² "You Win 1A2B" è‡³ OtherGameText
+    ; ¼g¤J¦r¦ê "You Win 1A2B" ¦Ü OtherGameText
     lea esi, WinText1A2B
     call WriteOtherGameString
     ret
 
 Cake1Win:
-    ; å¯«å…¥å­—ä¸² "You Win Cake1" è‡³ OtherGameText
+    ; ¼g¤J¦r¦ê "You Win Cake1" ¦Ü OtherGameText
     lea esi, WinTextCake1
     call WriteOtherGameString
     ret
 
 Cake2Win:
-    ; å¯«å…¥å­—ä¸² "You Win Cake2" è‡³ OtherGameText
+    ; ¼g¤J¦r¦ê "You Win Cake2" ¦Ü OtherGameText
     lea esi, WinTextCake2
     call WriteOtherGameString
     ret
 
 MinesweeperWin:
-    ; å¯«å…¥å­—ä¸² "You Win Minesweeper" è‡³ OtherGameText
+    ; ¼g¤J¦r¦ê "You Win Minesweeper" ¦Ü OtherGameText
     lea esi, WinTextMinesweeper
     call WriteOtherGameString
     ret
 
 Advanced1A2BLose:
-    ; å¯«å…¥å­—ä¸² "You Lose 1A2B" è‡³ OtherGameText
+    ; ¼g¤J¦r¦ê "You Lose 1A2B" ¦Ü OtherGameText
     lea esi, LoseText1A2B
     call WriteOtherGameString
     ret
 
 Cake1Lose:
-    ; å¯«å…¥å­—ä¸² "You Lose Cake1" è‡³ OtherGameText
+    ; ¼g¤J¦r¦ê "You Lose Cake1" ¦Ü OtherGameText
     lea esi, LoseTextCake1
     call WriteOtherGameString
     ret
 
 Cake2Lose:
-    ; å¯«å…¥å­—ä¸² "You Lose Cake2" è‡³ OtherGameText
+    ; ¼g¤J¦r¦ê "You Lose Cake2" ¦Ü OtherGameText
     lea esi, LoseTextCake2
     call WriteOtherGameString
     ret
 
 MinesweeperLose:
-    ; å¯«å…¥å­—ä¸² "You Lose Minesweeper" è‡³ OtherGameText
+    ; ¼g¤J¦r¦ê "You Lose Minesweeper" ¦Ü OtherGameText
     lea esi, LoseTextMinesweeper
     call WriteOtherGameString
     ret
 getOtherGame endp
 
-; ä¸€å€‹ç°¡å–®çš„ WriteOtherGameString å‡½æ•¸ä¾†å¯«å…¥å­—ä¸²
+; ¤@­ÓÂ²³æªº WriteOtherGameString ¨ç¼Æ¨Ó¼g¤J¦r¦ê
 WriteOtherGameString proc
-    ; è¼¸å…¥ï¼šESI = å­—ä¸²åœ°å€
-    lea edi, OtherGameText    ; é–‹å§‹ä½ç½®
+    ; ¿é¤J¡GESI = ¦r¦ê¦a§}
+    lea edi, OtherGameText    ; ¶}©l¦ì¸m
 next_char:
-    mov al, [esi]                 ; è¼‰å…¥å­—ä¸²çš„ç•¶å‰å­—å…ƒ
-    mov [edi], al                 ; å­˜å…¥è¨˜æ†¶é«”
-    inc esi                        ; ç§»è‡³ä¸‹ä¸€å€‹å­—å…ƒ
-    inc edi                        ; ç§»è‡³ä¸‹ä¸€å€‹ä½ç½®
-    cmp al, 0                      ; æª¢æŸ¥æ˜¯å¦æ˜¯ null çµ‚æ­¢ç¬¦
-    jne next_char                 ; å¦‚æœä¸æ˜¯ï¼Œç¹¼çºŒå¯«å…¥
+    mov al, [esi]                 ; ¸ü¤J¦r¦êªº·í«e¦r¤¸
+    mov [edi], al                 ; ¦s¤J°O¾ĞÅé
+    inc esi                        ; ²¾¦Ü¤U¤@­Ó¦r¤¸
+    inc edi                        ; ²¾¦Ü¤U¤@­Ó¦ì¸m
+    cmp al, 0                      ; ÀË¬d¬O§_¬O null ²×¤î²Å
+    jne next_char                 ; ¦pªG¤£¬O¡AÄ~Äò¼g¤J
     ret
 WriteOtherGameString endp
     
