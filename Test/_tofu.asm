@@ -22,7 +22,7 @@ cakeWidth EQU 60          ; 蛋糕寬度
 cakeHeight EQU 20         ; 蛋糕高度
 initialcakeX EQU 200      ; 初始 X 座標
 initialcakeY EQU 230      ; 初始 Y 座標
-initialvelocityX EQU -5   ; X 方向速度
+initialvelocityX EQU -3   ; X 方向速度
 dropSpeed EQU 10
 maxCakes EQU 100
 cakeMoveSize EQU 5
@@ -71,6 +71,7 @@ ground DWORD ?
 moveDown BOOL ?
 gameover BOOL ?
 canDrop BOOL ?
+valid BOOL ?
 
 .CODE
 WinMain6 proc
@@ -201,6 +202,12 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         cmp ball.bottom, 230
         jl move_ground
 
+        call check_ball
+        cmp gameover, TRUE
+        je game_over
+        cmp valid, TRUE
+        je next
+
         cmp cakeX, border_left
         jne move_ground
 
@@ -208,6 +215,8 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         cmp canDrop, FALSE
         je move_ground
 
+    next:
+        mov valid,FALSE
         mov eax, cakeHeight
         add needMove, eax
         invoke InvalidateRect, hWnd, NULL, FALSE
@@ -318,6 +327,7 @@ initializeCake3 PROC
     mov needMove, 0
     mov currentCakeIndex, 1
     mov gameover, FALSE
+    mov valid, FALSE
 initializeCake3 ENDP
 
 ; 更新蛋糕位置
@@ -326,7 +336,7 @@ update_cake3 PROC
     je end_update
     mov eax, cakeX
     cmp eax, border_left
-    jne end_update
+    je end_update
     add eax, cVelocityX
     mov cakeX, eax
 end_update:
@@ -379,6 +389,40 @@ game_not_over:
 check_collision3 ENDP
 
 check_ball PROC
+    Local cr:RECT
+
+    mov eax, currentCakeIndex
+    mov ebx, SIZEOF RECT
+    imul ebx
+    mov ebx, cakes[eax].bottom
+    mov cr.bottom, ebx
+    mov ebx, cakes[eax].top
+    mov cr.top, ebx
+    mov ebx, cakes[eax].left
+    mov cr.left, ebx
+    mov ebx, cakes[eax].right
+    mov cr.right, ebx
+
+
+    ; 檢查球是否與蛋糕相撞
+    mov eax, ball.right
+    cmp eax, cr.left  ; 球的右邊界在蛋糕的左邊界右邊
+    jbe ball_not_collision  ; 如果是，則不碰撞
+
+    mov eax, ball.bottom
+    cmp eax, cr.top   ; 球的底部是否在蛋糕的上方
+    jae invalid_collision  ; 如果是，則不碰撞
+    jmp ball_not_collision
+
+    invalid_collision:
+    cmp eax, 230
+    je valid_collision
+    mov gameover, TRUE;
+    jmp ball_not_collision
+
+    valid_collision:
+    mov valid, TRUE
+  ball_not_collision:
     ret
 check_ball ENDP
 
