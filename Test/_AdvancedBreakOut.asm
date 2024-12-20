@@ -58,7 +58,7 @@ brickTypeNum EQU 6
 brickWidth EQU 60
 brickHeight EQU 20
 fallTime EQU 3
-specialTime EQU 1
+specialTime EQU 3
 ballRadius EQU 10             ; 小球半徑
 OFFSET_BASE EQU 150
 timer EQU 20
@@ -69,11 +69,11 @@ line2Rect RECT <400, 560, 600, 600>
 
 .DATA 
 ClassName db "SimpleWinClass2",0 
-AppName  db "BreakOut",0
+AppName  db "AdvancedBreakOut",0
 Text db "Window", 0
 EndGame db "Game Over!", 0
 TimeText db "Time:         ", 0
-OtherGameText db "                         ", 0
+OtherGameText db "                                  ", 0
 
 hBackBitmapName db "bitmap5.bmp",0
 
@@ -85,6 +85,10 @@ LoseText1A2B db "You Lose 1A2B", 0
 LoseTextCake1 db "You Lose Cake1", 0
 LoseTextCake2 db "You Lose Cake2", 0
 LoseTextMinesweeper db "You Lose Minesweeper", 0
+GoingText1A2B db "1A2B is still going !", 0
+GoingTextCake1 db "Cake1 is still going !", 0
+GoingTextCake2 db "Cake2 is still going !", 0
+GoingTextMinesweeper db "Minesweeper is still going !", 0
 
 offset_center DWORD 0
 controlsCreated DWORD 0
@@ -101,9 +105,13 @@ gameOver DWORD 1
 gameTypeCount DWORD 2
 time DWORD 0
 timeCounter DWORD 0
+countOtherGameText DWORD 0
+winPosX DWORD 400
+winPosY DWORD 0
+
 randomNum DWORD 0
 randomSeed DWORD 0                 ; 隨機數種子
-countOtherGameText DWORD 0
+
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -173,9 +181,9 @@ WinMain2 proc
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            400, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
+            winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
-    invoke SetTimer, hwnd, 10, timer, NULL
+    invoke SetTimer, hwnd, 1, timer, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
 
@@ -196,6 +204,7 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL ps:PAINTSTRUCT 
 
     .IF uMsg == WM_DESTROY 
+        
         ; 設定遊戲結束旗標並釋放資源
         mov gameOver, 1
         invoke KillTimer, hWnd, 1
@@ -302,11 +311,11 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
 
     game_over:
-        ; 顯示遊戲結束訊息並關閉窗口
+        invoke InvalidateRect, hWnd, NULL, FALSE
         invoke KillTimer, hWnd, 1
         invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
         invoke DestroyWindow, hWnd
-        xor eax, eax
+        invoke PostQuitMessage, 0
         ret
 
     .ELSEIF uMsg == WM_PAINT
@@ -343,6 +352,7 @@ initializeBreakOut PROC
     mov gameOver, 0
     mov time, 0
     mov timeCounter, 0
+    mov countOtherGameText, 0
     
     mov eax, brickNumX
     mov ebx, brickNumY
@@ -778,8 +788,6 @@ brick_collisionY:
     neg velocityY                  ; 反轉 Y 方向速度
     invoke goSpecialBrick, [esi]
     mov DWORD PTR [esi], 0         ; 移除磚塊
-    
-
 
 left_brick_collision:         ; brick + (brickIndexX - 1) * 4 + brickIndexY * brickNumX * 4
     cmp brickIndexX, 0
@@ -1315,6 +1323,8 @@ StartGame1:
     call checkAdvanced1A2B
     cmp eax, 1
     je goGame1
+    mov eax, 11
+    call getOtherGame
     mov gameOver, 1
     ret
 goGame1:
@@ -1326,6 +1336,8 @@ StartGame2:
     call checkCake1
     cmp eax, 1
     je goGame2
+    mov eax, 12
+    call getOtherGame
     mov gameOver, 1
     ret
 goGame2:
@@ -1337,6 +1349,8 @@ StartGame3:
     call checkCake2
     cmp eax, 1
     je goGame3
+    mov eax, 13
+    call getOtherGame
     mov gameOver, 1
     ret
 goGame3:
@@ -1348,6 +1362,8 @@ StartGame4:
     call checkMinesweeper
     cmp eax, 1
     je goGame4
+    mov eax, 14
+    call getOtherGame
     mov gameOver, 1
     ret
 goGame4:
@@ -1378,6 +1394,7 @@ getOtherGame proc
     je Cake2Win
     cmp eax, 4
     je MinesweeperWin
+
     cmp eax, -1
     je Advanced1A2BLose
     cmp eax, -2
@@ -1386,6 +1403,15 @@ getOtherGame proc
     je Cake2Lose
     cmp eax, -4
     je MinesweeperLose
+
+    cmp eax, 11
+    je Advanced1A2BGoing
+    cmp eax, 12
+    je Cake1Going
+    cmp eax, 13
+    je Cake2Going
+    cmp eax, 14
+    je MinesweeperGoing
     ret
 
 Advanced1A2BWin:
@@ -1433,6 +1459,30 @@ Cake2Lose:
 MinesweeperLose:
     ; 寫入字串 "You Lose Minesweeper" 至 OtherGameText
     lea esi, LoseTextMinesweeper
+    call WriteOtherGameString
+    ret
+
+Advanced1A2BGoing:
+    ; 寫入字串 "You Lose 1A2B" 至 OtherGameText
+    lea esi, GoingText1A2B
+    call WriteOtherGameString
+    ret
+
+Cake1Going:
+    ; 寫入字串 "You Lose Cake1" 至 OtherGameText
+    lea esi, GoingTextCake1
+    call WriteOtherGameString
+    ret
+
+Cake2Going:
+    ; 寫入字串 "You Lose Cake2" 至 OtherGameText
+    lea esi, GoingTextCake2
+    call WriteOtherGameString
+    ret
+
+MinesweeperGoing:
+    ; 寫入字串 "You Lose Minesweeper" 至 OtherGameText
+    lea esi, GoingTextMinesweeper
     call WriteOtherGameString
     ret
 getOtherGame endp
