@@ -20,7 +20,7 @@ initialground EQU 250     ; 地板高度
 radius EQU 10             ; 半徑
 cakeWidth EQU 60          ; 蛋糕寬度
 cakeHeight EQU 20         ; 蛋糕高度
-initialcakeX EQU 200      ; 初始 X 座標
+initialcakeX EQU 230      ; 初始 X 座標
 initialcakeY EQU 230      ; 初始 Y 座標
 initialvelocityX EQU -3   ; X 方向速度
 dropSpeed EQU 10
@@ -40,6 +40,7 @@ hitPlayCmd db "play hitMusic from 0", 0
 
 line1Rect RECT <30, 30, 280, 50>
 ball RECT <140, 230, 160, 250> ; 球的初始位置
+firstcake RECT <120, 250, 180, 270>
 cakes RECT <120, 250, 180, 270>, 99 DUP(<0, 0, 0, 0>)
 colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
 colors_count EQU ($ - colors) / 4
@@ -53,7 +54,7 @@ hdc HDC ?
 hdcMem HDC ?
 hdcBack HDC ?
 hBallBrush HBRUSH ?
-brushes HBRUSH 99 DUP(?)
+brushes HBRUSH maxCakes DUP(?)
 
 velocityY DWORD ?              ; 球的垂直速度
 move BYTE ?
@@ -175,6 +176,9 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         test eax, 8000h ; 測試最高位
         jz skip_space_key
 
+        cmp ball.bottom, 250
+        jl skip_space_key
+
         cmp move, TRUE
         je skip_space_key
         mov velocityY, initialVelocity
@@ -198,7 +202,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je skip_move
         call Update_move
 
-     skip_move:
+    skip_move:
         cmp ball.bottom, 230
         jl move_ground
 
@@ -216,6 +220,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je move_ground
 
     next:
+        mov move, FALSE
         mov valid,FALSE
         mov eax, cakeHeight
         add needMove, eax
@@ -226,6 +231,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov cakeY, initialcakeY
         mov cVelocityY, 0
         dec TriesRemaining
+
         cmp gameover, TRUE
         je game_over
         cmp TriesRemaining, 0
@@ -240,6 +246,8 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ; 地面和蛋糕繼續移動
         add groundMoveCount, cakeMoveSize
         add ground, cakeMoveSize
+        add ball.top, cakeMoveSize
+        add ball.bottom, cakeMoveSize
 
         mov ecx, currentCakeIndex
         dec ecx
@@ -294,17 +302,17 @@ WndProc6 endp
 
 Update_move PROC
     ; 更新球的位置
-    mov eax, ball.top
-    add eax, velocityY
-    mov ball.top, eax
-    mov eax, ball.bottom
-    add eax, velocityY
-    mov ball.bottom, eax
+    mov eax, velocityY
+    add ball.top, eax
+    mov eax, velocityY
+    add ball.bottom, eax
     add velocityY, gravity
+    cmp velocityY, 0
+    jl no_collision
 
     ; 檢查碰撞地板
     mov eax, ball.bottom
-    cmp eax, initialground
+    cmp eax, 230
     jl no_collision
 
     ; 停止運動並固定球位置
@@ -328,6 +336,14 @@ initializeCake3 PROC
     mov currentCakeIndex, 1
     mov gameover, FALSE
     mov valid, FALSE
+    mov eax, firstcake.top
+    mov cakes.top, eax
+    mov eax, firstcake.bottom
+    mov cakes.bottom, eax
+    mov eax, firstcake.left
+    mov cakes.left, eax
+    mov eax, firstcake.right
+    mov cakes.right, eax
 initializeCake3 ENDP
 
 ; 更新蛋糕位置
@@ -414,15 +430,15 @@ check_ball PROC
     jae invalid_collision  ; 如果是，則不碰撞
     jmp ball_not_collision
 
-    invalid_collision:
+invalid_collision:
     cmp eax, 230
     je valid_collision
     mov gameover, TRUE;
     jmp ball_not_collision
 
-    valid_collision:
+valid_collision:
     mov valid, TRUE
-  ball_not_collision:
+ball_not_collision:
     ret
 check_ball ENDP
 

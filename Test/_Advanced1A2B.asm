@@ -56,7 +56,8 @@ line5Rect RECT <20, 140, 250, 160>
 line6Rect RECT <20, 170, 250, 190>
 line7Rect RECT <20, 200, 250, 220>
 line8Rect RECT <20, 230, 250, 250>
-line9Rect RECT <20, 280, 250, 300>
+line9Rect RECT <20, 260, 250, 380>
+line0Rect RECT <20, 280, 250, 300>
 
 SelectedCount   dd 0
 TriesRemaining  db 8
@@ -271,6 +272,7 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             invoke UpdateLineText, OFFSET Line5Text, 1, 3
             invoke UpdateLineText, OFFSET Line6Text, 1, 2
             invoke UpdateLineText, OFFSET Line7Text, 1, 1
+            invoke UpdateLineText, OFFSET Line8Text, 1, 0
 
             mov edi, OFFSET GuessLineText
             mov ecx, 7
@@ -350,6 +352,7 @@ Initialized PROC
     invoke UpdateLineText, OFFSET Line5Text, 0, 0
     invoke UpdateLineText, OFFSET Line6Text, 0, 0
     invoke UpdateLineText, OFFSET Line7Text, 0, 0
+    invoke UpdateLineText, OFFSET Line8Text, 0, 0
     ret
 Initialized ENDP
 
@@ -494,7 +497,7 @@ UpdateText PROC
     add al, '0'                     ; 將數字轉換為 ASCII (單位數)
     mov byte ptr [RemainingTriesText + 11], al ; 將字元寫入字串
     invoke DrawText, hdcMem, addr RemainingTriesText, -1, addr line1Rect,DT_CENTER
-    invoke DrawText, hdcMem, addr GuessLineText, -1, addr line9Rect,DT_CENTER
+    invoke DrawText, hdcMem, addr GuessLineText, -1, addr line0Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line1Text, -1, addr line2Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line2Text, -1, addr line3Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line3Text, -1, addr line4Rect,DT_CENTER
@@ -502,6 +505,7 @@ UpdateText PROC
     invoke DrawText, hdcMem, addr Line5Text, -1, addr line6Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line6Text, -1, addr line7Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line7Text, -1, addr line8Rect,DT_CENTER
+    invoke DrawText, hdcMem, addr Line8Text, -1, addr line9Rect,DT_CENTER
     ret
 UpdateText ENDP
 
