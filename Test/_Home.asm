@@ -51,7 +51,7 @@ hButton3BitmapName db "home_cake1.bmp", 0
 hButton4BitmapName db "home_cake2.bmp", 0
 hButton5BitmapName db "home_minesweeper.bmp", 0
 hButton6BitmapName db "home_tofu.bmp", 0
-hButton7BitmapName db "bitmap6.bmp", 0
+hButton7BitmapName db "bonus.bmp", 0
 
 hBackBitmapName db "home_background.bmp", 0
 BackgroundMusic db "background.mp3", 0

@@ -64,7 +64,7 @@ OFFSET_BASE EQU 150
 timer EQU 20
 speed DWORD 10
 divisor DWORD 180
-line1Rect RECT <20, 560, 120, 600>
+line1Rect RECT <50, 555, 150, 615>
 line2Rect RECT <400, 560, 600, 600>
 
 .DATA 
@@ -75,7 +75,7 @@ EndGame db "Game Over!", 0
 TimeText db "Time:         ", 0
 OtherGameText db "                                  ", 0
 
-hBackBitmapName db "bitmap5.bmp",0
+hBackBitmapName db "breakout_background.bmp",0
 
 WinText1A2B db "You Win 1A2B", 0
 WinTextCake1 db "You Win Cake1", 0

@@ -161,10 +161,13 @@
     <ResourceCompile Include="Test.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="1A2B_background.bmp" />
     <Image Include="bitmap3.bmp" />
     <Image Include="bitmap4.bmp" />
     <Image Include="bitmap5.bmp" />
     <Image Include="bitmap6.bmp" />
+    <Image Include="bonus.bmp" />
+    <Image Include="breakout_background.bmp" />
     <Image Include="cake1_background.bmp" />
     <Image Include="cake2_background.bmp" />
     <Image Include="flag_red.bmp" />
@@ -177,6 +180,7 @@
     <Image Include="home_tofu.bmp" />
     <Image Include="mine.bmp" />
     <Image Include="flag.bmp" />
+    <Image Include="mine_background.bmp" />
     <Image Include="mine_red.bmp" />
     <Image Include="simplebreakout_background.bmp" />
   </ItemGroup>

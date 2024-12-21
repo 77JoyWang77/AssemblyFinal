@@ -29,7 +29,7 @@ ballRadius EQU 10             ; ¤p²y¥b®|
 OFFSET_BASE EQU 150
 speed DWORD 10
 divisor DWORD 180
-line1Rect RECT <20, 560, 120, 600>
+line1Rect RECT <50, 555, 150, 615>
 
 .DATA 
 ClassName db "SimpleWinClass7",0 
