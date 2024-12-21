@@ -183,6 +183,7 @@
     <Image Include="mine_background.bmp" />
     <Image Include="mine_red.bmp" />
     <Image Include="simplebreakout_background.bmp" />
+    <Image Include="tofu_background.bmp" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="..\..\音樂\breakOutLose.wav" />
