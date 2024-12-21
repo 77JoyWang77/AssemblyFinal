@@ -44,20 +44,14 @@ include winmm.inc
 ClassName db "SimpleWinClass",0 
 AppName  db "Home",0 
 ButtonClassName db "button", 0 
-ButtonText1 db "1A2B", 0
-ButtonText2 db "Breakout", 0
-ButtonText3 db "Cake1", 0
-ButtonText4 db "Cake2", 0
-ButtonText5 db "Minesweeper", 0
-ButtonText6 db "AdvancedBreakout", 0
-
 
 hButton1BitmapName db "home_1A2B.bmp", 0
 hButton2BitmapName db "home_BREAKOUT.bmp", 0
 hButton3BitmapName db "home_cake1.bmp", 0
 hButton4BitmapName db "home_cake2.bmp", 0
 hButton5BitmapName db "home_minesweeper.bmp", 0
-hButton6BitmapName db "bitmap6.bmp", 0
+hButton6BitmapName db "home_tofu.bmp", 0
+hButton7BitmapName db "bitmap6.bmp", 0
 
 hBackBitmapName db "home_background.bmp", 0
 BackgroundMusic db "background.mp3", 0
@@ -83,6 +77,7 @@ hButton3Bitmap HBITMAP ?
 hButton4Bitmap HBITMAP ?
 hButton5Bitmap HBITMAP ?
 hButton6Bitmap HBITMAP ?
+hButton7Bitmap HBITMAP ?
 hdcMem HDC ?
 tempWidth DWORD ?
 tempHeight DWORD ?
@@ -122,8 +117,12 @@ ButtonProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         jmp startDraw
     Next5:
         cmp current, 6
-        jne startDraw
+        jne Next6
         invoke SelectObject, hdcMem, hButton6Bitmap
+    Next6:
+        cmp current, 7
+        jne startDraw
+        invoke SelectObject, hdcMem, hButton7Bitmap
 
     startDraw:
         invoke BeginPaint, hWnd, addr ps
@@ -291,33 +290,36 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov OriginalProc, eax
         invoke SetWindowLong, hTarget, GWL_USERDATA, eax
 
-
         invoke LoadImage, hInstance, addr hButton6BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hButton6Bitmap, eax
+
         invoke CreateWindowEx, NULL,  ADDR ButtonClassName, NULL, \
                WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_OWNERDRAW, \
-               300, 500, 40, ButtonHeight, hWnd, 6, hInstance, NULL
+               100, 450, ButtonWidth, ButtonHeight, hWnd, 6, hInstance, NULL
         mov hTarget, eax
         invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
         mov OriginalProc, eax
         invoke SetWindowLong, hTarget, GWL_USERDATA, eax
 
-        ;invoke LoadImage, hInstance, addr hButton6BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
-        ;mov hButton6Bitmap, eax
-
-        ;invoke CreateWindowEx, NULL,  ADDR ButtonClassName, NULL, \
-        ;       WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_OWNERDRAW, \
-        ;       100, 450, ButtonWidth, ButtonHeight, hWnd, 6, hInstance, NULL
-        ;mov hTarget, eax
-        ;invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
-        ;mov OriginalProc, eax
-        ;invoke SetWindowLong, hTarget, GWL_USERDATA, eax
+        invoke LoadImage, hInstance, addr hButton7BitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
+        mov hButton7Bitmap, eax
+        invoke CreateWindowEx, NULL,  ADDR ButtonClassName, NULL, \
+               WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_OWNERDRAW, \
+               300, 500, 40, ButtonHeight, hWnd, 7, hInstance, NULL
+        mov hTarget, eax
+        invoke SetWindowLong, hTarget, GWL_WNDPROC, OFFSET ButtonProc
+        mov OriginalProc, eax
+        invoke SetWindowLong, hTarget, GWL_USERDATA, eax
 
         invoke ReleaseDC, hWnd, hdc
     .ELSEIF uMsg == WM_COMMAND
         invoke mciSendString, addr clickOpenCmd, NULL, 0, NULL
         invoke mciSendString, addr clickVolumeCmd, NULL, 0, NULL
         invoke mciSendString, addr clickPlayCmd, NULL, 0, NULL
+
+        call checkGame
+        cmp eax, 1
+        je hasGame
 
         mov eax, wParam
         cmp eax, 1
@@ -332,6 +334,10 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         je StartGame5
         cmp eax, 6
         je StartGame6
+        cmp eax, 7
+        je StartGame7
+
+    hasGame:
 
 
     .ELSEIF uMsg == WM_PAINT
@@ -349,61 +355,56 @@ WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     xor   eax, eax 
     ret 
 StartGame1:
-    call checkAdvanced1A2B
-    cmp eax, 1
-    je goGame1
-    ret
-goGame1:
     call Advanced1A2B
     ret
 StartGame2:
-    call checkBreakOut
-    cmp eax, 0
-    je skipGame2
-    cmp eax, 0
-    je skipGame2
     call BreakOut
     ret
-skipGame2:
-    ret
 StartGame3:
-    call checkCake1
-    cmp eax, 1
-    je goGame3
-    ret
-goGame3:
     call Cake1
     ret
 StartGame4:
-    call checkCake2
-    cmp eax, 1
-    je goGame4
-    ret
-goGame4:
     call Cake2
     ret
 StartGame5:
-    call checkMinesweeper
-    cmp eax, 1
-    je goGame5
-    ret
-goGame5:
     call Minesweeper
-;StartGame6:
-    ; ©I¥s¹CÀ¸±Ò°Ê
-    ;call Tofu
-    ;ret
-    
+    ret
 StartGame6:
-    call checkBreakOut
-    cmp eax, 0
-    je skipGame6
-    cmp eax, 0
-    je skipGame6
+    call Tofu
+    ret
+StartGame7:
     call AdvancedBreakOut
     ret
-skipGame6:
-    ret
+
 WndProc endp 
+
+checkGame PROC
+    call checkAdvanced1A2B
+    cmp eax, 0
+    je hasGame
+    call checkBreakOut
+    cmp eax, 0
+    je hasGame
+    call checkCake1
+    cmp eax, 0
+    je hasGame
+    call checkCake2
+    cmp eax, 0
+    je hasGame
+    call checkMinesweeper
+    cmp eax, 0
+    je hasGame
+    call checkAdvancedBreakOut
+    cmp eax, 0
+    je hasGame
+
+    mov eax, 0
+    ret
+
+hasGame:
+    mov eax, 1
+    ret
+
+checkGame ENDP
 
 end

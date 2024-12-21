@@ -17,6 +17,7 @@ EXTERN getMinesweeperGame@0: PROC
 EXTERN Advanced1A2BfromBreakOut@0: PROC
 EXTERN Cake1fromBreakOut@0: PROC
 EXTERN Cake2fromBreakOut@0: PROC
+EXTERN MinesweeperfromBreakOut@0: PROC
 
 Advanced1A2B EQU WinMain1@0
 GameBrick EQU WinMain2@0
@@ -33,6 +34,7 @@ checkMinesweeper EQU getMinesweeperGame@0
 goAdvanced1A2B EQU Advanced1A2BfromBreakOut@0
 goCake1 EQU Cake1fromBreakOut@0
 goCake2 EQU Cake2fromBreakOut@0
+goMinesweeper EQU MinesweeperfromBreakOut@0
 
 goSpecialBrick proto :DWORD
 corner_collision proto :DWORD,:DWORD
@@ -56,22 +58,57 @@ brickTypeNum EQU 6
 brickWidth EQU 60
 brickHeight EQU 20
 fallTime EQU 3
-specialTime EQU 1
+specialTime EQU 3
 ballRadius EQU 10             ; 小球半徑
 OFFSET_BASE EQU 150
 timer EQU 20
 speed DWORD 10
 divisor DWORD 180
 line1Rect RECT <20, 560, 120, 600>
+line2Rect RECT <400, 560, 600, 600>
 
 .DATA 
 ClassName db "SimpleWinClass2",0 
-AppName  db "BreakOut",0
+AppName  db "AdvancedBreakOut",0
 Text db "Window", 0
 EndGame db "Game Over!", 0
 TimeText db "Time:         ", 0
+OtherGameText db "                                  ", 0
 
 hBackBitmapName db "bitmap5.bmp",0
+
+WinText1A2B db "You Win 1A2B", 0
+WinTextCake1 db "You Win Cake1", 0
+WinTextCake2 db "You Win Cake2", 0
+WinTextMinesweeper db "You Win Minesweeper", 0
+LoseText1A2B db "You Lose 1A2B", 0
+LoseTextCake1 db "You Lose Cake1", 0
+LoseTextCake2 db "You Lose Cake2", 0
+LoseTextMinesweeper db "You Lose Minesweeper", 0
+GoingText1A2B db "1A2B is still going !", 0
+GoingTextCake1 db "Cake1 is still going !", 0
+GoingTextCake2 db "Cake2 is still going !", 0
+GoingTextMinesweeper db "Minesweeper is still going !", 0
+
+fallBrickOpenCmd db "open fallBrick.wav type mpegvideo alias fallBrickMusic", 0
+fallBrickVolumeCmd db "setaudio fallBrickMusic volume to 300", 0
+fallBrickPlayCmd db "play fallBrickMusic from 0", 0
+
+brickOpenCmd db "open brick.wav type mpegvideo alias brickMusic", 0
+brickVolumeCmd db "setaudio brickMusic volume to 300", 0
+brickPlayCmd db "play brickMusic from 0", 0
+
+specialBrickOpenCmd db "open specialBrick.wav type mpegvideo alias specialBrickMusic", 0
+specialBrickVolumeCmd db "setaudio specialBrickMusic volume to 300", 0
+specialBrickPlayCmd db "play specialBrickMusic from 0", 0
+
+platformOpenCmd db "open platform.wav type mpegvideo alias platformMusic", 0
+platformVolumeCmd db "setaudio platformMusic volume to 300", 0
+platformPlayCmd db "play platformMusic from 0", 0
+
+breakOutLoseOpenCmd db "open breakOutLose.wav type mpegvideo alias breakOutLoseMusic", 0
+breakOutLoseVolumeCmd db "setaudio breakOutLoseMusic volume to 300", 0
+breakOutLosePlayCmd db "play breakOutLoseMusic from 0", 0
 
 offset_center DWORD 0
 controlsCreated DWORD 0
@@ -88,8 +125,13 @@ gameOver DWORD 1
 gameTypeCount DWORD 2
 time DWORD 0
 timeCounter DWORD 0
+countOtherGameText DWORD 0
+winPosX DWORD 400
+winPosY DWORD 0
+
 randomNum DWORD 0
 randomSeed DWORD 0                 ; 隨機數種子
+
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -159,7 +201,7 @@ WinMain2 proc
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            400, 0, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
+            winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
     invoke SetTimer, hwnd, 1, timer, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
@@ -181,51 +223,69 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
 
-    .IF uMsg==WM_DESTROY 
+    .IF uMsg == WM_DESTROY 
+        
+        ; 設定遊戲結束旗標並釋放資源
         mov gameOver, 1
         invoke KillTimer, hWnd, 1
         invoke DeleteObject, hBitmap
         invoke DeleteDC, hdcMem
+        invoke DeleteDC, hdcBack
         invoke ReleaseDC, hWnd, hdc
         invoke PostQuitMessage, NULL
+        xor eax, eax
         ret
 
     .ELSEIF uMsg == WM_CREATE
-        CALL initializeBreakOut
-        CALL initializeBrick
-        CALL initializeBrush
+        ; 初始化遊戲資源
+        call initializeBreakOut
+        call initializeBrick
+        call initializeBrush
 
+        ; 加載位圖
         invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hBackBitmap, eax
         invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hBackBitmap2, eax
-        invoke GetDC,hWnd              
+
+        ; 設置內存 DC
+        invoke GetDC, hWnd
         mov hdc, eax
-        invoke CreateCompatibleDC,hdc  
+        invoke CreateCompatibleDC, hdc
         mov hdcMem, eax
-        invoke CreateCompatibleDC,hdc 
+        invoke CreateCompatibleDC, hdc
         mov hdcBack, eax
         invoke SelectObject, hdcMem, hBackBitmap
         invoke SelectObject, hdcBack, hBackBitmap2
         invoke ReleaseDC, hWnd, hdc
+        xor eax, eax
+        ret
+
     .ELSEIF uMsg == WM_TIMER
+        ; 處理定時器事件
+        cmp gameOver, 1
+        je game_over
+
+        ; 更新遊戲計時器
         mov eax, timeCounter
-        mov ebx, timer
-        add eax, ebx
+        add eax, timer
         mov timeCounter, eax
         cmp eax, 1000
-        jne skipAddTime
+        jl skipAddTime
         mov timeCounter, 0
         inc time
     skipAddTime:
-        cmp gameOver, 1
-        je game_over
-     
+
+        ; 更新磚塊和特殊磚邏輯
         cmp fallTimeCount, 0
         jne no_brick_fall
 
-        CALL Fall
-        CALL newBrick
+        invoke mciSendString, addr fallBrickOpenCmd, NULL, 0, NULL
+        invoke mciSendString, addr fallBrickVolumeCmd, NULL, 0, NULL
+        invoke mciSendString, addr fallBrickPlayCmd, NULL, 0, NULL
+
+        call Fall
+        call newBrick
         mov eax, fallTime
         mov fallTimeCount, eax
 
@@ -234,20 +294,18 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov specialTimeCount, eax
         cmp eax, 0
         jne no_brick_fall
-
-        CALL specialBrick
+        call specialBrick
         mov eax, specialTime
         mov specialTimeCount, eax
-
     no_brick_fall:
-        ; 更新小球位置
-        call update_ball
 
-        ; 檢測平台碰撞
+        ; 更新小球和平台邏輯
+        call update_ball
         call check_platform_collision
 
+        ; 處理左鍵移動
         invoke GetAsyncKeyState, VK_LEFT
-        test eax, 8000h ; 測試最高位
+        test eax, 8000h
         jz skip_left
         mov eax, platformX
         cmp eax, stepSize
@@ -256,8 +314,9 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov platformX, eax
     skip_left:
 
+        ; 處理右鍵移動
         invoke GetAsyncKeyState, VK_RIGHT
-        test eax, 8000h ; 測試最高位
+        test eax, 8000h
         jz skip_right
         mov eax, platformX
         add eax, stepSize
@@ -268,13 +327,20 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         add eax, stepSize
         mov platformX, eax
     skip_right:
+
         call brick_collision
 
         ; 重繪視窗
         invoke InvalidateRect, hWnd, NULL, FALSE
+        xor eax, eax
         ret
 
     game_over:
+        invoke mciSendString, addr breakOutLoseOpenCmd, NULL, 0, NULL
+        invoke mciSendString, addr breakOutLoseVolumeCmd, NULL, 0, NULL
+        invoke mciSendString, addr breakOutLosePlayCmd, NULL, 0, NULL
+
+        invoke InvalidateRect, hWnd, NULL, FALSE
         invoke KillTimer, hWnd, 1
         invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
         invoke DestroyWindow, hWnd
@@ -282,21 +348,27 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
 
     .ELSEIF uMsg == WM_PAINT
+        ; 處理視窗繪圖
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
         invoke BitBlt, hdcMem, 0, 0, winWidth, winHeight, hdcBack, 0, 0, SRCCOPY
         call DrawScreen
         call updateTime
+        call updateOtherGameText
         invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
-
-    .ELSE 
-        invoke DefWindowProc,hWnd,uMsg,wParam,lParam 
+        xor eax, eax
         ret
-    .ENDIF 
-    xor   eax, eax 
-    ret 
-WndProc2 endp 
+
+    .ELSE
+        ; 處理預設消息
+        invoke DefWindowProc, hWnd, uMsg, wParam, lParam
+        ret
+    .ENDIF
+    xor eax, eax
+    ret
+WndProc2 endp
+
 
 initializeBreakOut PROC
     mov platformX, 240
@@ -309,6 +381,7 @@ initializeBreakOut PROC
     mov gameOver, 0
     mov time, 0
     mov timeCounter, 0
+    mov countOtherGameText, 0
     
     mov eax, brickNumX
     mov ebx, brickNumY
@@ -390,6 +463,16 @@ div_error:
     ret
 
 updateTime ENDP
+
+updateOtherGameText PROC
+    cmp countOtherGameText, 0
+    jle skip
+    dec countOtherGameText
+    invoke SetBkMode, hdcMem, TRANSPARENT
+    invoke DrawText, hdcMem, addr OtherGameText, -1, addr line2Rect, DT_CENTER
+skip:
+    ret
+updateOtherGameText ENDP
 
 update_ball PROC
     ; 更新小球位置
@@ -645,6 +728,9 @@ do_corner_collision:
     fistp velocityY
 
 has_collision:
+    invoke mciSendString, addr platformOpenCmd, NULL, 0, NULL
+    invoke mciSendString, addr platformVolumeCmd, NULL, 0, NULL
+    invoke mciSendString, addr platformPlayCmd, NULL, 0, NULL
     dec fallTimeCount
 no_collision:
     ret
@@ -734,8 +820,6 @@ brick_collisionY:
     neg velocityY                  ; 反轉 Y 方向速度
     invoke goSpecialBrick, [esi]
     mov DWORD PTR [esi], 0         ; 移除磚塊
-    
-
 
 left_brick_collision:         ; brick + (brickIndexX - 1) * 4 + brickIndexY * brickNumX * 4
     cmp brickIndexX, 0
@@ -1257,6 +1341,11 @@ Continue:
 DrawScreen ENDP
 
 goSpecialBrick PROC, brickType:DWORD
+    cmp brickType, 1
+    je noGame
+    invoke mciSendString, addr specialBrickOpenCmd, NULL, 0, NULL
+    invoke mciSendString, addr specialBrickVolumeCmd, NULL, 0, NULL
+    invoke mciSendString, addr specialBrickPlayCmd, NULL, 0, NULL
     cmp brickType, 2
     je StartGame1
     cmp brickType, 3
@@ -1265,52 +1354,63 @@ goSpecialBrick PROC, brickType:DWORD
     je StartGame3
     cmp brickType, 5
     je StartGame4
-    jmp noGame
 
 StartGame1:
     call checkAdvanced1A2B
     cmp eax, 1
     je goGame1
+    mov eax, 11
+    call getOtherGame
     mov gameOver, 1
     ret
 goGame1:
     mov DWORD PTR [esi], 0
-    ;call goAdvanced1A2B
+    call goAdvanced1A2B
     call Advanced1A2B
     ret
 StartGame2:
     call checkCake1
     cmp eax, 1
     je goGame2
+    mov eax, 12
+    call getOtherGame
     mov gameOver, 1
     ret
 goGame2:
     mov DWORD PTR [esi], 0
-    ;call goCake1
+    call goCake1
     call Cake1
     ret
 StartGame3:
     call checkCake2
     cmp eax, 1
     je goGame3
+    mov eax, 13
+    call getOtherGame
     mov gameOver, 1
     ret
 goGame3:
     mov DWORD PTR [esi], 0
-    ;call goCake2
+    call goCake2
     call Cake2
     ret
 StartGame4:
     call checkMinesweeper
     cmp eax, 1
     je goGame4
+    mov eax, 14
+    call getOtherGame
     mov gameOver, 1
     ret
 goGame4:
     mov DWORD PTR [esi], 0
+    call goMinesweeper
     call Minesweeper
 
 noGame:
+    invoke mciSendString, addr brickOpenCmd, NULL, 0, NULL
+    invoke mciSendString, addr brickVolumeCmd, NULL, 0, NULL
+    invoke mciSendString, addr brickPlayCmd, NULL, 0, NULL
     mov DWORD PTR [esi], 0
     ret
 
@@ -1321,4 +1421,123 @@ getAdvancedBreakOutGame PROC
     ret
 getAdvancedBreakOutGame ENDP
 
+getOtherGame proc
+    mov countOtherGameText, 100
+    lea edi, OtherGameText + 20      ; 設定字串的開始位置
+
+    cmp eax, 1
+    je Advanced1A2BWin
+    cmp eax, 2
+    je Cake1Win
+    cmp eax, 3
+    je Cake2Win
+    cmp eax, 4
+    je MinesweeperWin
+
+    cmp eax, -1
+    je Advanced1A2BLose
+    cmp eax, -2
+    je Cake1Lose
+    cmp eax, -3
+    je Cake2Lose
+    cmp eax, -4
+    je MinesweeperLose
+
+    cmp eax, 11
+    je Advanced1A2BGoing
+    cmp eax, 12
+    je Cake1Going
+    cmp eax, 13
+    je Cake2Going
+    cmp eax, 14
+    je MinesweeperGoing
+    ret
+
+Advanced1A2BWin:
+    ; 寫入字串 "You Win 1A2B" 至 OtherGameText
+    lea esi, WinText1A2B
+    call WriteOtherGameString
+    ret
+
+Cake1Win:
+    ; 寫入字串 "You Win Cake1" 至 OtherGameText
+    lea esi, WinTextCake1
+    call WriteOtherGameString
+    ret
+
+Cake2Win:
+    ; 寫入字串 "You Win Cake2" 至 OtherGameText
+    lea esi, WinTextCake2
+    call WriteOtherGameString
+    ret
+
+MinesweeperWin:
+    ; 寫入字串 "You Win Minesweeper" 至 OtherGameText
+    lea esi, WinTextMinesweeper
+    call WriteOtherGameString
+    ret
+
+Advanced1A2BLose:
+    ; 寫入字串 "You Lose 1A2B" 至 OtherGameText
+    lea esi, LoseText1A2B
+    call WriteOtherGameString
+    ret
+
+Cake1Lose:
+    ; 寫入字串 "You Lose Cake1" 至 OtherGameText
+    lea esi, LoseTextCake1
+    call WriteOtherGameString
+    ret
+
+Cake2Lose:
+    ; 寫入字串 "You Lose Cake2" 至 OtherGameText
+    lea esi, LoseTextCake2
+    call WriteOtherGameString
+    ret
+
+MinesweeperLose:
+    ; 寫入字串 "You Lose Minesweeper" 至 OtherGameText
+    lea esi, LoseTextMinesweeper
+    call WriteOtherGameString
+    ret
+
+Advanced1A2BGoing:
+    ; 寫入字串 "You Lose 1A2B" 至 OtherGameText
+    lea esi, GoingText1A2B
+    call WriteOtherGameString
+    ret
+
+Cake1Going:
+    ; 寫入字串 "You Lose Cake1" 至 OtherGameText
+    lea esi, GoingTextCake1
+    call WriteOtherGameString
+    ret
+
+Cake2Going:
+    ; 寫入字串 "You Lose Cake2" 至 OtherGameText
+    lea esi, GoingTextCake2
+    call WriteOtherGameString
+    ret
+
+MinesweeperGoing:
+    ; 寫入字串 "You Lose Minesweeper" 至 OtherGameText
+    lea esi, GoingTextMinesweeper
+    call WriteOtherGameString
+    ret
+getOtherGame endp
+
+; 一個簡單的 WriteOtherGameString 函數來寫入字串
+WriteOtherGameString proc
+    ; 輸入：ESI = 字串地址
+    lea edi, OtherGameText    ; 開始位置
+next_char:
+    mov al, [esi]                 ; 載入字串的當前字元
+    mov [edi], al                 ; 存入記憶體
+    inc esi                        ; 移至下一個字元
+    inc edi                        ; 移至下一個位置
+    cmp al, 0                      ; 檢查是否是 null 終止符
+    jne next_char                 ; 如果不是，繼續寫入
+    ret
+WriteOtherGameString endp
+    
 end

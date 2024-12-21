@@ -8,6 +8,9 @@ include kernel32.inc
 include gdi32.inc 
 include winmm.inc
 
+EXTERN getOtherGame@0: PROC
+backBreakOut EQU getOtherGame@0
+
 UpdateLineText PROTO, LineText:PTR DWORD, mode: Byte, do:byte
 CreateButton PROTO Text:PTR DWORD, x:DWORD, y:DWORD, ID:DWORD, hWnd:HWND
 
@@ -53,7 +56,8 @@ line5Rect RECT <20, 140, 250, 160>
 line6Rect RECT <20, 170, 250, 190>
 line7Rect RECT <20, 200, 250, 220>
 line8Rect RECT <20, 230, 250, 250>
-line9Rect RECT <20, 280, 250, 300>
+line9Rect RECT <20, 260, 250, 380>
+line0Rect RECT <20, 280, 250, 300>
 
 SelectedCount   dd 0
 TriesRemaining  db 8
@@ -61,6 +65,8 @@ winWidth DWORD 270           ; 保存窗口寬度
 winHeight DWORD 400          ; 保存窗口高度
 fromBreakout DWORD 0
 gameover DWORD 1
+winPosX DWORD 400
+winPosY DWORD 0
 
 .DATA? 
 hInstance HINSTANCE ? 
@@ -127,7 +133,7 @@ WinMain1 proc
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            1000, 0, tempWidth, tempHeight, \
+            winPosX, winPosY, tempWidth, tempHeight, \
             NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
 
@@ -151,6 +157,21 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     LOCAL rect:RECT 
 
     .IF uMsg==WM_DESTROY 
+        cmp fromBreakout, 0
+        je getDestory
+        cmp Acount, 4
+        jne notWin
+        mov eax, 1
+        call backBreakOut
+        jmp getDestory
+    notWin:
+        mov eax, -1
+        call backBreakOut
+
+    getDestory:
+        mov winPosX, 400
+        mov winPosY, 0
+        mov fromBreakout, 0
         mov gameover, 1
         invoke DeleteDC, hdcMem
         invoke DestroyWindow, hWnd
@@ -251,6 +272,7 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             invoke UpdateLineText, OFFSET Line5Text, 1, 3
             invoke UpdateLineText, OFFSET Line6Text, 1, 2
             invoke UpdateLineText, OFFSET Line7Text, 1, 1
+            invoke UpdateLineText, OFFSET Line8Text, 1, 0
 
             mov edi, OFFSET GuessLineText
             mov ecx, 7
@@ -288,9 +310,11 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         game_over:
         ; 顯示遊戲結束訊息
-            mov gameover, 1
             call Output
+            cmp fromBreakout, 1
+            je skipMsg
             invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
+        skipMsg:
             invoke DeleteDC, hdcMem
             invoke DestroyWindow, hWnd
             invoke PostQuitMessage, 0
@@ -328,6 +352,7 @@ Initialized PROC
     invoke UpdateLineText, OFFSET Line5Text, 0, 0
     invoke UpdateLineText, OFFSET Line6Text, 0, 0
     invoke UpdateLineText, OFFSET Line7Text, 0, 0
+    invoke UpdateLineText, OFFSET Line8Text, 0, 0
     ret
 Initialized ENDP
 
@@ -472,7 +497,7 @@ UpdateText PROC
     add al, '0'                     ; 將數字轉換為 ASCII (單位數)
     mov byte ptr [RemainingTriesText + 11], al ; 將字元寫入字串
     invoke DrawText, hdcMem, addr RemainingTriesText, -1, addr line1Rect,DT_CENTER
-    invoke DrawText, hdcMem, addr GuessLineText, -1, addr line9Rect,DT_CENTER
+    invoke DrawText, hdcMem, addr GuessLineText, -1, addr line0Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line1Text, -1, addr line2Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line2Text, -1, addr line3Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line3Text, -1, addr line4Rect,DT_CENTER
@@ -480,6 +505,7 @@ UpdateText PROC
     invoke DrawText, hdcMem, addr Line5Text, -1, addr line6Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line6Text, -1, addr line7Rect,DT_CENTER
     invoke DrawText, hdcMem, addr Line7Text, -1, addr line8Rect,DT_CENTER
+    invoke DrawText, hdcMem, addr Line8Text, -1, addr line9Rect,DT_CENTER
     ret
 UpdateText ENDP
 
@@ -489,7 +515,11 @@ getAdvanced1A2BGame PROC
 getAdvanced1A2BGame ENDP
 
 Advanced1A2BfromBreakOut PROC
+    mov winPosX, 1000
+    mov winPosY, 0
     mov fromBreakout, 1
+    ret
 Advanced1A2BfromBreakOut ENDP
+
 
 end
