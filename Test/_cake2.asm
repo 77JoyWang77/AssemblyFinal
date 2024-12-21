@@ -336,6 +336,11 @@ skipMaxcakes:
     mov needMove, 0
     mov gameover, FALSE
     mov falling, FALSE
+    mov edi, OFFSET cakes
+    mov ecx, maxCakes
+    imul ecx, 4
+    xor eax, eax
+    rep stosd
 initializeCake2 ENDP
 
 ; §ó·s³J¿|¦ì¸m

@@ -12,6 +12,7 @@ include winmm.inc
 winWidth EQU 300          ; 視窗寬度
 winHeight EQU 400         ; 視窗高度
 border_left EQU 120
+border_right EQU 180
 ballSize EQU 20           ; 球的大小
 updateInterval EQU 30     ; 計時器更新間隔 (ms)
 initialVelocity EQU -20   ; 初始速度 (負值向上)
@@ -20,9 +21,11 @@ initialground EQU 250     ; 地板高度
 radius EQU 10             ; 半徑
 cakeWidth EQU 60          ; 蛋糕寬度
 cakeHeight EQU 20         ; 蛋糕高度
-initialcakeX EQU 230      ; 初始 X 座標
+initialcakeX EQU 220      ; 初始 X 座標
 initialcakeY EQU 230      ; 初始 Y 座標
 initialvelocityX EQU -3   ; X 方向速度
+initialcakeX1 EQU 20      ; 初始 X 座標
+initialvelocityX1 EQU 3   ; X 方向速度
 dropSpeed EQU 10
 maxCakes EQU 100
 cakeMoveSize EQU 5
@@ -212,9 +215,16 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         cmp valid, TRUE
         je next
 
+        cmp way, TRUE
+        jne from_left
         cmp cakeX, border_left
-        jne move_ground
+        jg move_ground
+        jmp next1
 
+    from_left:
+        cmp cakeX, border_left
+        jl move_ground
+    next1:
         call check_collision3
         cmp canDrop, FALSE
         je move_ground
@@ -227,13 +237,27 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov valid,FALSE
         mov eax, cakeHeight
         add needMove, eax
-        invoke InvalidateRect, hWnd, NULL, FALSE
+        
         inc currentCakeIndex  ; 下一個蛋糕
+        invoke GetTickCount                ; 生成隨機數
+        mov ebx, 2       ; 計算範圍大小
+        cdq                        ; 擴展 EAX 為 64 位
+        idiv ebx                   ; 除以範圍大小，餘數在 EAX
+        cmp edx, 0
+        jne Next
+        mov way, TRUE
         mov cakeX, initialcakeX
         mov cVelocityX, initialvelocityX
+        jmp Next1
+    Next:
+        mov way, FALSE
+        mov cakeX, initialcakeX1
+        mov cVelocityX, initialvelocityX1
+    Next1:
         mov cakeY, initialcakeY
         mov cVelocityY, 0
         dec TriesRemaining
+        invoke InvalidateRect, hWnd, NULL, FALSE
 
         cmp gameover, TRUE
         je game_over
@@ -303,6 +327,35 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     ret
 WndProc6 endp
 
+initializeCake3 PROC
+    mov cakeX, initialcakeX
+    mov cakeY, initialcakeY
+    mov ground, initialground
+    mov cVelocityX, initialvelocityX
+    mov cVelocityY, 0
+    mov TriesRemaining, maxCakes
+    dec TriesRemaining
+    mov groundMoveCount, 0
+    mov needMove, 0
+    mov currentCakeIndex, 1
+    mov gameover, FALSE
+    mov valid, FALSE
+    mov way, TRUE
+    mov edi, OFFSET cakes
+    mov ecx, maxCakes
+    imul ecx, 4
+    xor eax, eax
+    rep stosd
+    mov eax, firstcake.top
+    mov cakes.top, eax
+    mov eax, firstcake.bottom
+    mov cakes.bottom, eax
+    mov eax, firstcake.left
+    mov cakes.left, eax
+    mov eax, firstcake.right
+    mov cakes.right, eax
+initializeCake3 ENDP
+
 Update_move PROC
     ; 更新球的位置
     mov eax, velocityY
@@ -326,39 +379,27 @@ no_collision:
     ret
 Update_move ENDP
 
-initializeCake3 PROC
-    mov cakeX, initialcakeX
-    mov cakeY, initialcakeY
-    mov ground, initialground
-    mov cVelocityX, initialvelocityX
-    mov cVelocityY, 0
-    mov TriesRemaining, maxCakes
-    dec TriesRemaining
-    mov groundMoveCount, 0
-    mov needMove, 0
-    mov currentCakeIndex, 1
-    mov gameover, FALSE
-    mov valid, FALSE
-    mov eax, firstcake.top
-    mov cakes.top, eax
-    mov eax, firstcake.bottom
-    mov cakes.bottom, eax
-    mov eax, firstcake.left
-    mov cakes.left, eax
-    mov eax, firstcake.right
-    mov cakes.right, eax
-initializeCake3 ENDP
-
 ; 更新蛋糕位置
 update_cake3 PROC
     cmp cVelocityX, 0
     je end_update
+    cmp way, TRUE
+    jne left
     mov eax, cakeX
     cmp eax, border_left
-    je end_update
+    jle end_update
     add eax, cVelocityX
     mov cakeX, eax
+    ret
+left:
+    mov eax, cakeX
+    cmp eax, border_left
+    jge end_update
+    add eax, cVelocityX
+    mov cakeX, eax
+    ret
 end_update:
+    mov cVelocityX, 0
     ret
 update_cake3 ENDP
 
@@ -370,19 +411,11 @@ check_collision3 PROC
     mov eax, currentCakeIndex
     mov ebx, SIZEOF RECT
     imul ebx
-    mov ebx, cakes[eax].bottom
-    mov cr.bottom, ebx
-    mov ebx, cakes[eax].top
-    mov cr.top, ebx
     mov ebx, cakes[eax].left
     mov cr.left, ebx
     mov ebx, cakes[eax].right
     mov cr.right, ebx
 
-    mov ebx, cakes[eax - 16].bottom
-    mov lr.bottom, ebx
-    mov ebx, cakes[eax - 16].top
-    mov lr.top, ebx
     mov ebx, cakes[eax - 16].left
     mov lr.left, ebx
     mov ebx, cakes[eax - 16].right
@@ -390,7 +423,7 @@ check_collision3 PROC
 
 check_left:
     mov eax, lr.left
-    cmp cr.left, eax
+    cmp cr.right, eax
     jl check_end
     
 check_right:
@@ -421,13 +454,22 @@ check_ball PROC
     mov cr.left, ebx
     mov ebx, cakes[eax].right
     mov cr.right, ebx
-
+    
+    cmp way, TRUE
+    jne left_way
 
     ; 檢查球是否與蛋糕相撞
     mov eax, ball.right
     cmp eax, cr.left  ; 球的右邊界在蛋糕的左邊界右邊
     jbe ball_not_collision  ; 如果是，則不碰撞
+    jmp check_bottom
 
+left_way:
+    mov eax, ball.left
+    cmp eax, cr.right
+    jge ball_not_collision
+
+check_bottom:
     mov eax, ball.bottom
     cmp eax, cr.top   ; 球的底部是否在蛋糕的上方
     jae invalid_collision  ; 如果是，則不碰撞
