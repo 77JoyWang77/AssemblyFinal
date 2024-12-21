@@ -37,7 +37,7 @@ EndGame db "Game Over!", 0
 ScoreText db "Score:         ", 0
 offset_center DWORD 0
 
-hBackBitmapName db "bitmap5.bmp",0
+hBackBitmapName db "simplebreakout_background.bmp",0
 
 platformX DWORD 240           ; 初始 X 座標
 platformY DWORD 530           ; 初始 Y 座標

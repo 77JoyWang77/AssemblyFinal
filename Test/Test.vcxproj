@@ -178,6 +178,7 @@
     <Image Include="mine.bmp" />
     <Image Include="flag.bmp" />
     <Image Include="mine_red.bmp" />
+    <Image Include="simplebreakout_background.bmp" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="background.wav" />
