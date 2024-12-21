@@ -148,7 +148,9 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .IF uMsg==WM_DESTROY 
         cmp fromBreakout, 0
         je getDestory
-        cmp maxCakes, 0
+        cmp TriesRemaining, 0
+        jne notWin
+        cmp gameover, 0
         jne notWin
         mov eax, 3
         call backBreakOut
