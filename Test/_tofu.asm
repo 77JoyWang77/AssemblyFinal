@@ -21,10 +21,10 @@ initialground EQU 250     ; 地板高度
 radius EQU 10             ; 半徑
 cakeWidth EQU 60          ; 蛋糕寬度
 cakeHeight EQU 20         ; 蛋糕高度
-initialcakeX EQU 220      ; 初始 X 座標
+initialcakeX EQU 240      ; 初始 X 座標
 initialcakeY EQU 230      ; 初始 Y 座標
 initialvelocityX EQU -3   ; X 方向速度
-initialcakeX1 EQU 20      ; 初始 X 座標
+initialcakeX1 EQU 0       ; 初始 X 座標
 initialvelocityX1 EQU 3   ; X 方向速度
 dropSpeed EQU 10
 maxCakes EQU 100
@@ -175,7 +175,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke SetTimer, hWnd, 1, updateInterval, NULL
 
     .ELSEIF uMsg == WM_TIMER
-        invoke GetAsyncKeyState, VK_SPACE
+        invoke GetAsyncKeyState, VK_UP
         test eax, 8000h ; 測試最高位
         jz skip_space_key
 
@@ -239,20 +239,31 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         add needMove, eax
         
         inc currentCakeIndex  ; 下一個蛋糕
-        invoke GetTickCount                ; 生成隨機數
-        mov ebx, 2       ; 計算範圍大小
-        cdq                        ; 擴展 EAX 為 64 位
-        idiv ebx                   ; 除以範圍大小，餘數在 EAX
+        invoke GetTickCount
+        mov ebx, 2
+        cdq
+        idiv ebx
         cmp edx, 0
         jne Next
         mov way, TRUE
         mov cakeX, initialcakeX
-        mov cVelocityX, initialvelocityX
+        invoke GetTickCount
+        mov ebx, 4
+        cdq
+        idiv ebx
+        add edx, 2
+        neg edx
+        mov cVelocityX, edx
         jmp Next1
     Next:
         mov way, FALSE
         mov cakeX, initialcakeX1
-        mov cVelocityX, initialvelocityX1
+        invoke GetTickCount
+        mov ebx, 4
+        cdq
+        idiv ebx
+        add edx, 2
+        mov cVelocityX, edx
     Next1:
         mov cakeY, initialcakeY
         mov cVelocityY, 0
@@ -294,6 +305,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
     game_over:
         ; 顯示遊戲結束訊息
+        invoke InvalidateRect, hWnd, NULL, FALSE
         invoke KillTimer, hWnd, 1
         invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
         invoke DeleteObject, hBitmap
@@ -366,11 +378,27 @@ Update_move PROC
     cmp velocityY, 0
     jl no_collision
 
+    mov eax, ball.bottom
+    cmp eax, initialground
+    je stop_move
+
     ; 檢查碰撞地板
     mov eax, ball.bottom
     cmp eax, initialcakeY
     jl no_collision
 
+    cmp way, TRUE
+    jne check_way
+    mov eax, ball.right
+    cmp cakeX, eax
+    jg no_collision
+    jmp stop_move
+check_way:
+    mov eax, ball.left
+    cmp cakeX, eax
+    jl no_collision
+    jmp stop_move
+stop_move:
     ; 停止運動並固定球位置
     mov velocityY, 0  ; 停止運動
     mov move, FALSE
@@ -455,31 +483,41 @@ check_ball PROC
     mov ebx, cakes[eax].right
     mov cr.right, ebx
     
+    cmp ball.bottom, initialcakeY
+    jne check_side
+
     cmp way, TRUE
     jne left_way
+
+    cmp cr.left, 150
+    jg ball_not_collision
+    jmp valid_collision
+
+left_way:
+    cmp cr.right, 150
+    jl ball_not_collision
+    jmp valid_collision
+
+check_side:
+    mov eax, ball.bottom
+    cmp eax, initialground
+    jne ball_not_collision
+
+    cmp way, TRUE
+    jne left_way2
 
     ; 檢查球是否與蛋糕相撞
     mov eax, ball.right
     cmp eax, cr.left  ; 球的右邊界在蛋糕的左邊界右邊
-    jbe ball_not_collision  ; 如果是，則不碰撞
-    jmp check_bottom
+    jl ball_not_collision  ; 如果是，則不碰撞
+    mov gameover, TRUE
+    jmp valid_collision
 
-left_way:
+left_way2:
     mov eax, ball.left
     cmp eax, cr.right
-    jge ball_not_collision
-
-check_bottom:
-    mov eax, ball.bottom
-    cmp eax, cr.top   ; 球的底部是否在蛋糕的上方
-    jae invalid_collision  ; 如果是，則不碰撞
-    jmp ball_not_collision
-
-invalid_collision:
-    cmp eax, initialcakeY
-    je valid_collision
-    mov gameover, TRUE;
-    jmp ball_not_collision
+    jg ball_not_collision
+    mov gameover, TRUE
 
 valid_collision:
     mov valid, TRUE
