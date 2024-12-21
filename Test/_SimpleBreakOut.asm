@@ -30,6 +30,7 @@ OFFSET_BASE EQU 150
 speed DWORD 10
 divisor DWORD 180
 line1Rect RECT <50, 555, 150, 615>
+line2Rect RECT <350, 560, 600, 600>
 
 .DATA 
 ClassName db "SimpleWinClass7",0 
@@ -37,6 +38,11 @@ AppName  db "BreakOut",0
 Text db "Window", 0
 EndGame db "Game Over!", 0
 ScoreText db "Score:         ", 0
+ScoreAddText db "         ", 0
+Brick2Text db "+6", 0
+Brick3Text db "+10", 0
+Brick4Text db "+18", 0
+Brick5Text db "+30", 0
 offset_center DWORD 0
 
 hBackBitmapName db "simplebreakout_background.bmp",0
@@ -74,6 +80,7 @@ gameOver DWORD 1
 score DWORD 0
 winPosX DWORD 400
 winPosY DWORD 0
+countScoreAddText DWORD 0
 randomNum DWORD 0
 randomSeed DWORD 0                 ; 隨機數種子
 
@@ -150,7 +157,7 @@ WinMain7 proc
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
             winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
-    invoke SetTimer, hwnd, 1, 1, NULL  ; 更新間隔從 50ms 改為 10ms
+    invoke SetTimer, hwnd, 1, 10, NULL  ; 更新間隔從 50ms 改為 10ms
 
     ; 顯示和更新窗口
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
@@ -277,6 +284,7 @@ WndProc7 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke BitBlt, hdcMem, 0, 0, winWidth, winHeight, hdcBack, 0, 0, SRCCOPY
         call DrawScreen1
         call updateScore1
+        call updateScoreAddText
         invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
 
@@ -298,6 +306,7 @@ initializeBreakOut1 PROC
     mov specialTimeCount, 5
     mov gameOver, 0
     mov score, 0
+    mov countScoreAddText, 0
     
     mov eax, brickNumX
     mov ebx, brickNumY
@@ -337,6 +346,16 @@ initializeBrush1 PROC
     
     ret
 initializeBrush1 ENDP
+
+updateScoreAddText PROC
+    cmp countScoreAddText, 0
+    jle skip
+    dec countScoreAddText
+    invoke SetBkMode, hdcMem, TRANSPARENT
+    invoke DrawText, hdcMem, addr ScoreAddText, -1, addr line2Rect, DT_CENTER
+skip:
+    ret
+updateScoreAddText ENDP
 
 update_ball1 PROC
     ; 更新小球位置
@@ -1255,7 +1274,6 @@ goSpecialBrick1 PROC, brickType:DWORD
     je brick4
     cmp brickType, 5
     je brick5
-    jmp noBrick
 
 brick1:
     invoke mciSendString, addr brickOpenCmd, NULL, 0, NULL
@@ -1265,23 +1283,48 @@ brick1:
     ret
 brick2:
     add score, 6
+    mov DWORD PTR [esi], 0
+    lea esi, Brick2Text
+    call WriteAddScoreString
     ret
 brick3:
     add score, 10
+    mov DWORD PTR [esi], 0
+    lea esi, Brick3Text
+    call WriteAddScoreString
     ret
 brick4:
     add score, 18
+    mov DWORD PTR [esi], 0
+    lea esi, Brick4Text
+    call WriteAddScoreString
     ret
 brick5:
     add score, 30
+    mov DWORD PTR [esi], 0
+    lea esi, Brick5Text
+    call WriteAddScoreString
     ret
-noBrick:
-    ret
+
 goSpecialBrick1 ENDP
 
 getBreakOutGame PROC
     mov eax, gameOver
     ret
 getBreakOutGame ENDP
+
+WriteAddScoreString proc
+    mov countScoreAddText, 500
+    ; 輸入：ESI = 字串地址
+    lea edi, ScoreAddText    ; 開始位置
+next_char:
+    mov al, [esi]                 ; 載入字串的當前字元
+    mov [edi], al                 ; 存入記憶體
+    inc esi                        ; 移至下一個字元
+    inc edi                        ; 移至下一個位置
+    cmp al, 0                      ; 檢查是否是 null 終止符
+    jne next_char                 ; 如果不是，繼續寫入
+    ret
+WriteAddScoreString endp
 
 end

@@ -62,7 +62,7 @@ specialTime EQU 3
 ballRadius EQU 10             ; 小球半徑
 OFFSET_BASE EQU 150
 timer EQU 20
-speed DWORD 10
+
 divisor DWORD 180
 line1Rect RECT <50, 555, 150, 615>
 line2Rect RECT <400, 560, 600, 600>
@@ -128,6 +128,8 @@ timeCounter DWORD 0
 countOtherGameText DWORD 0
 winPosX DWORD 400
 winPosY DWORD 0
+
+speed DWORD 10
 
 randomNum DWORD 0
 randomSeed DWORD 0                 ; 隨機數種子
@@ -371,6 +373,7 @@ WndProc2 endp
 
 
 initializeBreakOut PROC
+    mov speed, 10
     mov platformX, 240
     mov ballX, 300
     mov ballY, 200
@@ -1423,7 +1426,6 @@ getAdvancedBreakOutGame ENDP
 
 getOtherGame proc
     mov countOtherGameText, 100
-    lea edi, OtherGameText + 20      ; 設定字串的開始位置
 
     cmp eax, 1
     je Advanced1A2BWin
@@ -1485,24 +1487,28 @@ Advanced1A2BLose:
 
 Cake1Lose:
     ; 寫入字串 "You Lose Cake1" 至 OtherGameText
+    inc speed
     lea esi, LoseTextCake1
     call WriteOtherGameString
     ret
 
 Cake2Lose:
     ; 寫入字串 "You Lose Cake2" 至 OtherGameText
+    inc speed
     lea esi, LoseTextCake2
     call WriteOtherGameString
     ret
 
 MinesweeperLose:
     ; 寫入字串 "You Lose Minesweeper" 至 OtherGameText
+    inc speed
     lea esi, LoseTextMinesweeper
     call WriteOtherGameString
     ret
 
 Advanced1A2BGoing:
     ; 寫入字串 "You Lose 1A2B" 至 OtherGameText
+    inc speed
     lea esi, GoingText1A2B
     call WriteOtherGameString
     ret
