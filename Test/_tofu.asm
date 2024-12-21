@@ -42,11 +42,14 @@ hitVolumeCmd db "setaudio hitMusic volume to 300", 0
 hitPlayCmd db "play hitMusic from 0", 0
 
 line1Rect RECT <30, 30, 280, 50>
+initialball RECT <140, 230, 160, 250>
 ball RECT <140, 230, 160, 250> ; 球的初始位置
 firstcake RECT <120, 250, 180, 270>
 cakes RECT <120, 250, 180, 270>, 99 DUP(<0, 0, 0, 0>)
 colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
 colors_count EQU ($ - colors) / 4
+winPosX DWORD 400
+winPosY DWORD 0
 
 .DATA?
 hInstance HINSTANCE ?
@@ -65,7 +68,6 @@ tempHeight DWORD ?
 cakeX DWORD ?                        ; X 座標
 cakeY DWORD ?                        ; Y 座標
 cVelocityX DWORD ?                   ; X 方向速度
-cVelocityY DWORD ?                   ; Y 方向速度
 currentCakeIndex DWORD ?             ; 當前蛋糕索引
 TriesRemaining BYTE ?                ; 剩餘次數
 groundMoveCount DWORD ?              ; 記錄地面已移動的像素總數
@@ -125,10 +127,9 @@ WinMain6 proc
     ; 創建窗口
     invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
            WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-           CW_USEDEFAULT, CW_USEDEFAULT, tempWidth, tempHeight, \
-           NULL, NULL, hInstance, NULL
+           winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov hwnd,eax
-
+    invoke SetTimer, hwnd, 1, updateInterval, NULL
     invoke ShowWindow, hwnd, SW_SHOWNORMAL
     invoke UpdateWindow, hwnd
     
@@ -168,12 +169,6 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         invoke CreateSolidBrush, 00C9A133h
         mov hBallBrush, eax
-
-        ; 初始化球運動
-        mov velocityY, 0
-        mov move, FALSE
-        invoke SetTimer, hWnd, 1, updateInterval, NULL
-
     .ELSEIF uMsg == WM_TIMER
         invoke GetAsyncKeyState, VK_UP
         test eax, 8000h ; 測試最高位
@@ -248,7 +243,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov way, TRUE
         mov cakeX, initialcakeX
         invoke GetTickCount
-        mov ebx, 4
+        mov ebx, 5
         cdq
         idiv ebx
         add edx, 2
@@ -259,14 +254,13 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov way, FALSE
         mov cakeX, initialcakeX1
         invoke GetTickCount
-        mov ebx, 4
+        mov ebx, 5
         cdq
         idiv ebx
         add edx, 2
         mov cVelocityX, edx
     Next1:
         mov cakeY, initialcakeY
-        mov cVelocityY, 0
         dec TriesRemaining
         invoke InvalidateRect, hWnd, NULL, FALSE
 
@@ -344,12 +338,13 @@ initializeCake3 PROC
     mov cakeY, initialcakeY
     mov ground, initialground
     mov cVelocityX, initialvelocityX
-    mov cVelocityY, 0
     mov TriesRemaining, maxCakes
     dec TriesRemaining
     mov groundMoveCount, 0
     mov needMove, 0
     mov currentCakeIndex, 1
+    mov velocityY, 0
+    mov move, FALSE
     mov gameover, FALSE
     mov valid, FALSE
     mov way, TRUE
@@ -366,6 +361,14 @@ initializeCake3 PROC
     mov cakes.left, eax
     mov eax, firstcake.right
     mov cakes.right, eax
+    mov eax, initialball.top
+    mov ball.top, eax
+    mov eax, initialball.bottom
+    mov ball.bottom, eax
+    mov eax, initialball.left
+    mov ball.left, eax
+    mov eax, initialball.right
+    mov ball.right, eax
 initializeCake3 ENDP
 
 Update_move PROC
@@ -501,15 +504,19 @@ left_way:
 check_side:
     mov eax, ball.bottom
     cmp eax, initialground
-    jne ball_not_collision
+    jl ball_not_collision
 
     cmp way, TRUE
     jne left_way2
 
     ; 檢查球是否與蛋糕相撞
     mov eax, ball.right
-    cmp eax, cr.left  ; 球的右邊界在蛋糕的左邊界右邊
-    jl ball_not_collision  ; 如果是，則不碰撞
+    cmp eax, cr.left
+    jl ball_not_collision
+    mov ebx, cr.left
+    sub eax, ebx
+    add cr.left, eax
+    add cr.right, eax
     mov gameover, TRUE
     jmp valid_collision
 
@@ -517,9 +524,19 @@ left_way2:
     mov eax, ball.left
     cmp eax, cr.right
     jg ball_not_collision
+    mov ebx, cr.right
+    sub ebx, eax
+    sub cr.left, ebx
+    sub cr.right, ebx
     mov gameover, TRUE
 
 valid_collision:
+    mov ebx, SIZEOF RECT
+    imul ebx, currentCakeIndex
+    mov eax, cr.left
+    mov cakes[ebx].left, eax
+    mov eax, cr.right
+    mov cakes[ebx].right, eax
     mov valid, TRUE
 ball_not_collision:
     ret
