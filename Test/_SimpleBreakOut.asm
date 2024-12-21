@@ -38,11 +38,7 @@ AppName  db "BreakOut",0
 Text db "Window", 0
 EndGame db "Game Over!", 0
 ScoreText db "Score:         ", 0
-ScoreAddText db "         ", 0
-Brick2Text db "+6", 0
-Brick3Text db "+10", 0
-Brick4Text db "+18", 0
-Brick5Text db "+30", 0
+
 offset_center DWORD 0
 
 hBackBitmapName db "simplebreakout_background.bmp",0
@@ -83,6 +79,7 @@ winPosY DWORD 0
 countScoreAddText DWORD 0
 randomNum DWORD 0
 randomSeed DWORD 0                 ; 隨機數種子
+addScoreTextPos DWORD 0
 
 
 .DATA? 
@@ -284,7 +281,6 @@ WndProc7 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke BitBlt, hdcMem, 0, 0, winWidth, winHeight, hdcBack, 0, 0, SRCCOPY
         call DrawScreen1
         call updateScore1
-        call updateScoreAddText
         invoke BitBlt, hdc, 0, 0, winWidth, winHeight, hdcMem, 0, 0, SRCCOPY
         invoke EndPaint, hWnd, addr ps
 
@@ -306,7 +302,6 @@ initializeBreakOut1 PROC
     mov specialTimeCount, 5
     mov gameOver, 0
     mov score, 0
-    mov countScoreAddText, 0
     
     mov eax, brickNumX
     mov ebx, brickNumY
@@ -346,16 +341,6 @@ initializeBrush1 PROC
     
     ret
 initializeBrush1 ENDP
-
-updateScoreAddText PROC
-    cmp countScoreAddText, 0
-    jle skip
-    dec countScoreAddText
-    invoke SetBkMode, hdcMem, TRANSPARENT
-    invoke DrawText, hdcMem, addr ScoreAddText, -1, addr line2Rect, DT_CENTER
-skip:
-    ret
-updateScoreAddText ENDP
 
 update_ball1 PROC
     ; 更新小球位置
@@ -701,7 +686,6 @@ brick_collisionY:
     ; 碰撞處理
     neg velocityY                  ; 反轉 Y 方向速度
     invoke goSpecialBrick1, [esi]
-    mov DWORD PTR [esi], 0         ; 移除磚塊
 
 left_brick_collision:         ; brick + (brickIndexX - 1) * 4 + brickIndexY * brickNumX * 4
     cmp brickIndexX, 0
@@ -758,7 +742,6 @@ brick_collisionX:
     ; 碰撞處理
     neg velocityX                  ; 反轉 X 方向速度
     invoke goSpecialBrick1, [esi]
-    mov DWORD PTR [esi], 0         ; 移除磚塊
     jmp corner_brick
 
 corner_brick:
@@ -798,7 +781,6 @@ leftup:
     cmp eax, 0
     je leftbottom
     invoke goSpecialBrick1, [esi]
-    mov DWORD PTR [esi], 0
     cmp velocityX, 0
     jge skipLeftupX
     neg velocityX
@@ -842,7 +824,6 @@ leftbottom:
     cmp eax, 0
     je rightup
     invoke goSpecialBrick1, [esi]
-    mov DWORD PTR [esi], 0
     cmp velocityX, 0
     jge skipLeftbottomX
     neg velocityX
@@ -887,7 +868,6 @@ rightup:
     cmp eax, 0
     je rightbottom
     invoke goSpecialBrick1, [esi]
-    mov DWORD PTR [esi], 0
     cmp velocityX, 0
     jle skipRightupX
     neg velocityX
@@ -931,7 +911,6 @@ rightbottom:
     cmp eax, 0
     je no_brick_collision
     invoke goSpecialBrick1, [esi]
-    mov DWORD PTR [esi], 0
     mov eax, velocityX
     cmp eax, 0
     jle skipRightbottomX
@@ -1028,7 +1007,7 @@ initializeBrick1 proc
     mov ecx, initialBrickRow
     mul ecx
     mov ecx, eax
-    mov ebx, 2
+    mov ebx, 6
 
     invoke GetTickCount
     mov eax, edx
@@ -1279,31 +1258,24 @@ brick1:
     invoke mciSendString, addr brickOpenCmd, NULL, 0, NULL
     invoke mciSendString, addr brickVolumeCmd, NULL, 0, NULL
     invoke mciSendString, addr brickPlayCmd, NULL, 0, NULL
+    mov DWORD PTR [esi], 0
     add score, 1
     ret
 brick2:
     add score, 6
     mov DWORD PTR [esi], 0
-    lea esi, Brick2Text
-    call WriteAddScoreString
     ret
 brick3:
     add score, 10
     mov DWORD PTR [esi], 0
-    lea esi, Brick3Text
-    call WriteAddScoreString
     ret
 brick4:
     add score, 18
     mov DWORD PTR [esi], 0
-    lea esi, Brick4Text
-    call WriteAddScoreString
     ret
 brick5:
     add score, 30
     mov DWORD PTR [esi], 0
-    lea esi, Brick5Text
-    call WriteAddScoreString
     ret
 
 goSpecialBrick1 ENDP
@@ -1312,19 +1284,5 @@ getBreakOutGame PROC
     mov eax, gameOver
     ret
 getBreakOutGame ENDP
-
-WriteAddScoreString proc
-    mov countScoreAddText, 500
-    ; 輸入：ESI = 字串地址
-    lea edi, ScoreAddText    ; 開始位置
-next_char:
-    mov al, [esi]                 ; 載入字串的當前字元
-    mov [edi], al                 ; 存入記憶體
-    inc esi                        ; 移至下一個字元
-    inc edi                        ; 移至下一個位置
-    cmp al, 0                      ; 檢查是否是 null 終止符
-    jne next_char                 ; 如果不是，繼續寫入
-    ret
-WriteAddScoreString endp
 
 end
