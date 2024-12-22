@@ -50,6 +50,7 @@ colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8
 colors_count EQU ($ - colors) / 4
 winPosX DWORD 400
 winPosY DWORD 0
+gameover BOOL 1
 
 .DATA?
 hInstance HINSTANCE ?
@@ -73,7 +74,6 @@ TriesRemaining BYTE ?                ; 剩餘次數
 groundMoveCount DWORD ?              ; 記錄地面已移動的像素總數
 needMove DWORD ?
 ground DWORD ?
-gameover BOOL ?
 canDrop BOOL ?
 valid BOOL ?
 way BOOL ?
@@ -318,6 +318,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
     .ELSEIF uMsg == WM_DESTROY
         ; 清理資源
+        mov gameover, 1
         invoke KillTimer, hWnd, 1
         invoke DeleteObject, hBallBrush
         invoke DeleteObject, hBitmap
@@ -599,4 +600,9 @@ brushesloop:
 end_brushesloop:
     ret
 SetBrushes3 ENDP
+
+getTofuGame PROC
+    mov eax, gameover
+    ret
+getTofuGame ENDP
 end

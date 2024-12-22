@@ -1007,7 +1007,7 @@ initializeBrick1 proc
     mov ecx, initialBrickRow
     mul ecx
     mov ecx, eax
-    mov ebx, 6
+    mov ebx, 2
 
     invoke GetTickCount
     mov eax, edx
