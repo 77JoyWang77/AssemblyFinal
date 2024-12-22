@@ -33,7 +33,7 @@ message8 byte "Invalid Input!", 0
 
 .code
 main PROC
-    ;call Home
+    call Home
 Start:
     CALL ClrScr
     mov edx, OFFSET Option1
