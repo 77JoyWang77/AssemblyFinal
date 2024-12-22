@@ -25,7 +25,7 @@ initialcakeX1 EQU 200     ; 初始 X 座標
 initialvelocityX1 EQU -10 ; X 方向速度
 initialground EQU 300
 dropSpeed EQU 10
-time EQU 10              ; 更新速度，影響磚塊速度
+time EQU 20              ; 更新速度，影響磚塊速度
 cakeMoveSize EQU 5
 heighest EQU 280
 
