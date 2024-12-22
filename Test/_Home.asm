@@ -15,6 +15,7 @@ EXTERN getBreakOutGame@0: PROC
 EXTERN getCake1Game@0: PROC
 EXTERN getCake2Game@0: PROC
 EXTERN getMinesweeperGame@0: PROC
+EXTERN getTofuGame@0: PROC
 EXTERN getAdvancedBreakOutGame@0: PROC
 
 Advanced1A2B EQU WinMain1@0
@@ -30,6 +31,7 @@ checkBreakOut EQU getBreakOutGame@0
 checkCake1 EQU getCake1Game@0
 checkCake2 EQU getCake2Game@0
 checkMinesweeper EQU getMinesweeperGame@0
+checkTofu EQU getTofuGame@0
 checkAdvancedBreakOut EQU getAdvancedBreakOutGame@0
 
 WinMain proto :DWORD
@@ -392,6 +394,9 @@ checkGame PROC
     cmp eax, 0
     je hasGame
     call checkMinesweeper
+    cmp eax, 0
+    je hasGame
+    call checkTofu
     cmp eax, 0
     je hasGame
     call checkAdvancedBreakOut
