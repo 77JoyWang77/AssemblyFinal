@@ -245,13 +245,13 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         call initializeBrush
 
         lea edi, brick
-        add edi, 168
+        add edi, 164
         mov DWORD PTR [edi], 2
-        add edi, 4
+        add edi, 8
         mov DWORD PTR [edi], 3
-        add edi, 4
+        add edi, 16
         mov DWORD PTR [edi], 4
-        add edi, 4
+        add edi, 8
         mov DWORD PTR [edi], 5
 
         ; ¥[¸ü¦ì¹Ï

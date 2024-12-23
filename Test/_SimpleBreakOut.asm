@@ -193,11 +193,11 @@ WndProc7 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         lea edi, brick
         add edi, 168
         mov DWORD PTR [edi], 2
-        add edi, 4
+        add edi, 8
         mov DWORD PTR [edi], 3
-        add edi, 4
+        add edi, 8
         mov DWORD PTR [edi], 4
-        add edi, 4
+        add edi, 8
         mov DWORD PTR [edi], 5
 
         ; 創建內存設備上下文 (hdcMem) 和位圖
