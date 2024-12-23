@@ -162,10 +162,6 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="1A2B_background.bmp" />
-    <Image Include="bitmap3.bmp" />
-    <Image Include="bitmap4.bmp" />
-    <Image Include="bitmap5.bmp" />
-    <Image Include="bitmap6.bmp" />
     <Image Include="bonus.bmp" />
     <Image Include="breakout_background.bmp" />
     <Image Include="cake1_background.bmp" />

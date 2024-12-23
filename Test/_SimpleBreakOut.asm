@@ -44,23 +44,23 @@ offset_center DWORD 0
 hBackBitmapName db "simplebreakout_background.bmp",0
 
 fallBrickOpenCmd db "open fallBrick.wav type mpegvideo alias fallBrickMusic", 0
-fallBrickVolumeCmd db "setaudio fallBrickMusic volume to 300", 0
+fallBrickVolumeCmd db "setaudio fallBrickMusic volume to 100", 0
 fallBrickPlayCmd db "play fallBrickMusic from 0", 0
 
 brickOpenCmd db "open brick.wav type mpegvideo alias brickMusic", 0
-brickVolumeCmd db "setaudio brickMusic volume to 300", 0
+brickVolumeCmd db "setaudio brickMusic volume to 100", 0
 brickPlayCmd db "play brickMusic from 0", 0
 
 specialBrickOpenCmd db "open specialBrick.wav type mpegvideo alias specialBrickMusic", 0
-specialBrickVolumeCmd db "setaudio specialBrickMusic volume to 300", 0
+specialBrickVolumeCmd db "setaudio specialBrickMusic volume to 100", 0
 specialBrickPlayCmd db "play specialBrickMusic from 0", 0
 
 platformOpenCmd db "open platform.wav type mpegvideo alias platformMusic", 0
-platformVolumeCmd db "setaudio platformMusic volume to 300", 0
+platformVolumeCmd db "setaudio platformMusic volume to 100", 0
 platformPlayCmd db "play platformMusic from 0", 0
 
 breakOutLoseOpenCmd db "open breakOutLose.wav type mpegvideo alias breakOutLoseMusic", 0
-breakOutLoseVolumeCmd db "setaudio breakOutLoseMusic volume to 300", 0
+breakOutLoseVolumeCmd db "setaudio breakOutLoseMusic volume to 100", 0
 breakOutLosePlayCmd db "play breakOutLoseMusic from 0", 0
 
 platformX DWORD 240           ; ªì©l X ®y¼Ð
@@ -1007,7 +1007,7 @@ initializeBrick1 proc
     mov ecx, initialBrickRow
     mul ecx
     mov ecx, eax
-    mov ebx, 2
+    mov ebx, 6
 
     invoke GetTickCount
     mov eax, edx

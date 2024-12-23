@@ -45,7 +45,7 @@ Line8Text db "                    ", 0
 
 hBackBitmapName db "1A2B_background.bmp",0
 clickOpenCmd db "open click.wav type mpegvideo alias clickMusic", 0
-clickVolumeCmd db "setaudio clickMusic volume to 300", 0
+clickVolumeCmd db "setaudio clickMusic volume to 100", 0
 clickPlayCmd db "play clickMusic from 0", 0
 
 line1Rect RECT <20, 20, 250, 40>

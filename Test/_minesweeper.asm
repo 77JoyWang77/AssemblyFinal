@@ -40,7 +40,7 @@ hFlagBitmapName db "flag.bmp",0
 hFlagRedBitmapName db "flag_red.bmp",0
 hBackBitmapName db "mine_background.bmp",0
 boomOpenCmd db "open boom.wav type mpegvideo alias boomMusic", 0
-boomVolumeCmd db "setaudio boomMusic volume to 300", 0
+boomVolumeCmd db "setaudio boomMusic volume to 100", 0
 boomPlayCmd db "play boomMusic from 0", 0
 
 winPosX DWORD 400
