@@ -244,6 +244,16 @@ WndProc2 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         call initializeBrick
         call initializeBrush
 
+        lea edi, brick
+        add edi, 164
+        mov DWORD PTR [edi], 2
+        add edi, 8
+        mov DWORD PTR [edi], 3
+        add edi, 16
+        mov DWORD PTR [edi], 4
+        add edi, 8
+        mov DWORD PTR [edi], 5
+
         ; ¥[¸ü¦ì¹Ï
         invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hBackBitmap, eax

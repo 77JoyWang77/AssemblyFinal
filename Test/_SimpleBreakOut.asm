@@ -154,7 +154,7 @@ WinMain7 proc
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
             winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
-    invoke SetTimer, hwnd, 1, 10, NULL  ; 更新間隔從 50ms 改為 10ms
+    invoke SetTimer, hwnd, 1, 20, NULL  ; 更新間隔從 50ms 改為 10ms
 
     ; 顯示和更新窗口
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
@@ -189,6 +189,16 @@ WndProc7 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         CALL initializeBreakOut1
         CALL initializeBrick1
         CALL initializeBrush1
+
+        lea edi, brick
+        add edi, 168
+        mov DWORD PTR [edi], 2
+        add edi, 8
+        mov DWORD PTR [edi], 3
+        add edi, 8
+        mov DWORD PTR [edi], 4
+        add edi, 8
+        mov DWORD PTR [edi], 5
 
         ; 創建內存設備上下文 (hdcMem) 和位圖
         invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
