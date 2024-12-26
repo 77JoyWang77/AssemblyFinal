@@ -34,9 +34,9 @@ AppName  db "Cake", 0
 RemainingTriesText db "Remaining:   ", 0
 EndGame db "Game Over!", 0
 
-hBackBitmapName db "cake2_background.bmp",0
+hBackBitmapName db "bmp/cake2_background.bmp",0
 
-hitOpenCmd db "open hit.wav type mpegvideo alias hitMusic", 0
+hitOpenCmd db "open wav/hit.wav type mpegvideo alias hitMusic", 0
 hitVolumeCmd db "setaudio hitMusic volume to 100", 0
 hitPlayCmd db "play hitMusic from 0", 0
 

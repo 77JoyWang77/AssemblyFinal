@@ -47,20 +47,19 @@ ClassName db "SimpleWinClass",0
 AppName  db "Home",0 
 ButtonClassName db "button", 0 
 
-hButton1BitmapName db "home_1A2B.bmp", 0
-hButton2BitmapName db "home_BREAKOUT.bmp", 0
-hButton3BitmapName db "home_cake1.bmp", 0
-hButton4BitmapName db "home_cake2.bmp", 0
-hButton5BitmapName db "home_minesweeper.bmp", 0
-hButton6BitmapName db "home_tofu.bmp", 0
-hButton7BitmapName db "bonus.bmp", 0
+hButton1BitmapName db "bmp/home_1A2B.bmp", 0
+hButton2BitmapName db "bmp/home_BREAKOUT.bmp", 0
+hButton3BitmapName db "bmp/home_cake1.bmp", 0
+hButton4BitmapName db "bmp/home_cake2.bmp", 0
+hButton5BitmapName db "bmp/home_minesweeper.bmp", 0
+hButton6BitmapName db "bmp/home_tofu.bmp", 0
+hButton7BitmapName db "bmp/bonus.bmp", 0
+hBackBitmapName db "bmp/home_background.bmp", 0
 
-hBackBitmapName db "home_background.bmp", 0
-BackgroundMusic db "background.mp3", 0
-bgOpenCmd db "open merrychristmas.wav type mpegvideo alias bgMusic", 0
+bgOpenCmd db "open wav/merrychristmas.wav type mpegvideo alias bgMusic", 0
 bgVolumeCmd db "setaudio bgMusic volume to 100", 0
 bgPlayCmd db "play bgMusic repeat", 0
-clickOpenCmd db "open click.wav type mpegvideo alias clickMusic", 0
+clickOpenCmd db "open wav/click.wav type mpegvideo alias clickMusic", 0
 clickVolumeCmd db "setaudio clickMusic volume to 100", 0
 clickPlayCmd db "play clickMusic from 0", 0
 

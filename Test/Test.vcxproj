@@ -87,6 +87,7 @@
       <AdditionalLibraryDirectories>C:\Irvine;C:\masm32\include</AdditionalLibraryDirectories>
       <AdditionalDependencies>Irvine32.lib;user32.lib;kernel32.lib;gdi32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateMapFile>true</GenerateMapFile>
+      <EmbedManagedResourceFile>$(OutDir)$(ProjectName).res</EmbedManagedResourceFile>
     </Link>
     <MASM>
       <IncludePaths>C:\Irvine;C:\masm32\include</IncludePaths>
@@ -94,7 +95,7 @@
       <ObjectFileName>$(OutDir)%(FileName).obj</ObjectFileName>
     </MASM>
     <ResourceCompile>
-      <ResourceOutputFileName>Test.res</ResourceOutputFileName>
+      <ResourceOutputFileName>$(OutDir)$(ProjectName).res</ResourceOutputFileName>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -165,35 +166,7 @@
     <ResourceCompile Include="Test.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="1A2B_background.bmp" />
-    <Image Include="bonus.bmp" />
-    <Image Include="breakout_background.bmp" />
-    <Image Include="cake1_background.bmp" />
-    <Image Include="cake2_background.bmp" />
-    <Image Include="flag_red.bmp" />
-    <Image Include="home_1A2B.bmp" />
-    <Image Include="home_background.bmp" />
-    <Image Include="home_BREAKOUT.bmp" />
-    <Image Include="home_cake1.bmp" />
-    <Image Include="home_cake2.bmp" />
-    <Image Include="home_minesweeper.bmp" />
-    <Image Include="home_tofu.bmp" />
-    <Image Include="mine.bmp" />
-    <Image Include="flag.bmp" />
-    <Image Include="mine_background.bmp" />
-    <Image Include="mine_red.bmp" />
-    <Image Include="simplebreakout_background.bmp" />
-    <Image Include="tofu_background.bmp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Media Include="..\..\音樂\breakOutLose.wav" />
-    <Media Include="..\..\音樂\brick.wav" />
-    <Media Include="..\..\音樂\fallBrick.wav" />
-    <Media Include="..\..\音樂\platform.wav" />
-    <Media Include="..\..\音樂\specialBrick.wav" />
-    <Media Include="background.wav" />
-    <Media Include="click.wav" />
-    <Media Include="hit.wav" />
+    <Image Include="bmp\home_background.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -34,12 +34,12 @@ WinGame  db "Win!", 0
 LoseGame db "Game Over!", 0
 ShowText db " ", 0
 
-hMineBitmapName db "mine.bmp",0
-hMineRedBitmapName db "mine_red.bmp",0
-hFlagBitmapName db "flag.bmp",0
-hFlagRedBitmapName db "flag_red.bmp",0
-hBackBitmapName db "mine_background.bmp",0
-boomOpenCmd db "open boom.wav type mpegvideo alias boomMusic", 0
+hMineBitmapName db "bmp/mine.bmp",0
+hMineRedBitmapName db "bmp/mine_red.bmp",0
+hFlagBitmapName db "bmp/flag.bmp",0
+hFlagRedBitmapName db "bmp/flag_red.bmp",0
+hBackBitmapName db "bmp/mine_background.bmp",0
+boomOpenCmd db "open wav/boom.wav type mpegvideo alias boomMusic", 0
 boomVolumeCmd db "setaudio boomMusic volume to 100", 0
 boomPlayCmd db "play boomMusic from 0", 0
 
