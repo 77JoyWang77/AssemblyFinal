@@ -58,10 +58,10 @@ hButton7BitmapName db "bonus.bmp", 0
 hBackBitmapName db "home_background.bmp", 0
 BackgroundMusic db "background.mp3", 0
 bgOpenCmd db "open merrychristmas.wav type mpegvideo alias bgMusic", 0
-bgVolumeCmd db "setaudio bgMusic volume to 300", 0
+bgVolumeCmd db "setaudio bgMusic volume to 100", 0
 bgPlayCmd db "play bgMusic repeat", 0
 clickOpenCmd db "open click.wav type mpegvideo alias clickMusic", 0
-clickVolumeCmd db "setaudio clickMusic volume to 300", 0
+clickVolumeCmd db "setaudio clickMusic volume to 100", 0
 clickPlayCmd db "play clickMusic from 0", 0
 
 winWidth EQU 400        ; µøµ¡¼e«×
