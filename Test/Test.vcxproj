@@ -24,7 +24,7 @@
     <ProjectGuid>{8a807bd8-3271-4112-9e76-038fb27b1413}</ProjectGuid>
     <RootNamespace>Test</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>group10</ProjectName>
+    <ProjectName>Test</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -84,15 +84,15 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Irvine;C:\masm32\include;%(IncludePaths)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Irvine32.lib;user32.lib;kernel32.lib;gdi32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>user32.lib;kernel32.lib;gdi32.lib;winmm.lib;msvcrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateMapFile>false</GenerateMapFile>
       <EmbedManagedResourceFile>
       </EmbedManagedResourceFile>
     </Link>
     <MASM>
-      <IncludePaths>C:\Irvine;C:\masm32\include;%(IncludePaths)</IncludePaths>
+      <IncludePaths>C:\masm32\include;%(IncludePaths)</IncludePaths>
       <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
       <AssembledCodeListingFile>$(ProjectName).lst</AssembledCodeListingFile>
     </MASM>
@@ -154,8 +154,6 @@
     <MASM Include="_minesweeper.asm" />
     <MASM Include="_Advanced1A2B.asm" />
     <MASM Include="_cake1.asm" />
-    <MASM Include="_Game1A2B.asm" />
-    <MASM Include="_Breakout.asm" />
     <MASM Include="main.asm" />
     <MASM Include="_Home.asm" />
     <MASM Include="_SimpleBreakOut.asm" />
@@ -166,9 +164,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Test.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="bmp\home_background.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

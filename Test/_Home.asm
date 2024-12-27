@@ -18,6 +18,8 @@ EXTERN getMinesweeperGame@0: PROC
 EXTERN getTofuGame@0: PROC
 EXTERN getAdvancedBreakOutGame@0: PROC
 
+crt_printf equ _imp__printf
+
 Advanced1A2B EQU WinMain1@0
 BreakOut EQU WinMain2@0
 Cake1 EQU WinMain3@0
