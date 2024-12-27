@@ -19,12 +19,12 @@ EXTERN getTofuGame@0: PROC
 EXTERN getAdvancedBreakOutGame@0: PROC
 
 Advanced1A2B EQU WinMain1@0
-AdvancedBreakOut EQU WinMain2@0
+BreakOut EQU WinMain2@0
 Cake1 EQU WinMain3@0
 Cake2 EQU WinMain4@0
 Minesweeper EQU WinMain5@0
 Tofu EQU WinMain6@0
-BreakOut EQU WinMain7@0
+AdvancedBreakOut EQU WinMain7@0
 
 checkAdvanced1A2B EQU getAdvanced1A2BGame@0
 checkBreakOut EQU getBreakOutGame@0
