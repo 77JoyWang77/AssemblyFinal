@@ -43,8 +43,8 @@ Line6Text db "                    ", 0
 Line7Text db "                    ", 0
 Line8Text db "                    ", 0
 
-hBackBitmapName db "1A2B_background.bmp",0
-clickOpenCmd db "open click.wav type mpegvideo alias clickMusic", 0
+hBackBitmapName db "bmp/1A2B_background.bmp",0
+clickOpenCmd db "open bmp/click.wav type mpegvideo alias clickMusic", 0
 clickVolumeCmd db "setaudio clickMusic volume to 100", 0
 clickPlayCmd db "play clickMusic from 0", 0
 

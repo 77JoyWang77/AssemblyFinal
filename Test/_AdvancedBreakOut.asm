@@ -85,7 +85,7 @@ EndGame db "Game Over!", 0
 TimeText db "Time:         ", 0
 OtherGameText db "                                  ", 0
 
-hBackBitmapName db "breakout_background.bmp",0
+hBackBitmapName db "bmp/breakout_background.bmp",0
 
 ; 訊息條
 WinText1A2B db "You Win 1A2B", 0
@@ -102,23 +102,23 @@ GoingTextCake2 db "Cake2 is still going !", 0
 GoingTextMinesweeper db "Minesweeper is still going !", 0
 
 ; 音效
-fallBrickOpenCmd db "open fallBrick.wav type mpegvideo alias fallBrickMusic", 0
+fallBrickOpenCmd db "open wav/fallBrick.wav type mpegvideo alias fallBrickMusic", 0
 fallBrickVolumeCmd db "setaudio fallBrickMusic volume to 100", 0
 fallBrickPlayCmd db "play fallBrickMusic from 0", 0
 
-brickOpenCmd db "open brick.wav type mpegvideo alias brickMusic", 0
+brickOpenCmd db "open wav/brick.wav type mpegvideo alias brickMusic", 0
 brickVolumeCmd db "setaudio brickMusic volume to 100", 0
 brickPlayCmd db "play brickMusic from 0", 0
 
-specialBrickOpenCmd db "open specialBrick.wav type mpegvideo alias specialBrickMusic", 0
+specialBrickOpenCmd db "open wav/specialBrick.wav type mpegvideo alias specialBrickMusic", 0
 specialBrickVolumeCmd db "setaudio specialBrickMusic volume to 100", 0
 specialBrickPlayCmd db "play specialBrickMusic from 0", 0
 
-platformOpenCmd db "open platform.wav type mpegvideo alias platformMusic", 0
+platformOpenCmd db "open wav/platform.wav type mpegvideo alias platformMusic", 0
 platformVolumeCmd db "setaudio platformMusic volume to 100", 0
 platformPlayCmd db "play platformMusic from 0", 0
 
-breakOutLoseOpenCmd db "open breakOutLose.wav type mpegvideo alias breakOutLoseMusic", 0
+breakOutLoseOpenCmd db "open wav/breakOutLose.wav type mpegvideo alias breakOutLoseMusic", 0
 breakOutLoseVolumeCmd db "setaudio breakOutLoseMusic volume to 100", 0
 breakOutLosePlayCmd db "play breakOutLoseMusic from 0", 0
 
