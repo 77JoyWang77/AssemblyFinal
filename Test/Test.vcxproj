@@ -24,6 +24,7 @@
     <ProjectGuid>{8a807bd8-3271-4112-9e76-038fb27b1413}</ProjectGuid>
     <RootNamespace>Test</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>group10</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -72,7 +73,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <TargetName>group10</TargetName>
+    <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -84,18 +85,19 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Irvine;C:\masm32\include</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Irvine;C:\masm32\include;%(IncludePaths)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Irvine32.lib;user32.lib;kernel32.lib;gdi32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <GenerateMapFile>true</GenerateMapFile>
-      <EmbedManagedResourceFile>$(OutDir)$(ProjectName).res</EmbedManagedResourceFile>
+      <GenerateMapFile>false</GenerateMapFile>
+      <EmbedManagedResourceFile>
+      </EmbedManagedResourceFile>
     </Link>
     <MASM>
-      <IncludePaths>C:\Irvine;C:\masm32\include</IncludePaths>
+      <IncludePaths>C:\Irvine;C:\masm32\include;%(IncludePaths)</IncludePaths>
+      <ObjectFileName>$(IntDir)%(FileName).obj</ObjectFileName>
       <AssembledCodeListingFile>$(ProjectName).lst</AssembledCodeListingFile>
-      <ObjectFileName>$(OutDir)%(FileName).obj</ObjectFileName>
     </MASM>
     <ResourceCompile>
-      <ResourceOutputFileName>$(OutDir)$(ProjectName).res</ResourceOutputFileName>
+      <ResourceOutputFileName>$(IntDir)%(Filename).res</ResourceOutputFileName>
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
