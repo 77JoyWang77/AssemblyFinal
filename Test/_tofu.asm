@@ -63,8 +63,8 @@ hdcBack HDC ?                  ; 背景設備上下文
 
 hBallBrush HBRUSH ?            ; 球筆刷
 brushes HBRUSH maxTofu DUP(?)  ; 豆腐筆刷
-tempWidth DWORD ?
-tempHeight DWORD ?
+tempWidth DWORD ?              ; 暫存寬度
+tempHeight DWORD ?             ; 暫存高度
 
 velocityY DWORD ?              ; 球 Y 方向速度
 velocityX DWORD ?              ; 豆腐 X 方向速度
@@ -89,21 +89,21 @@ WinMain6 proc
     mov    hInstance,eax
 
     ; 初始化窗口類
-    mov wc.cbSize,SIZEOF WNDCLASSEX
+    mov wc.cbSize, SIZEOF WNDCLASSEX
     mov wc.style, CS_HREDRAW or CS_VREDRAW
     mov wc.lpfnWndProc, OFFSET WndProc6
-    mov wc.cbClsExtra,NULL
-    mov wc.cbWndExtra,NULL
+    mov wc.cbClsExtra, NULL
+    mov wc.cbWndExtra, NULL
     push hInstance
     pop wc.hInstance
-    mov wc.hbrBackground,COLOR_WINDOW+1
-    mov wc.lpszMenuName,NULL
-    mov wc.lpszClassName,OFFSET ClassName
-    invoke LoadIcon,NULL,IDI_APPLICATION
-    mov wc.hIcon,eax
-    mov wc.hIconSm,eax
-    invoke LoadCursor,NULL,IDC_ARROW
-    mov wc.hCursor,eax
+    mov wc.hbrBackground, COLOR_WINDOW+1
+    mov wc.lpszMenuName, NULL
+    mov wc.lpszClassName, OFFSET ClassName
+    invoke LoadIcon, NULL, IDI_APPLICATION
+    mov wc.hIcon, eax
+    mov wc.hIconSm, eax
+    invoke LoadCursor, NULL, IDC_ARROW
+    mov wc.hCursor, eax
     invoke RegisterClassEx, addr wc
 
     ; 設置客戶區大小
@@ -132,7 +132,6 @@ WinMain6 proc
     invoke ShowWindow, hwnd, SW_SHOWNORMAL
     invoke UpdateWindow, hwnd
     
-
     ; 主消息循環
     .WHILE TRUE
         invoke GetMessage, ADDR msg, NULL, 0, 0
@@ -160,7 +159,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hBackBitmap2, eax
 
-        ; 初始化資源
+        ; 初始化畫面
         invoke GetDC,hWnd              
         mov hdc, eax
         invoke CreateCompatibleDC,hdc  
@@ -291,7 +290,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
 
     game_over:
-        ; 顯示遊戲結束訊息並清理資源
+        ; 顯示遊戲結束訊息
         invoke InvalidateRect, hWnd, NULL, FALSE
         invoke KillTimer, hWnd, 1
         invoke MessageBox, hWnd, addr EndGame, addr AppName, MB_OK
@@ -300,7 +299,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
     .ELSEIF uMsg == WM_PAINT
 
-        ; 繪製背景與球
+        ; 繪製畫面
         invoke BeginPaint, hWnd, addr ps
         mov hdc, eax
         invoke BitBlt, hdcMem, 0, 0, winWidth, winHeight, hdcBack, 0, 0, SRCCOPY
@@ -329,6 +328,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     ret
 WndProc6 endp
 
+; 初始化遊戲
 initializetofu PROC
 
     mov tofuX, initialtofuX
@@ -637,10 +637,9 @@ end_brushesloop:
 
 SetBrushes3 ENDP
 
+; 返回遊戲狀態
 getTofuGame PROC
-
     mov eax, gameover
     ret
-
 getTofuGame ENDP
 end
