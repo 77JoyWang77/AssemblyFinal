@@ -341,7 +341,7 @@ WndProc5 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov eax, hWnd 
         mov mainh, eax ;儲存視窗句柄
         mov currentID, 10 ; 起始按扭ID
-        mov Time, 0 ; 計時歸零
+        mov Time, 0 ; 計時歸零1
         ; load image
         invoke LoadImage, hInstance, addr hFlagBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hFlagBitmap, eax

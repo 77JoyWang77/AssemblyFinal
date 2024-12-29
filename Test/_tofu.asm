@@ -11,73 +11,75 @@ include winmm.inc
 .CONST
 winWidth EQU 300          ; 視窗寬度
 winHeight EQU 400         ; 視窗高度
-border_left EQU 120
-border_right EQU 180
-ballSize EQU 20           ; 球的大小
+border_left EQU 120       ; 豆腐下落左邊界
+border_right EQU 180      ; 豆腐下落又邊界
 updateInterval EQU 30     ; 計時器更新間隔 (ms)
-initialVelocity EQU -20   ; 初始速度 (負值向上)
+initialVelocity EQU -20   ; 球初始速度 (負值向上)
 gravity EQU 2             ; 模擬重力加速度
-initialground EQU 250     ; 地板高度
-radius EQU 10             ; 半徑
-cakeWidth EQU 60          ; 蛋糕寬度
-cakeHeight EQU 20         ; 蛋糕高度
-initialcakeX EQU 240      ; 初始 X 座標
-initialcakeY EQU 230      ; 初始 Y 座標
-initialvelocityX EQU -3   ; X 方向速度
-initialcakeX1 EQU 0       ; 初始 X 座標
-initialvelocityX1 EQU 3   ; X 方向速度
-dropSpeed EQU 10
-maxCakes EQU 100
-cakeMoveSize EQU 5
+initialground EQU 250     ; 初始地板
+tofuWidth EQU 60          ; 豆腐寬度
+tofuHeight EQU 20         ; 豆腐高度
+initialtofuX EQU 240      ; 豆腐初始 X 座標 1
+initialvelocityX EQU -3   ; 豆腐初始 X 方向速度 1
+initialtofuX1 EQU 0       ; 豆腐初始 X 座標 2
+initialvelocityX1 EQU 3   ; 豆腐初始 X 方向速度 2
+initialtofuY EQU 230      ; 豆腐初始 Y 座標
+maxTofu EQU 100           ; 最多豆腐數
+tofuMoveSize EQU 5        ; 下降高度
 
 .DATA
 ClassName db "SimpleWinClass8", 0
-AppName  db "Tofu", 0
+AppName db "Tofu", 0
 RemainingTriesText db "Remaining:   ", 0
-EndGame  db "Game Over", 0
+EndGame db "Game Over", 0
 
+; 音效/背景
 hBackBitmapName db "bmp/tofu_background.bmp",0
 hitOpenCmd db "open wav/hit.wav type mpegvideo alias hitMusic", 0
 hitVolumeCmd db "setaudio hitMusic volume to 100", 0
 hitPlayCmd db "play hitMusic from 0", 0
 
-line1Rect RECT <30, 30, 280, 50>
-initialball RECT <140, 230, 160, 250>
-ball RECT <140, 230, 160, 250> ; 球的初始位置
-firstcake RECT <120, 250, 180, 270>
-cakes RECT <120, 250, 180, 270>, 99 DUP(<0, 0, 0, 0>)
+; 物件位置
+line1Rect RECT <30, 30, 280, 50>                       ; 文字
+initialball RECT <140, 230, 160, 250>                  ; 球初始
+ball RECT <140, 230, 160, 250>                         ; 球
+firsttofu RECT <120, 250, 180, 270>                    ; 豆腐初始
+tofus RECT <120, 250, 180, 270>, 99 DUP(<0, 0, 0, 0>)  ; 豆腐
+
+; 筆刷顏色
 colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
 colors_count EQU ($ - colors) / 4
-winPosX DWORD 400
-winPosY DWORD 0
-gameover BOOL 1
+
+winPosX DWORD 400              ; 螢幕位置 X 座標
+winPosY DWORD 0                ; 螢幕位置 Y 座標
+gameover BOOL FALSE            ; 遊戲結束狀態
 
 .DATA?
-hInstance HINSTANCE ?
-hBitmap HBITMAP ?
-hBackBitmap HBITMAP ?
-hBackBitmap2 HBITMAP ?
-hdc HDC ?
-hdcMem HDC ?
-hdcBack HDC ?
-hBallBrush HBRUSH ?
-brushes HBRUSH maxCakes DUP(?)
+hInstance HINSTANCE ?          ; 程式實例句柄
+hBitmap HBITMAP ?              ; 位圖句柄
+hBackBitmap HBITMAP ?          ; 背景位圖句柄
+hBackBitmap2 HBITMAP ?         ; 第二背景位圖句柄
+hdcMem HDC ?                   ; 記憶體設備上下文
+hdcBack HDC ?                  ; 背景設備上下文
 
-velocityY DWORD ?              ; 球的垂直速度
+hBallBrush HBRUSH ?            ; 球筆刷
+brushes HBRUSH maxTofu DUP(?)  ; 豆腐筆刷
 tempWidth DWORD ?
 tempHeight DWORD ?
-cakeX DWORD ?                        ; X 座標
-cakeY DWORD ?                        ; Y 座標
-cVelocityX DWORD ?                   ; X 方向速度
-currentCakeIndex DWORD ?             ; 當前蛋糕索引
-TriesRemaining BYTE ?                ; 剩餘次數
-groundMoveCount DWORD ?              ; 記錄地面已移動的像素總數
-needMove DWORD ?
-ground DWORD ?
-canDrop BOOL ?
-valid BOOL ?
-way BOOL ?
-move BOOL ?
+
+velocityY DWORD ?              ; 球 Y 方向速度
+velocityX DWORD ?              ; 豆腐 X 方向速度
+tofuX DWORD ?                  ; 豆腐 X 座標
+tofuY DWORD ?                  ; 豆腐 Y 座標
+currentTofuIndex DWORD ?       ; 當前豆腐索引
+TriesRemaining BYTE ?          ; 剩餘次數
+groundMoveCount DWORD ?        ; 地面已移動距離
+needMove DWORD ?               ; 地面需移動距離
+ground DWORD ?                 ; 地面
+canDrop BOOL ?                 ; 豆腐可放下
+valid BOOL ?                   ;
+way BOOL ?                     ;
+move BOOL ?                    ;
 
 .CODE
 WinMain6 proc
@@ -146,11 +148,12 @@ WinMain6 proc
 WinMain6 endp
 
 WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
+    LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT
 
     .IF uMsg == WM_CREATE
         call SetBrushes3
-        call initializeCake3
+        call initializetofu3
 
         invoke LoadImage, hInstance, addr hBackBitmapName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE or LR_DEFAULTCOLOR
         mov hBackBitmap, eax
@@ -183,17 +186,17 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov move, TRUE
 
     skip_space_key:
-        call update_cake3
+        call update_tofu3
         mov ebx, SIZEOF RECT
-        imul ebx, currentCakeIndex
-        mov eax, cakeX
-        mov cakes[ebx].left, eax
-        add eax, cakeWidth
-        mov cakes[ebx].right, eax
-        mov eax, cakeY
-        mov cakes[ebx].top, eax
-        add eax, cakeHeight
-        mov cakes[ebx].bottom, eax
+        imul ebx, currentTofuIndex
+        mov eax, tofuX
+        mov tofus[ebx].left, eax
+        add eax, tofuWidth
+        mov tofus[ebx].right, eax
+        mov eax, tofuY
+        mov tofus[ebx].top, eax
+        add eax, tofuHeight
+        mov tofus[ebx].bottom, eax
 
     start_move:
         cmp move, FALSE
@@ -201,7 +204,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         call Update_move
 
     skip_move:
-        cmp ball.bottom, initialcakeY
+        cmp ball.bottom, initialtofuY
         jl move_ground
 
         call check_ball
@@ -212,12 +215,12 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         cmp way, TRUE
         jne from_left
-        cmp cakeX, border_left
+        cmp tofuX, border_left
         jg move_ground
         jmp next1
 
     from_left:
-        cmp cakeX, border_left
+        cmp tofuX, border_left
         jl move_ground
     next1:
         call check_collision3
@@ -230,10 +233,10 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke mciSendString, addr hitPlayCmd, NULL, 0, NULL
         mov move, FALSE
         mov valid,FALSE
-        mov eax, cakeHeight
+        mov eax, tofuHeight
         add needMove, eax
         
-        inc currentCakeIndex  ; 下一個蛋糕
+        inc currentTofuIndex  ; 下一個豆腐
         invoke GetTickCount
         mov ebx, 2
         cdq
@@ -241,26 +244,26 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         cmp edx, 0
         jne Next
         mov way, TRUE
-        mov cakeX, initialcakeX
+        mov tofuX, initialtofuX
         invoke GetTickCount
         mov ebx, 5
         cdq
         idiv ebx
         add edx, 2
         neg edx
-        mov cVelocityX, edx
+        mov velocityX, edx
         jmp Next1
     Next:
         mov way, FALSE
-        mov cakeX, initialcakeX1
+        mov tofuX, initialtofuX1
         invoke GetTickCount
         mov ebx, 5
         cdq
         idiv ebx
         add edx, 2
-        mov cVelocityX, edx
+        mov velocityX, edx
     Next1:
-        mov cakeY, initialcakeY
+        mov tofuY, initialtofuY
         dec TriesRemaining
         invoke InvalidateRect, hWnd, NULL, FALSE
 
@@ -275,13 +278,13 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         cmp ebx, groundMoveCount
         jle skip_fall
 
-        ; 地面和蛋糕繼續移動
-        add groundMoveCount, cakeMoveSize
-        add ground, cakeMoveSize
-        add ball.top, cakeMoveSize
-        add ball.bottom, cakeMoveSize
+        ; 地面和豆腐繼續移動
+        add groundMoveCount, tofuMoveSize
+        add ground, tofuMoveSize
+        add ball.top, tofuMoveSize
+        add ball.bottom, tofuMoveSize
 
-        mov ecx, currentCakeIndex
+        mov ecx, currentTofuIndex
         dec ecx
     move_ground_loop:
         mov eax, ecx
@@ -289,8 +292,8 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         jl skip_fall
         mov ebx, SIZEOF RECT
         imul ebx
-        add cakes[eax].top, cakeMoveSize
-        add cakes[eax].bottom, cakeMoveSize
+        add tofus[eax].top, tofuMoveSize
+        add tofus[eax].bottom, tofuMoveSize
         dec ecx
         jmp move_ground_loop
 
@@ -334,34 +337,34 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     ret
 WndProc6 endp
 
-initializeCake3 PROC
-    mov cakeX, initialcakeX
-    mov cakeY, initialcakeY
+initializetofu3 PROC
+    mov tofuX, initialtofuX
+    mov tofuY, initialtofuY
     mov ground, initialground
-    mov cVelocityX, initialvelocityX
-    mov TriesRemaining, maxCakes
+    mov velocityX, initialvelocityX
+    mov TriesRemaining, maxTofu
     dec TriesRemaining
     mov groundMoveCount, 0
     mov needMove, 0
-    mov currentCakeIndex, 1
+    mov currentTofuIndex, 1
     mov velocityY, 0
     mov move, FALSE
     mov gameover, FALSE
     mov valid, FALSE
     mov way, TRUE
-    mov edi, OFFSET cakes
-    mov ecx, maxCakes
+    mov edi, OFFSET tofus
+    mov ecx, maxTofu
     imul ecx, 4
     xor eax, eax
     rep stosd
-    mov eax, firstcake.top
-    mov cakes.top, eax
-    mov eax, firstcake.bottom
-    mov cakes.bottom, eax
-    mov eax, firstcake.left
-    mov cakes.left, eax
-    mov eax, firstcake.right
-    mov cakes.right, eax
+    mov eax, firsttofu.top
+    mov tofus.top, eax
+    mov eax, firsttofu.bottom
+    mov tofus.bottom, eax
+    mov eax, firsttofu.left
+    mov tofus.left, eax
+    mov eax, firsttofu.right
+    mov tofus.right, eax
     mov eax, initialball.top
     mov ball.top, eax
     mov eax, initialball.bottom
@@ -370,7 +373,7 @@ initializeCake3 PROC
     mov ball.left, eax
     mov eax, initialball.right
     mov ball.right, eax
-initializeCake3 ENDP
+initializetofu3 ENDP
 
 Update_move PROC
     ; 更新球的位置
@@ -388,18 +391,18 @@ Update_move PROC
 
     ; 檢查碰撞地板
     mov eax, ball.bottom
-    cmp eax, initialcakeY
+    cmp eax, initialtofuY
     jl no_collision
 
     cmp way, TRUE
     jne check_way
     mov eax, ball.right
-    cmp cakeX, eax
+    cmp tofuX, eax
     jg no_collision
     jmp stop_move
 check_way:
     mov eax, ball.left
-    cmp cakeX, eax
+    cmp tofuX, eax
     jl no_collision
     jmp stop_move
 stop_move:
@@ -411,46 +414,46 @@ no_collision:
     ret
 Update_move ENDP
 
-; 更新蛋糕位置
-update_cake3 PROC
-    cmp cVelocityX, 0
+; 更新豆腐位置
+update_tofu3 PROC
+    cmp velocityX, 0
     je end_update
     cmp way, TRUE
     jne left
-    mov eax, cakeX
+    mov eax, tofuX
     cmp eax, border_left
     jle end_update
-    add eax, cVelocityX
-    mov cakeX, eax
+    add eax, velocityX
+    mov tofuX, eax
     ret
 left:
-    mov eax, cakeX
+    mov eax, tofuX
     cmp eax, border_left
     jge end_update
-    add eax, cVelocityX
-    mov cakeX, eax
+    add eax, velocityX
+    mov tofuX, eax
     ret
 end_update:
-    mov cVelocityX, 0
+    mov velocityX, 0
     ret
-update_cake3 ENDP
+update_tofu3 ENDP
 
-; 判斷是否可放下，是return eax TRUE
+; 判斷豆腐是否可放下，是return eax TRUE
 check_collision3 PROC
     LOCAL cr:RECT
     LOCAL lr:RECT
 
-    mov eax, currentCakeIndex
+    mov eax, currentTofuIndex
     mov ebx, SIZEOF RECT
     imul ebx
-    mov ebx, cakes[eax].left
+    mov ebx, tofus[eax].left
     mov cr.left, ebx
-    mov ebx, cakes[eax].right
+    mov ebx, tofus[eax].right
     mov cr.right, ebx
 
-    mov ebx, cakes[eax - 16].left
+    mov ebx, tofus[eax - 16].left
     mov lr.left, ebx
-    mov ebx, cakes[eax - 16].right
+    mov ebx, tofus[eax - 16].right
     mov lr.right, ebx
 
 check_left:
@@ -475,19 +478,19 @@ check_collision3 ENDP
 check_ball PROC
     Local cr:RECT
 
-    mov eax, currentCakeIndex
+    mov eax, currentTofuIndex
     mov ebx, SIZEOF RECT
     imul ebx
-    mov ebx, cakes[eax].bottom
+    mov ebx, tofus[eax].bottom
     mov cr.bottom, ebx
-    mov ebx, cakes[eax].top
+    mov ebx, tofus[eax].top
     mov cr.top, ebx
-    mov ebx, cakes[eax].left
+    mov ebx, tofus[eax].left
     mov cr.left, ebx
-    mov ebx, cakes[eax].right
+    mov ebx, tofus[eax].right
     mov cr.right, ebx
     
-    cmp ball.bottom, initialcakeY
+    cmp ball.bottom, initialtofuY
     jne check_side
 
     cmp way, TRUE
@@ -510,7 +513,7 @@ check_side:
     cmp way, TRUE
     jne left_way2
 
-    ; 檢查球是否與蛋糕相撞
+    ; 檢查球是否與豆腐相撞
     mov eax, ball.right
     cmp eax, cr.left
     jl ball_not_collision
@@ -533,11 +536,11 @@ left_way2:
 
 valid_collision:
     mov ebx, SIZEOF RECT
-    imul ebx, currentCakeIndex
+    imul ebx, currentTofuIndex
     mov eax, cr.left
-    mov cakes[ebx].left, eax
+    mov tofus[ebx].left, eax
     mov eax, cr.right
-    mov cakes[ebx].right, eax
+    mov tofus[ebx].right, eax
     mov valid, TRUE
 ball_not_collision:
     ret
@@ -560,8 +563,8 @@ Update3 PROC
     mov byte ptr [RemainingTriesText + 12], ah ; 將字元寫入字串
     invoke DrawText, hdcMem, addr RemainingTriesText, -1, addr line1Rect,DT_CENTER
 
-    mov eax, currentCakeIndex
-draw_cakes:
+    mov eax, currentTofuIndex
+draw_tofus:
     push eax
     push ecx
     invoke SelectObject, hdcMem, brushes[eax * 4]
@@ -570,12 +573,12 @@ draw_cakes:
     mov ebx, SIZEOF RECT
     imul ebx
     push eax
-    invoke Rectangle, hdcMem, cakes[eax].left, cakes[eax].top, cakes[eax].right, cakes[eax].bottom
+    invoke Rectangle, hdcMem, tofus[eax].left, tofus[eax].top, tofus[eax].right, tofus[eax].bottom
     pop eax
     idiv ebx
     dec eax
     cmp eax, 0
-    jge draw_cakes
+    jge draw_tofus
 
     invoke SelectObject, hdcMem, hBallBrush
     invoke Ellipse, hdcMem, ball.left, ball.top, ball.right, ball.bottom
@@ -591,7 +594,7 @@ brushesloop:
     mov brushes[edi * 4], eax
     inc esi
     inc edi
-    cmp edi, maxCakes
+    cmp edi, maxTofu
     je end_brushesloop
     cmp esi, colors_count
     jne brushesloop

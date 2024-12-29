@@ -43,11 +43,13 @@ Line6Text db "                    ", 0
 Line7Text db "                    ", 0
 Line8Text db "                    ", 0
 
+; 音效/背景
 hBackBitmapName db "bmp/1A2B_background.bmp",0
 clickOpenCmd db "open bmp/click.wav type mpegvideo alias clickMusic", 0
 clickVolumeCmd db "setaudio clickMusic volume to 100", 0
 clickPlayCmd db "play clickMusic from 0", 0
 
+; 物件位置
 line1Rect RECT <20, 20, 250, 40>
 line2Rect RECT <20, 50, 250, 70> 
 line3Rect RECT <20, 80, 250, 100>
