@@ -39,7 +39,7 @@ hMineRedBitmapName db "bmp/mine_red.bmp",0                              ; 地雷圖
 hFlagBitmapName db "bmp/flag.bmp",0                                     ; 旗子圖案
 hFlagRedBitmapName db "bmp/flag_red.bmp",0                              ; 旗子圖案(插錯位置)
 hBackBitmapName db "bmp/mine_background.bmp",0
-boomOpenCmd db "open wav/boom.wav type mpegvideo alias boomMusic", 0
+boomOpenCmd db "open wav/boom.wav type mpegvideo alias boomMusic", 0    ; 爆炸音效
 boomVolumeCmd db "setaudio boomMusic volume to 100", 0
 boomPlayCmd db "play boomMusic from 0", 0
 
