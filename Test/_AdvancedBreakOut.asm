@@ -153,6 +153,7 @@ velocityY DWORD ?              ; 球 Y 方向速度
 speed DWORD ?                  ; 球移動速度
 
 brick DWORD brickNumY DUP(brickNumX DUP(?)) ; 磚塊矩陣
+
 fallTimeCount DWORD ?          ; 磚塊掉落計時器
 specialTimeCount DWORD ?       ; 特殊磚塊計時器
 time DWORD ?                   ; 時間
@@ -162,7 +163,7 @@ gameTypeCount DWORD ?          ; 遊戲種類
 randomSeed DWORD ?             ; 隨機數種子
 
 .CODE 
-WinMain7 proc
+WinMain7 PROC
     LOCAL wc:WNDCLASSEX 
     LOCAL hwnd:HWND 
     LOCAL wr:RECT
@@ -224,10 +225,10 @@ WinMain7 proc
     .ENDW 
     mov     eax,msg.wParam 
     ret 
-WinMain7 endp
+WinMain7 ENDP
 
 
-WndProc7 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
+WndProc7 PROC hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
 
@@ -334,9 +335,10 @@ WndProc7 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     .ENDIF
     xor eax, eax
     ret
-WndProc7 endp
+WndProc7 ENDP
 
-initializeBreakOut PROC         ; 遊戲初始化
+; 遊戲初始化
+initializeBreakOut PROC         
     mov platformX, initialplatformX
     mov ballX, initialballX
     mov ballY, initialballY
@@ -363,7 +365,8 @@ LoopBrick:
     ret
 initializeBreakOut ENDP
 
-initializeBrush PROC                ; 畫刷初始化
+; 畫刷初始化
+initializeBrush PROC                
     invoke CreateSolidBrush, 00FFFFFFh
     mov whiteBrush, eax
     invoke CreateSolidBrush, 003c14dch
@@ -381,7 +384,8 @@ initializeBrush PROC                ; 畫刷初始化
     ret
 initializeBrush ENDP
 
-initializeBrick proc                ; 磚塊初始化
+; 磚塊初始化
+initializeBrick PROC                
     mov esi, OFFSET brick
     mov eax, brickNumX
     mov ecx, initialBrickRow
@@ -401,7 +405,8 @@ newRandomBrick:
 
 initializeBrick ENDP
 
-updateTime proc                     ; 更新遊戲時間
+; 更新遊戲時間
+updateTime PROC                     
     mov eax, timeCounter
     add eax, timer
     mov timeCounter, eax            ; 確認已達到 1000ms
@@ -448,7 +453,8 @@ skip:
     ret
 updateOtherGameText ENDP
 
-check_brick_fall PROC           ; 更新磚塊和特殊磚邏輯
+; 更新磚塊和特殊磚邏輯
+check_brick_fall PROC           
     cmp fallTimeCount, 0
     jne no_brick_fall
 
@@ -532,7 +538,8 @@ end_update:
     ret
 update_ball ENDP
 
-check_platform_collision PROC   ; 平台碰撞
+; 平台碰撞
+check_platform_collision PROC   
     LOCAL angle:DWORD           ; 反彈角度
 
     mov eax, ballY
@@ -727,13 +734,14 @@ no_collision:
     ret
 check_platform_collision ENDP
 
-brick_collision PROC           ; 磚塊碰撞
-    Local brickIndexX : DWORD
-    Local brickIndexY : DWORD
-    Local brickRemainderX : DWORD
-    Local brickRemainderY : DWORD
-    Local tempX : DWORD
-    Local tempY : DWORD
+; 磚塊碰撞
+brick_collision PROC           
+    Local brickIndexX : DWORD       ; 球所在的磚塊 X 方向位置
+    Local brickIndexY : DWORD       ; 球所在的磚塊 Y 方向位置
+    Local brickRemainderX : DWORD   ; 球與上方磚塊的距離
+    Local brickRemainderY : DWORD   ; 球與左方磚塊的距離
+    Local tempX : DWORD             ; 暫存磚塊 X 方向位置
+    Local tempY : DWORD             ; 暫存磚塊 Y 方向位置
 
     xor edx, edx
     mov eax, ballX
@@ -858,7 +866,7 @@ brick_collisionX:
     invoke goSpecialBrick, [esi]
     jmp leftup
 
-leftup:
+leftup:                     ; 球撞擊左上方磚塊
     mov esi, OFFSET brick
     mov eax, brickIndexX
     dec eax
@@ -899,7 +907,7 @@ skipLeftupX:
     jge leftbottom
     neg velocityY           ; Y 方向速度為正
 
-leftbottom:
+leftbottom:                 ; 球撞擊左下方磚塊
     mov esi, OFFSET brick
     mov eax, brickIndexX
     dec eax
@@ -939,7 +947,7 @@ skipLeftbottomX:
     jle rightup
     neg velocityY           ; Y 方向速度為負
 
-rightup:
+rightup:                    ; 球撞擊右上方磚塊
     mov esi, OFFSET brick
     mov eax, brickIndexX
     inc eax
@@ -981,7 +989,7 @@ skipRightupX:
     jge rightbottom
     neg velocityY           ; Y 方向速度為正
 
-rightbottom:
+rightbottom:                ; 球撞擊右下方磚塊
     mov esi, OFFSET brick
     mov eax, brickIndexX
     inc eax
@@ -1028,9 +1036,10 @@ no_brick_collision:
     ret
 brick_collision ENDP
 
-corner_collision PROC,          ; 角落碰撞
-    corner_X : DWORD,
-    corner_Y : DWORD
+; 角落碰撞
+corner_collision PROC,          
+    corner_X : DWORD,       ; 磚塊角落 X 方向座標
+    corner_Y : DWORD        ; 磚塊角落 Y 方向座標
     LOCAL square_X : DWORD
     LOCAL square_Y : DWORD
 
@@ -1045,9 +1054,9 @@ corner_collision PROC,          ; 角落碰撞
     mov square_Y, eax       ; square_Y = (ballY - cornerY) ** 2
     
     mov eax, ballRadius
-    imul eax, eax
+    imul eax, eax           ; eax = ballRadius ** 2
     mov edx, square_X
-    add edx, square_Y
+    add edx, square_Y       ; edx = square_X + square_Y
     cmp edx, eax
     jg no_corner_collision
     mov eax, 1
@@ -1059,7 +1068,8 @@ end_corner_collision:
     ret
 corner_collision ENDP
 
-newBrick proc                       ; 生成新磚塊
+; 生成新磚塊
+newBrick PROC                       
     call GetRandomSeed              ; 取得隨機種子
     mov eax, randomSeed
     mov esi, OFFSET brick
@@ -1080,7 +1090,8 @@ newRandomBrick:
     ret
 newBrick ENDP
 
-specialBrick proc                   ; 生成特殊磚塊
+; 生成特殊磚塊
+specialBrick PROC                   
     call GetRandomSeed              ; 取得隨機種子
     mov eax, randomSeed
     mov esi, OFFSET brick
@@ -1108,23 +1119,26 @@ initializeGameType:
     ret
 specialBrick ENDP
 
-GetRandomSeed proc                  ; 取得隨機種子
+; 取得隨機種子
+GetRandomSeed PROC                  
     invoke QueryPerformanceCounter, OFFSET randomSeed
     ret
 GetRandomSeed ENDP
 
-Fall proc                           ; 磚塊下落
-    mov esi, OFFSET brick + ((brickNumY-1) * brickNumX-1) * 4 
-    mov edi, OFFSET brick + (brickNumY * brickNumX-1) * 4
+; 磚塊下落
+Fall PROC                           
+    mov esi, OFFSET brick + ((brickNumY-1) * brickNumX-1) * 4   ; 倒數第二行磚塊
+    mov edi, OFFSET brick + (brickNumY * brickNumX-1) * 4       ; 倒數第一行磚塊
     std                                           
     mov ecx, (brickNumY-1) * brickNumX                               
-    rep movsd                                    
+    rep movsd                                                   ; 複製磚塊資料到下一行
     cld       
     call checkBrick
     ret
-Fall endp
-    
-checkBrick PROC                     ; 判斷磚塊是否下降到超過平台
+Fall ENDP
+
+; 判斷磚塊是否下降到超過平台
+checkBrick PROC                     
     mov esi, OFFSET brick + ((brickNumY-1) * brickNumX) * 4
     mov ecx, brickNumX
 Loopcheck:
@@ -1140,6 +1154,7 @@ noBrick:
     ret
 checkBrick ENDP
 
+; 繪製畫面
 DrawScreen PROC
     invoke SelectObject, hdcMem, purpleBrush
 
@@ -1267,7 +1282,8 @@ Continue:
     ret
 DrawScreen ENDP
 
-goSpecialBrick PROC, brickType:DWORD        ; 特殊磚塊 (音效與加分)
+; 特殊磚塊 (音效與進入其他遊戲)
+goSpecialBrick PROC, brickType:DWORD        
     cmp brickType, 1
     je noGame
     ; 特殊磚塊音效
@@ -1345,12 +1361,8 @@ noGame:
 
 goSpecialBrick ENDP
 
-getAdvancedBreakOutGame PROC    ; 確認遊戲是否結束
-    mov eax, gameOver           ; 存入eax (傳入home)
-    ret
-getAdvancedBreakOutGame ENDP
-
-getOtherGame proc               ; 判斷別的遊戲的輸贏
+; 判斷別的遊戲的輸贏
+getOtherGame PROC               
     cmp eax, 1
     je Advanced1A2BWin
     cmp eax, 2
@@ -1431,9 +1443,10 @@ MinesweeperGoing:
     lea esi, GoingTextMinesweeper   ; "You Lose Minesweeper"
     call WriteOtherGameString
     ret
-getOtherGame endp
+getOtherGame ENDP
 
-WriteOtherGameString proc          ;寫入訊息字串
+;寫入訊息字串
+WriteOtherGameString PROC          
     mov countOtherGameText, 100
     lea edi, OtherGameText
 next_char:
@@ -1444,6 +1457,12 @@ next_char:
     cmp al, 0                      ; 檢查是否是 null 終止符
     jne next_char
     ret
-WriteOtherGameString endp
+WriteOtherGameString ENDP
+
+; 確認遊戲是否結束
+getAdvancedBreakOutGame PROC    
+    mov eax, gameOver           ; 存入eax (傳入home)
+    ret
+getAdvancedBreakOutGame ENDP
     
 end
