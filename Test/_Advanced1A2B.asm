@@ -86,7 +86,9 @@ tempWidth DWORD ?              ; 暫存寬度
 tempHeight DWORD ?             ; 暫存高度
 
 .CODE 
+; 創建視窗
 WinMain1 proc
+
     LOCAL wc:WNDCLASSEX 
     LOCAL msg:MSG 
     LOCAL hwnd:HWND 
@@ -150,9 +152,12 @@ WinMain1 proc
     .ENDW 
     mov     eax,msg.wParam 
     ret 
+
 WinMain1 endp
 
+; 視窗運行
 WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM 
+    
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
     LOCAL rect:RECT 
@@ -307,7 +312,7 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             ret
 
         game_over:
-        ; 顯示遊戲結束訊息
+            ; 顯示遊戲結束訊息
             call Output
             cmp fromBreakout, TRUE
             je skipMsg
@@ -568,11 +573,11 @@ getAdvanced1A2BGame PROC
     ret
 getAdvanced1A2BGame ENDP
 
-; 確認遊戲來源
+; 設置遊戲來源
 Advanced1A2BfromBreakOut PROC
     mov winPosX, 1000
     mov winPosY, 0
-    mov fromBreakout, 1
+    mov fromBreakout, TRUE
     ret
 Advanced1A2BfromBreakOut ENDP
 end

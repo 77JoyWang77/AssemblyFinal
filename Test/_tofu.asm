@@ -43,7 +43,7 @@ line1Rect RECT <30, 30, 280, 50>                       ; 文字
 initialball RECT <140, 230, 160, 250>                  ; 球初始
 ball RECT <140, 230, 160, 250>                         ; 球
 firsttofu RECT <120, 250, 180, 270>                    ; 豆腐初始
-tofu RECT <120, 250, 180, 270>, 99 DUP(<0, 0, 0, 0>)  ; 豆腐
+tofu RECT <120, 250, 180, 270>, 99 DUP(<0, 0, 0, 0>)   ; 豆腐
 
 ; 筆刷顏色
 colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
@@ -79,7 +79,9 @@ way BOOL ?                     ; 紀錄豆腐位置，TRUE 為右，FALSE 為左
 move BOOL ?                    ; 球是否移動中
 
 .CODE
+; 創建視窗
 WinMain6 proc
+
     LOCAL wc:WNDCLASSEX
     LOCAL msg:MSG
     LOCAL hwnd:HWND
@@ -141,9 +143,12 @@ WinMain6 proc
     .ENDW
     mov eax, msg.wParam
     ret
+
 WinMain6 endp
 
+; 視窗運行
 WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
+    
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT
 
@@ -172,20 +177,20 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
     .ELSEIF uMsg == WM_TIMER
 
-        ; 偵測空白鍵
+        ; 偵測向上鍵
         invoke GetAsyncKeyState, VK_UP
-        test eax, 8000h ; 測試最高位
-        jz skip_space_key
+        test eax, 8000h
+        jz skip_up_key
 
         cmp ball.bottom, initialground    ; 如果球未在初始位置，略過空白鍵
-        jl skip_space_key
+        jl skip_up_key
 
         cmp move, TRUE                    ; 如果球在移動，略過空白鍵
-        je skip_space_key
+        je skip_up_key
         mov velocityY, initialVelocity    ; 設置球初速
         mov move, TRUE                    ; 設置球狀態
 
-    skip_space_key:
+    skip_up_key:
         ; 更新豆腐狀態
         call update_tofu
         mov ebx, SIZEOF RECT
@@ -311,6 +316,7 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 
         ; 清理資源
         mov gameover, TRUE
+        invoke KillTimer, hWnd, 1
         invoke DeleteObject, hBitmap
         invoke DeleteObject, hBackBitmap
         invoke DeleteObject, hBackBitmap2
@@ -476,14 +482,14 @@ check_last_tofu:              ; 確認現在的豆腐已在上個豆腐上方
     mov ebx, tofu[eax - 16].right
     mov lr.right, ebx
 
-check_left:                   ; 現在的右邊界應小於等於上個的左邊界
-    mov eax, lr.left
+    mov eax, lr.left          ; 現在的右邊界應大於等於上個的左邊界
     cmp cr.right, eax
-    jl check_end
+    jle check_end
     
-check_right:                  ; 現在的左邊界應大於等於上個的右邊界
-    mov eax, lr.right
+    mov eax, lr.right         ; 現在的左邊界應小於等於上個的右邊界
     cmp cr.left, eax
+    jge check_end
+
     mov eax, TRUE
     ret
 
@@ -585,7 +591,7 @@ Update3 PROC
 nextdigit:
     add ah, '0'                                    ; 將數字轉換為 ASCII (單位數)
     mov byte ptr [RemainingTriesText + 12], ah     ; 寫入個位數
-    invoke DrawText, hdcMem, addr RemainingTriesText, -1, addr line1Rect,DT_CENTER
+    invoke DrawText, hdcMem, addr RemainingTriesText, -1, addr line1Rect, DT_CENTER
 
     ; 豆腐
     mov eax, currentTofuIndex
@@ -632,6 +638,7 @@ brushesloop:
     jne brushesloop
     mov esi, 0
     jmp brushesloop
+
 end_brushesloop:
     ret
 

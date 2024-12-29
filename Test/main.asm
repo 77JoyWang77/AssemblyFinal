@@ -2,7 +2,7 @@
 .model flat,stdcall 
 option casemap:none 
 
-EXTERN Home@0: PROC
+EXTERN WinMain@0: PROC
 EXTERN WinMain1@0: PROC
 EXTERN WinMain2@0: PROC
 EXTERN WinMain3@0: PROC
@@ -10,7 +10,7 @@ EXTERN WinMain4@0: PROC
 EXTERN WinMain5@0: PROC
 EXTERN WinMain6@0: PROC
 
-Home EQU Home@0
+Home EQU WinMain@0
 Advanced1A2B EQU WinMain1@0
 GameBrick EQU WinMain2@0
 Cake1 EQU WinMain3@0
