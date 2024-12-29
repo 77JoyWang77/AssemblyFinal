@@ -115,7 +115,7 @@ WinMain2 proc
     LOCAL msg:MSG
     
     invoke GetModuleHandle, NULL 
-    mov    hInstance,eax 
+    mov hInstance,eax 
 
     ; 定義窗口類別
     mov   wc.cbSize,SIZEOF WNDCLASSEX 
