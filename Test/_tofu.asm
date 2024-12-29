@@ -52,7 +52,7 @@ colors_count EQU ($ - colors) / 4
 
 winPosX DWORD 400              ; 螢幕位置 X 座標
 winPosY DWORD 0                ; 螢幕位置 Y 座標
-gameover BOOL FALSE            ; 遊戲結束狀態
+gameover BOOL TRUE             ; 遊戲結束狀態
 
 .DATA?
 hInstance HINSTANCE ?          ; 程式實例句柄
