@@ -41,8 +41,9 @@ hitOpenCmd db "open wav/hit.wav type mpegvideo alias hitMusic", 0
 hitVolumeCmd db "setaudio hitMusic volume to 100", 0
 hitPlayCmd db "play hitMusic from 0", 0
 
-line1Rect RECT <30, 30, 280, 50>
-cakes RECT 99 DUP(<0, 0, 0, 0>) ; 儲存蛋糕邊界
+; 物件位置
+cakes RECT 99 DUP(<0, 0, 0, 0>)        ; 蛋糕
+line1Rect RECT <20, 20, 280, 40>       ; 文字
 
 ; 筆刷顏色
 colors DWORD 07165FBh, 0A5B0F4h, 0F0EBC4h, 0B2C61Fh, 0D3F0B8h, 0C3CC94h, 0E9EFA8h, 0D38A92h, 094C9E4h, 0B08DDDh, 0E1BFA2h, 09B97D8h, 09ADFCBh, 0A394D1h, 0BF95DCh, 09CE1D6h, 0E099C1h, 0DCD0A0h, 09B93D9h, 0D3D1B2h
@@ -93,14 +94,14 @@ WinMain3 proc
     ; 初始化窗口類
     mov wc.cbSize, SIZEOF WNDCLASSEX
     mov wc.style, CS_HREDRAW or CS_VREDRAW
-    mov wc.lpfnWndProc, OFFSET WndProc3
+    mov wc.lpfnWndProc, offset WndProc3
     mov wc.cbClsExtra, NULL
     mov wc.cbWndExtra, NULL
     push hInstance
     pop wc.hInstance
-    mov wc.hbrBackground, COLOR_WINDOW+1
+    mov wc.hbrBackground, COLOR_WINDOW + 1
     mov wc.lpszMenuName, NULL
-    mov wc.lpszClassName, OFFSET ClassName
+    mov wc.lpszClassName, offset ClassName
     invoke LoadIcon, NULL, IDI_APPLICATION
     mov wc.hIcon, eax
     mov wc.hIconSm, eax
@@ -130,18 +131,20 @@ WinMain3 proc
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
             winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
     mov   hwnd,eax 
+
+    ; 顯示和更新窗口
     invoke SetTimer, hwnd, 1, updateInterval, NULL
     invoke ShowWindow, hwnd,SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
 
     ; 主消息循環
     .WHILE TRUE 
-        invoke GetMessage, ADDR msg,NULL,0,0 
+        invoke GetMessage, ADDR msg, NULL, 0, 0 
         .BREAK .IF (!eax) 
         invoke TranslateMessage, ADDR msg 
         invoke DispatchMessage, ADDR msg 
     .ENDW 
-    mov     eax,msg.wParam 
+    mov eax, msg.wParam 
     ret 
 
 WinMain3 endp
@@ -165,11 +168,11 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov hBackBitmap2, eax
 
         ; 初始化畫面
-        invoke GetDC,hWnd              
+        invoke GetDC, hWnd              
         mov hdc, eax
-        invoke CreateCompatibleDC,hdc  
+        invoke CreateCompatibleDC, hdc  
         mov hdcMem, eax
-        invoke CreateCompatibleDC,hdc 
+        invoke CreateCompatibleDC, hdc 
         mov hdcBack, eax
         invoke SelectObject, hdcMem, hBackBitmap
         invoke SelectObject, hdcBack, hBackBitmap2
@@ -284,7 +287,6 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ret
 
     game_over:
-
         ; 顯示遊戲結束訊息
         invoke KillTimer, hWnd, 1
         cmp fromBreakout, TRUE
@@ -338,7 +340,7 @@ WndProc3 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke PostQuitMessage, NULL
     
     .ELSE 
-        invoke DefWindowProc,hWnd,uMsg,wParam,lParam 
+        invoke DefWindowProc, hWnd, uMsg, wParam, lParam 
         ret
     .ENDIF 
     xor   eax, eax 
@@ -348,7 +350,6 @@ WndProc3 endp
 
 ; 初始化遊戲
 initializeCake1 PROC
-
     cmp fromBreakout, TRUE
     je skipMaxcakes
     mov maxCakes, 99
@@ -365,12 +366,11 @@ skipMaxcakes:
     mov currentCakeIndex, 0
     mov gameover, FALSE
     mov falling, FALSE
-    mov edi, OFFSET cakes
+    mov edi, offset cakes
     mov ecx, maxCakes
     imul ecx, 4
     xor eax, eax
     rep stosd
-
 initializeCake1 ENDP
 
 ; 更新蛋糕位置

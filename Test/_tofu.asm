@@ -88,19 +88,19 @@ WinMain6 proc
     LOCAL wr:RECT
 
     invoke GetModuleHandle, NULL
-    mov    hInstance,eax
+    mov hInstance,eax
 
     ; 初始化窗口類
     mov wc.cbSize, SIZEOF WNDCLASSEX
     mov wc.style, CS_HREDRAW or CS_VREDRAW
-    mov wc.lpfnWndProc, OFFSET WndProc6
+    mov wc.lpfnWndProc, offset WndProc6
     mov wc.cbClsExtra, NULL
     mov wc.cbWndExtra, NULL
     push hInstance
     pop wc.hInstance
-    mov wc.hbrBackground, COLOR_WINDOW+1
+    mov wc.hbrBackground, COLOR_WINDOW + 1
     mov wc.lpszMenuName, NULL
-    mov wc.lpszClassName, OFFSET ClassName
+    mov wc.lpszClassName, offset ClassName
     invoke LoadIcon, NULL, IDI_APPLICATION
     mov wc.hIcon, eax
     mov wc.hIconSm, eax
@@ -117,7 +117,7 @@ WinMain6 proc
     mov wr.bottom, eax
 
     ; 調整窗口大小
-    invoke AdjustWindowRect, ADDR wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
+    invoke AdjustWindowRect, addr wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
     mov eax, wr.right
     sub eax, wr.left
     mov tempWidth, eax
@@ -126,20 +126,22 @@ WinMain6 proc
     mov tempHeight, eax
 
     ; 創建窗口
-    invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
+    invoke CreateWindowEx, NULL, addr ClassName, addr AppName, \
            WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
            winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
-    mov hwnd,eax
+    mov hwnd, eax
+    
+    ; 顯示和更新窗口
     invoke SetTimer, hwnd, 1, updateInterval, NULL
     invoke ShowWindow, hwnd, SW_SHOWNORMAL
     invoke UpdateWindow, hwnd
     
     ; 主消息循環
     .WHILE TRUE
-        invoke GetMessage, ADDR msg, NULL, 0, 0
+        invoke GetMessage, addr msg, NULL, 0, 0
         .BREAK .IF (!eax)
-        invoke TranslateMessage, ADDR msg
-        invoke DispatchMessage, ADDR msg
+        invoke TranslateMessage, addr msg
+        invoke DispatchMessage, addr msg
     .ENDW
     mov eax, msg.wParam
     ret
@@ -165,11 +167,11 @@ WndProc6 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov hBackBitmap2, eax
 
         ; 初始化畫面
-        invoke GetDC,hWnd              
+        invoke GetDC, hWnd              
         mov hdc, eax
-        invoke CreateCompatibleDC,hdc  
+        invoke CreateCompatibleDC, hdc  
         mov hdcMem, eax
-        invoke CreateCompatibleDC,hdc 
+        invoke CreateCompatibleDC, hdc 
         mov hdcBack, eax
         invoke SelectObject, hdcMem, hBackBitmap
         invoke SelectObject, hdcBack, hBackBitmap2
@@ -336,7 +338,6 @@ WndProc6 endp
 
 ; 初始化遊戲
 initializetofu PROC
-
     mov tofuX, initialtofuX
     mov tofuY, initialtofuY
     mov ground, initialground
@@ -350,7 +351,7 @@ initializetofu PROC
     mov move, FALSE
     mov gameover, FALSE
     mov way, TRUE
-    mov edi, OFFSET tofu
+    mov edi, offset tofu
     mov ecx, maxTofu
     imul ecx, 4
     xor eax, eax
@@ -371,7 +372,6 @@ initializetofu PROC
     mov ball.left, eax
     mov eax, initialball.right
     mov ball.right, eax
-
 initializetofu ENDP
 
 ; 更新球狀態
