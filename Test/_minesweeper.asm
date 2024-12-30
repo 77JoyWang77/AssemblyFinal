@@ -846,11 +846,13 @@ update_Time proc uses eax ebx edx
     ret
 update_Time endp
 
+; 返回遊戲狀態
 getMinesweeperGame PROC
     mov eax, endGamebool
     ret
 getMinesweeperGame ENDP
 
+; 設置遊戲來源
 MinesweeperfromBreakOut PROC
     mov winPosX, 1000
     mov winPosY, 430
