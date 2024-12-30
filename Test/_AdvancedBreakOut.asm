@@ -1459,9 +1459,9 @@ next_char:
     ret
 WriteOtherGameString ENDP
 
-; 確認遊戲是否結束
+; 返回遊戲狀態
 getAdvancedBreakOutGame PROC    
-    mov eax, gameOver           ; 存入eax (傳入home)
+    mov eax, gameOver
     ret
 getAdvancedBreakOutGame ENDP
     

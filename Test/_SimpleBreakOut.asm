@@ -1251,9 +1251,9 @@ brick5:                     ; 藍色磚塊 (分數 + 30)
 
 goSpecialBrick1 ENDP
 
-; 確認遊戲是否結束
+; 返回遊戲狀態
 getBreakOutGame PROC        
-    mov eax, gameOver       ; 存入eax (傳入home)
+    mov eax, gameOver
     ret
 getBreakOutGame ENDP
 
