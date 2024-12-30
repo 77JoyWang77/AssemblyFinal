@@ -1427,20 +1427,20 @@ MinesweeperLose:
     call WriteOtherGameString
     ret
 Advanced1A2BGoing:
-    inc speed                       ; "You Lose 1A2B"
+    inc speed                       ; "1A2B is still going !"
     lea esi, GoingText1A2B
     call WriteOtherGameString
     ret
 Cake1Going:
-    lea esi, GoingTextCake1         ; "You Lose Cake1"
+    lea esi, GoingTextCake1         ; "Cake1 is still going !"
     call WriteOtherGameString
     ret
 Cake2Going:
-    lea esi, GoingTextCake2         ; "You Lose Cake2"
+    lea esi, GoingTextCake2         ; "Cake2 is still going !"
     call WriteOtherGameString
     ret
 MinesweeperGoing:
-    lea esi, GoingTextMinesweeper   ; "You Lose Minesweeper"
+    lea esi, GoingTextMinesweeper   ; "Minesweeper is still going !"
     call WriteOtherGameString
     ret
 getOtherGame ENDP
