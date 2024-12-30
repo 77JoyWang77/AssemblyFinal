@@ -89,19 +89,19 @@ WinMain4 proc
     LOCAL wr:RECT
 
     invoke GetModuleHandle, NULL 
-    mov    hInstance,eax
+    mov hInstance,eax
 
     ; 初始化窗口類
     mov wc.cbSize, SIZEOF WNDCLASSEX
     mov wc.style, CS_HREDRAW or CS_VREDRAW
-    mov wc.lpfnWndProc, OFFSET WndProc4
+    mov wc.lpfnWndProc, offset WndProc4
     mov wc.cbClsExtra, NULL
     mov wc.cbWndExtra, NULL
     push hInstance
     pop wc.hInstance
     mov wc.hbrBackground, COLOR_WINDOW+1
     mov wc.lpszMenuName, NULL
-    mov wc.lpszClassName, OFFSET ClassName
+    mov wc.lpszClassName, offset ClassName
     invoke LoadIcon, NULL, IDI_APPLICATION
     mov wc.hIcon, eax
     mov wc.hIconSm, eax
@@ -118,7 +118,7 @@ WinMain4 proc
     mov wr.bottom, eax
 
     ; 調整窗口大小
-    invoke AdjustWindowRect, ADDR wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
+    invoke AdjustWindowRect, addr wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
     mov eax, wr.right
     sub eax, wr.left
     mov tempWidth, eax
@@ -127,22 +127,24 @@ WinMain4 proc
     mov tempHeight, eax
 
     ; 創建窗口
-    invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
+    invoke CreateWindowEx, NULL, addr ClassName, addr AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
             winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
-    mov   hwnd,eax 
+    mov   hwnd, eax 
+
+    ; 顯示和更新窗口
     invoke SetTimer, hwnd, 1, updateInterval, NULL
-    invoke ShowWindow, hwnd,SW_SHOWNORMAL 
+    invoke ShowWindow, hwnd, SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
 
     ; 主消息循環
     .WHILE TRUE 
-        invoke GetMessage, ADDR msg,NULL,0,0 
+        invoke GetMessage, addr msg, NULL, 0, 0 
         .BREAK .IF (!eax) 
-        invoke TranslateMessage, ADDR msg 
-        invoke DispatchMessage, ADDR msg 
+        invoke TranslateMessage, addr msg 
+        invoke DispatchMessage, addr msg 
     .ENDW 
-    mov     eax,msg.wParam 
+    mov eax, msg.wParam 
     ret 
 
 WinMain4 endp
@@ -166,11 +168,11 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         mov hBackBitmap2, eax
 
         ; 初始化畫面
-        invoke GetDC,hWnd              
+        invoke GetDC, hWnd              
         mov hdc, eax
-        invoke CreateCompatibleDC,hdc  
+        invoke CreateCompatibleDC, hdc  
         mov hdcMem, eax
-        invoke CreateCompatibleDC,hdc 
+        invoke CreateCompatibleDC, hdc 
         mov hdcBack, eax
         invoke SelectObject, hdcMem, hBackBitmap
         invoke SelectObject, hdcBack, hBackBitmap2
@@ -344,17 +346,18 @@ WndProc4 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke ReleaseDC, hWnd, hdc
         invoke DestroyWindow, hWnd
         invoke PostQuitMessage, NULL
+
     .ELSE 
         invoke DefWindowProc,hWnd,uMsg,wParam,lParam 
         ret
     .ENDIF 
-    xor   eax, eax 
+    xor eax, eax 
     ret 
+
 WndProc4 endp 
 
 ; 初始化遊戲
 initializeCake2 PROC
-
     cmp fromBreakout, TRUE
     je skipMaxcakes
     mov maxCakes, 99
@@ -373,12 +376,11 @@ skipMaxcakes:
     mov gameover, FALSE
     mov falling, FALSE
     mov moveDown, FALSE
-    mov edi, OFFSET cakes
+    mov edi, offset cakes
     mov ecx, maxCakes
     imul ecx, 4
     xor eax, eax
     rep stosd
-
 initializeCake2 ENDP
 
 ; 更新蛋糕位置

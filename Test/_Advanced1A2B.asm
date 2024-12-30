@@ -100,14 +100,14 @@ WinMain1 proc
     ; 初始化窗口類
     mov wc.cbSize, SIZEOF WNDCLASSEX
     mov wc.style, CS_HREDRAW or CS_VREDRAW
-    mov wc.lpfnWndProc, OFFSET WndProc1
+    mov wc.lpfnWndProc, offset WndProc1
     mov wc.cbClsExtra, NULL
     mov wc.cbWndExtra, NULL
     push hInstance
     pop wc.hInstance
-    mov wc.hbrBackground, COLOR_WINDOW+1
+    mov wc.hbrBackground, COLOR_WINDOW + 1
     mov wc.lpszMenuName, NULL
-    mov wc.lpszClassName, OFFSET ClassName
+    mov wc.lpszClassName, offset ClassName
     invoke LoadIcon, NULL, IDI_APPLICATION
     mov wc.hIcon, eax
     mov wc.hIconSm, eax
@@ -124,7 +124,7 @@ WinMain1 proc
     mov wr.bottom, eax
 
     ; 調整窗口大小
-    invoke AdjustWindowRect, ADDR wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
+    invoke AdjustWindowRect, addr wr, WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, FALSE
     mov eax, wr.right
     sub eax, wr.left
     mov tempWidth, eax
@@ -133,26 +133,24 @@ WinMain1 proc
     mov tempHeight, eax
 
     ; 創建窗口
-    invoke CreateWindowEx, NULL, ADDR ClassName, ADDR AppName, \
+    invoke CreateWindowEx, NULL, addr ClassName, addr AppName, \
             WS_OVERLAPPED or WS_CAPTION or WS_SYSMENU or WS_MINIMIZEBOX, \
-            winPosX, winPosY, tempWidth, tempHeight, \
-            NULL, NULL, hInstance, NULL
-    mov   hwnd,eax 
+            winPosX, winPosY, tempWidth, tempHeight, NULL, NULL, hInstance, NULL
+    mov   hwnd, eax 
 
     ; 顯示和更新窗口
-    invoke ShowWindow, hwnd,SW_SHOWNORMAL 
+    invoke ShowWindow, hwnd, SW_SHOWNORMAL 
     invoke UpdateWindow, hwnd 
 
     ; 主消息循環
     .WHILE TRUE 
-        invoke GetMessage, ADDR msg,NULL,0,0 
+        invoke GetMessage, addr msg, NULL, 0, 0 
     .BREAK .IF (!eax) 
-        invoke TranslateMessage, ADDR msg 
-        invoke DispatchMessage, ADDR msg 
+        invoke TranslateMessage, addr msg 
+        invoke DispatchMessage, addr msg 
     .ENDW 
     mov     eax,msg.wParam 
     ret 
-
 WinMain1 endp
 
 ; 視窗運行
@@ -160,7 +158,6 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
     
     LOCAL hdc:HDC 
     LOCAL ps:PAINTSTRUCT 
-    LOCAL rect:RECT 
 
     .IF uMsg == WM_CREATE 
 
@@ -176,13 +173,12 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         ; 初始化畫面
         invoke GetDC, hWnd              
         mov hdc, eax
-        invoke CreateCompatibleDC,hdc  
+        invoke CreateCompatibleDC, hdc  
         mov hdcMem, eax
-        invoke CreateCompatibleDC,hdc 
+        invoke CreateCompatibleDC, hdc 
         mov hdcBack, eax
         invoke SelectObject, hdcMem, hBackBitmap
         invoke SelectObject, hdcBack, hBackBitmap2
-        invoke GetClientRect, hWnd, addr rect
         
         ; 初始化按鈕
         invoke CreateButton, addr ButtonText1, 20, 310, 11, hWnd
@@ -207,6 +203,7 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke mciSendString, addr clickPlayCmd, NULL, 0, NULL
 
         mov eax, wParam
+
         ; 數字按鈕
         .IF eax >= 10 && eax <= 19
 
@@ -266,20 +263,20 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             mov SelectedCount, 0
 
             ; 更新歷史資料
-            invoke UpdateLineText, OFFSET Line1Text, 1, 7
-            invoke UpdateLineText, OFFSET Line2Text, 1, 6
-            invoke UpdateLineText, OFFSET Line3Text, 1, 5
-            invoke UpdateLineText, OFFSET Line4Text, 1, 4
-            invoke UpdateLineText, OFFSET Line5Text, 1, 3
-            invoke UpdateLineText, OFFSET Line6Text, 1, 2
-            invoke UpdateLineText, OFFSET Line7Text, 1, 1
-            invoke UpdateLineText, OFFSET Line8Text, 1, 0
+            invoke UpdateLineText, addr Line1Text, 1, 7
+            invoke UpdateLineText, addr Line2Text, 1, 6
+            invoke UpdateLineText, addr Line3Text, 1, 5
+            invoke UpdateLineText, addr Line4Text, 1, 4
+            invoke UpdateLineText, addr Line5Text, 1, 3
+            invoke UpdateLineText, addr Line6Text, 1, 2
+            invoke UpdateLineText, addr Line7Text, 1, 1
+            invoke UpdateLineText, addr Line8Text, 1, 0
 
             ; 初始化猜測紀錄文字
-            mov edi, OFFSET GuessLineText
+            mov edi, offset GuessLineText
             mov ecx, 7
             mov al, ' '
-            reset_loop:
+        reset_loop:
             mov [edi], al
             inc edi
             loop reset_loop
@@ -287,13 +284,13 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
             ; 重新啟用所有按鈕
             mov ecx, 10
             mov ebx, 10
-            Reset:
-                push ecx
-                invoke GetDlgItem, hWnd, ebx
-                invoke EnableWindow, eax, TRUE
-                pop ecx
-                inc ebx
-                loop Reset
+        reset:
+            push ecx
+            invoke GetDlgItem, hWnd, ebx
+            invoke EnableWindow, eax, TRUE
+            pop ecx
+            inc ebx
+            loop reset
             
             ; 初始化猜測紀錄陣列
             mov byte ptr [SelectedNumbers], 0
@@ -320,7 +317,11 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         skipMsg:
             invoke PostMessage, hWnd, WM_DESTROY, 0, 0
             ret
+
         .ENDIF
+
+        skip_button:
+            ret
 
     .ELSEIF uMsg == WM_PAINT
         
@@ -364,83 +365,89 @@ WndProc1 proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
         invoke PostQuitMessage, NULL
 
     .ELSE 
-        invoke DefWindowProc,hWnd,uMsg,wParam,lParam 
+        invoke DefWindowProc, hWnd, uMsg, wParam, lParam 
         ret
     .ENDIF 
+
     xor   eax, eax 
     ret 
-
-skip_button:
-    ret
-
-continue_game:
-    ret
 
 WndProc1 ENDP
 
 ; 初始化遊戲
 Initialized PROC
-
     call RandomNumber2
     mov gameover, FALSE
     mov SelectedCount, 0
     mov TriesRemaining, 8
-    invoke UpdateLineText, OFFSET Line1Text, 0, 0
-    invoke UpdateLineText, OFFSET Line2Text, 0, 0
-    invoke UpdateLineText, OFFSET Line3Text, 0, 0
-    invoke UpdateLineText, OFFSET Line4Text, 0, 0
-    invoke UpdateLineText, OFFSET Line5Text, 0, 0
-    invoke UpdateLineText, OFFSET Line6Text, 0, 0
-    invoke UpdateLineText, OFFSET Line7Text, 0, 0
-    invoke UpdateLineText, OFFSET Line8Text, 0, 0
-    
+    invoke UpdateLineText, addr Line1Text, 0, 0
+    invoke UpdateLineText, addr Line2Text, 0, 0
+    invoke UpdateLineText, addr Line3Text, 0, 0
+    invoke UpdateLineText, addr Line4Text, 0, 0
+    invoke UpdateLineText, addr Line5Text, 0, 0
+    invoke UpdateLineText, addr Line6Text, 0, 0
+    invoke UpdateLineText, addr Line7Text, 0, 0
+    invoke UpdateLineText, addr Line8Text, 0, 0
+
+    ; 初始化猜測紀錄文字
+    mov edi, offset GuessLineText
+    mov ecx, 7
+    mov al, ' '
+reset_loop:
+    mov [edi], al
+    inc edi
+    loop reset_loop
+
+    ; 初始化猜測紀錄陣列
+    mov byte ptr [SelectedNumbers], 0
+    mov byte ptr [SelectedNumbers + 1], 0
+    mov byte ptr [SelectedNumbers + 2], 0
+    mov byte ptr [SelectedNumbers + 3], 0
 Initialized ENDP
 
 ; 計算結果
-CalculateResult PROC uses esi edi ecx
-
-    mov esi, OFFSET Answer
-    mov edi, OFFSET SelectedNumbers
+CalculateResult PROC
+    mov esi, offset Answer
+    mov edi, offset SelectedNumbers
     mov eax, 0
     mov ebx, 0
 
     ; 計算 A (數字與位置都正確)
     mov ecx, 4
-CountA:
+countA:
     mov dl, [esi]
     cmp dl, [edi]
-    jne SkipA
+    jne skipA
     inc eax
-SkipA:
+skipA:
     inc esi
     inc edi
-    loop CountA
+    loop countA
 
     ; 計算 B (數字正確但位置錯誤)
-    mov edi, OFFSET SelectedNumbers
+    mov edi, offset SelectedNumbers
     mov ecx, 4
-CountB:
+countB:
     push ecx
     mov dl, [edi]
-    mov esi, OFFSET Answer
+    mov esi, offset Answer
     mov ecx, 4
-CheckB:
+checkB:
     cmp dl, [esi]
-    jne NotB
+    jne notB
     inc ebx
-NotB:
+notB:
     inc esi
-    loop CheckB
-Next:
+    loop checkB
     pop ecx
     inc edi
-    loop CountB
+    loop countB
 
     ; 紀錄答案
     sub ebx, eax
-    mov esi, OFFSET Acount
+    mov esi, offset Acount
     mov [esi], al
-    mov edi, OFFSET Bcount
+    mov edi, offset Bcount
     mov [edi], bl
     ret
 CalculateResult ENDP
@@ -453,7 +460,7 @@ UpdateLineText PROC, LineText:PTR DWORD, mode: Byte, do:byte
     .IF mode == 1
         .IF TriesRemaining == al
             ; 寫入猜測紀錄
-            mov esi, OFFSET GuessLineText
+            mov esi, offset GuessLineText
             mov edi, LineText
             mov ecx, 7
             rep movsb
@@ -484,14 +491,13 @@ UpdateLineText PROC, LineText:PTR DWORD, mode: Byte, do:byte
 UpdateLineText ENDP
 
 ; 獲得 4 個不重複的隨機數字
-RandomNumber2 PROC USES eax ecx esi edi edx
-
+RandomNumber2 PROC
     mov ecx, 4
-    mov esi, OFFSET Answer
+    mov esi, offset Answer
     mov edx, 0
-Pushing:
+pushing:
     push ecx
-GenerateLoop:
+generateLoop:
     push edx
     invoke GetTickCount       ; 使用時間當種子
     mov ebx, 10
@@ -501,32 +507,31 @@ GenerateLoop:
 
     ; 檢查是否重複
     pop edx
-    mov edi, OFFSET Answer
+    mov edi, offset Answer
     mov ecx, edx
     cmp ecx, 0
-    je AddNumber
-CheckDuplicate:
-    cmp [edi], al
-    je GenerateLoop
-    inc edi
-    loop CheckDuplicate
+    je addNumber
 
-AddNumber:
+checkDuplicate:
+    cmp [edi], al
+    je generateLoop
+    inc edi
+    loop checkDuplicate
+
+addNumber:
     ; 存入字元
     mov [esi], al
     inc esi
     inc edx
     pop ecx
-    loop Pushing
+    loop pushing
     ret
-
 RandomNumber2 ENDP
 
 ; 將答案轉字串並彈出視窗
 Output PROC
-
-    mov edi, OFFSET Answer
-    mov esi, OFFSET AnswerText
+    mov edi, offset Answer
+    mov esi, offset AnswerText
     mov ecx, 4
 move:
     mov al, [edi]
@@ -537,14 +542,13 @@ move:
     loop move
     invoke MessageBox, NULL, addr AnswerText, addr AppName, MB_OK 
     ret
-
 Output ENDP
 
 ; 初始化按鈕
 CreateButton PROC Text:PTR DWORD, x:DWORD, y:DWORD, ID:DWORD, hWnd:HWND
-    invoke CreateWindowEx,WS_EX_CLIENTEDGE, ADDR ButtonClassName, Text,\
+    invoke CreateWindowEx,WS_EX_CLIENTEDGE, addr ButtonClassName, Text,\
                         WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON or BS_CENTER,\
-                        x,y,30,30,hWnd,ID,hInstance,NULL 
+                        x, y, 30, 30, hWnd, ID, hInstance, NULL 
     ret
 CreateButton ENDP
 
